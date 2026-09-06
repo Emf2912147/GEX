@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+.venv/
+# Charts from manual gamma_exposure.py runs at the repo root.
+/*.png
+/SPX_gex.csv
