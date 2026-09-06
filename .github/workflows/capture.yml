@@ -24,7 +24,6 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-          cache: pip
 
       - name: Install dependencies
         run: pip install requests pandas numpy matplotlib pyarrow
@@ -43,7 +42,7 @@ jobs:
         run: |
           git config user.name  "gex-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A history docs
+          git add -A
           if git diff --staged --quiet; then
             echo "nothing new to commit (likely a stale feed, already captured)"
           else
