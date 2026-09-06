@@ -1,1 +1,60 @@
+name: GEX daily capture
 
+on:
+  schedule:
+    # 11:30 UTC every day = 07:30 ET in summer, 06:30 ET in winter.
+    - cron: '30 11 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gex-capture
+  cancel-in-progress: false
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install requests pandas numpy matplotlib pyarrow
+
+      - name: Capture chains
+        id: capture
+        continue-on-error: true
+        run: python gex_capture.py
+
+      - name: Build dashboard
+        if: always()
+        run: python build_dashboard.py
+
+      - name: Commit results
+        if: always()
+        run: |
+          git config user.name  "gex-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A history docs
+          if git diff --staged --quiet; then
+            echo "nothing new to commit (likely a stale feed, already captured)"
+          else
+            git commit -m "capture $(date -u +'%Y-%m-%d %H:%M UTC')"
+            git pull --rebase --autostash
+            git push
+          fi
+
+      - name: Surface capture failures
+        if: always() && steps.capture.outcome == 'failure'
+        run: |
+          echo "::error::One or more symbols failed. See history/capture.log."
+          tail -40 history/capture.log || true
+          exit 1
