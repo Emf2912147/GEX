@@ -15,3 +15,9 @@
 2026-09-06T01:06:26+00:00  QQQ: feed_ts 2026-09-05 03:44:40 already captured, skipping
 2026-09-06T01:06:27+00:00  IWM: feed_ts 2026-09-05 03:44:35 already captured, skipping
 2026-09-06T01:06:27+00:00  === capture done  ok=0  failed=0
+2026-09-06T11:35:44+00:00  === capture start  symbols=SPX SPY QQQ IWM
+2026-09-06T11:35:45+00:00  SPX: feed_ts 2026-09-05 03:44:36 already captured, skipping
+2026-09-06T11:35:46+00:00  SPY: feed_ts 2026-09-05 06:00:28 already captured, skipping
+2026-09-06T11:35:47+00:00  QQQ: feed_ts 2026-09-05 03:44:40 already captured, skipping
+2026-09-06T11:35:47+00:00  IWM: feed_ts 2026-09-05 03:44:35 already captured, skipping
+2026-09-06T11:35:47+00:00  === capture done  ok=0  failed=0
