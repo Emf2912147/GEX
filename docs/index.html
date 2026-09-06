@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>GEX Monitor</title>
+<style>
+:root{
+  --bg:#fbfbfa; --surface:#fff; --border:#e4e2dd; --ink:#1a1a18;
+  --ink-2:#55534e; --ink-3:#85827b;
+  --pos:#2e9e5b; --neg:#c0392b; --flip:#8e44ad; --line:#2c3e50;
+  --pos-bg:#eaf6ef; --neg-bg:#fbeceb;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#16161a; --surface:#1e1e23; --border:#33333b; --ink:#f0efec;
+    --ink-2:#b3b0a8; --ink-3:#807d76;
+    --pos:#4cc07c; --neg:#e15c4c; --flip:#b07cd6; --line:#93a7bd;
+    --pos-bg:#1a2f22; --neg-bg:#33201d;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#16161a; --surface:#1e1e23; --border:#33333b; --ink:#f0efec;
+  --ink-2:#b3b0a8; --ink-3:#807d76;
+  --pos:#4cc07c; --neg:#e15c4c; --flip:#b07cd6; --line:#93a7bd;
+  --pos-bg:#1a2f22; --neg-bg:#33201d;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  -webkit-text-size-adjust:100%}
+.wrap{max-width:720px;margin:0 auto;padding:16px 14px 48px}
+header{margin:4px 0 18px}
+h1{font-size:20px;margin:0 0 4px;letter-spacing:-0.01em}
+.sub{color:var(--ink-3);font-size:12.5px;margin:0}
+.card{background:var(--surface);border:1px solid var(--border);
+  border-radius:12px;padding:14px;margin-bottom:14px}
+.card-top{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.sym{font-size:19px;font-weight:650;letter-spacing:-0.01em}
+.spot{color:var(--ink-2);font-variant-numeric:tabular-nums;font-size:14px}
+.badge{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;
+  font-weight:600;padding:3px 9px;border-radius:999px;white-space:nowrap}
+.badge.pos{background:var(--pos-bg);color:var(--pos)}
+.badge.neg{background:var(--neg-bg);color:var(--neg)}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px 14px;margin:13px 0 4px}
+.metric{min-width:0}
+.k{font-size:11px;color:var(--ink-3);text-transform:uppercase;
+  letter-spacing:0.04em;margin-bottom:2px}
+.v{font-size:16px;font-variant-numeric:tabular-nums;letter-spacing:-0.01em}
+.v small{font-size:12px;color:var(--ink-2);font-weight:400}
+.spark{width:100%;height:44px;display:block;margin-top:4px}
+.spark-line{fill:none;stroke:var(--line);stroke-width:1.6;
+  stroke-linejoin:round;stroke-linecap:round}
+.spark-dot{fill:var(--line)}
+.spark-zero{stroke:var(--border);stroke-width:1;stroke-dasharray:3 3}
+.spark-empty{color:var(--ink-3);font-size:12px;padding:12px 0}
+.coil{margin-top:9px;font-size:12.5px;line-height:1.45;color:var(--flip);
+  display:flex;gap:6px;align-items:flex-start}
+.coil svg{flex:0 0 auto;margin-top:2px}
+.sparkwrap{margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+details{margin-top:10px}
+summary{cursor:pointer;font-size:13px;color:var(--ink-2);padding:4px 0}
+.chartbox{overflow-x:auto;margin-top:8px}
+.chartbox img{width:100%;min-width:520px;border-radius:8px;display:block}
+table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:8px}
+th,td{text-align:right;padding:5px 6px;border-bottom:1px solid var(--border);
+  font-variant-numeric:tabular-nums}
+th:first-child,td:first-child{text-align:left}
+th{color:var(--ink-3);font-weight:600;font-size:11px;text-transform:uppercase}
+footer{color:var(--ink-3);font-size:12px;line-height:1.65;margin-top:26px;
+  border-top:1px solid var(--border);padding-top:14px}
+footer b{color:var(--ink-2);font-weight:600}
+.empty{background:var(--surface);border:1px dashed var(--border);
+  border-radius:12px;padding:26px 16px;text-align:center;color:var(--ink-3)}
+</style>
+</head><body>
+<div class="wrap">
+  <header>
+    <h1>GEX Monitor</h1>
+    <p class="sub">Cboe feed 2026-09-05 06:00:28 &middot; built 2026-09-06 01:00 UTC</p>
+  </header>
+  
+<section class="card">
+  <div class="card-top">
+    <div><span class="sym">SPX</span>
+      <span class="spot">&nbsp;7,718.60</span></div>
+    <span class="badge pos">positive gamma &middot; mean-reverting</span>
+  </div>
+  <div class="grid">
+    <div class="metric"><div class="k">Gamma flip</div>
+      <div class="v">7,697.68<small> -0.27% vs spot</small></div></div>
+    <div class="metric"><div class="k">Net GEX</div>
+      <div class="v">9.26<small> $Bn / 1%</small></div></div>
+    <div class="metric"><div class="k">Call wall</div>
+      <div class="v">7,800.00</div></div>
+    <div class="metric"><div class="k">Put wall</div>
+      <div class="v">7,600.00</div></div>
+  </div>
+  <div class='coil'><svg width='13' height='13' viewBox='0 0 16 16' aria-hidden='true'><circle cx='8' cy='8' r='7' fill='none' stroke='currentColor' stroke-width='1.5'/><path d='M8 4.5v4.2M8 11.2v.6' stroke='currentColor' stroke-width='1.5' stroke-linecap='round'/></svg><span>Spot is within 0.5% of the flip &mdash; regime boundary, expect chop.</span></div>
+  <div class="sparkwrap">
+    <div class="k">Flip distance from spot &middot; last 1 obs</div>
+    <div class="spark-empty">not enough history yet</div>
+  </div>
+  <details><summary>Recent history</summary>
+    <table><thead><tr><th>Feed date</th><th>Spot</th><th>Flip</th>
+      <th>Net GEX $Bn</th><th>Regime</th></tr></thead>
+      <tbody><tr><td>2026-09-05</td><td>7,718.60</td><td>7,697.68</td><td>9.26</td><td>positive</td></tr></tbody></table>
+  </details>
+  <details><summary>Chart</summary><div class='chartbox'><img src='charts/SPX.png' alt='SPX gamma exposure by strike' loading='lazy'></div></details>
+</section>
+<section class="card">
+  <div class="card-top">
+    <div><span class="sym">SPY</span>
+      <span class="spot">&nbsp;770.19</span></div>
+    <span class="badge neg">negative gamma &middot; trend-amplifying</span>
+  </div>
+  <div class="grid">
+    <div class="metric"><div class="k">Gamma flip</div>
+      <div class="v">771.71<small> +0.20% vs spot</small></div></div>
+    <div class="metric"><div class="k">Net GEX</div>
+      <div class="v">-2.42<small> $Bn / 1%</small></div></div>
+    <div class="metric"><div class="k">Call wall</div>
+      <div class="v">780.00</div></div>
+    <div class="metric"><div class="k">Put wall</div>
+      <div class="v">760.00</div></div>
+  </div>
+  <div class='coil'><svg width='13' height='13' viewBox='0 0 16 16' aria-hidden='true'><circle cx='8' cy='8' r='7' fill='none' stroke='currentColor' stroke-width='1.5'/><path d='M8 4.5v4.2M8 11.2v.6' stroke='currentColor' stroke-width='1.5' stroke-linecap='round'/></svg><span>Spot is within 0.5% of the flip &mdash; regime boundary, expect chop.</span></div>
+  <div class="sparkwrap">
+    <div class="k">Flip distance from spot &middot; last 1 obs</div>
+    <div class="spark-empty">not enough history yet</div>
+  </div>
+  <details><summary>Recent history</summary>
+    <table><thead><tr><th>Feed date</th><th>Spot</th><th>Flip</th>
+      <th>Net GEX $Bn</th><th>Regime</th></tr></thead>
+      <tbody><tr><td>2026-09-05</td><td>770.19</td><td>771.71</td><td>-2.42</td><td>negative</td></tr></tbody></table>
+  </details>
+  <details><summary>Chart</summary><div class='chartbox'><img src='charts/SPY.png' alt='SPY gamma exposure by strike' loading='lazy'></div></details>
+</section>
+<section class="card">
+  <div class="card-top">
+    <div><span class="sym">QQQ</span>
+      <span class="spot">&nbsp;717.50</span></div>
+    <span class="badge neg">negative gamma &middot; trend-amplifying</span>
+  </div>
+  <div class="grid">
+    <div class="metric"><div class="k">Gamma flip</div>
+      <div class="v">718.96<small> +0.20% vs spot</small></div></div>
+    <div class="metric"><div class="k">Net GEX</div>
+      <div class="v">-0.43<small> $Bn / 1%</small></div></div>
+    <div class="metric"><div class="k">Call wall</div>
+      <div class="v">725.00</div></div>
+    <div class="metric"><div class="k">Put wall</div>
+      <div class="v">700.00</div></div>
+  </div>
+  <div class='coil'><svg width='13' height='13' viewBox='0 0 16 16' aria-hidden='true'><circle cx='8' cy='8' r='7' fill='none' stroke='currentColor' stroke-width='1.5'/><path d='M8 4.5v4.2M8 11.2v.6' stroke='currentColor' stroke-width='1.5' stroke-linecap='round'/></svg><span>Spot is within 0.5% of the flip &mdash; regime boundary, expect chop.</span></div>
+  <div class="sparkwrap">
+    <div class="k">Flip distance from spot &middot; last 1 obs</div>
+    <div class="spark-empty">not enough history yet</div>
+  </div>
+  <details><summary>Recent history</summary>
+    <table><thead><tr><th>Feed date</th><th>Spot</th><th>Flip</th>
+      <th>Net GEX $Bn</th><th>Regime</th></tr></thead>
+      <tbody><tr><td>2026-09-05</td><td>717.50</td><td>718.96</td><td>-0.43</td><td>negative</td></tr></tbody></table>
+  </details>
+  <details><summary>Chart</summary><div class='chartbox'><img src='charts/QQQ.png' alt='QQQ gamma exposure by strike' loading='lazy'></div></details>
+</section>
+<section class="card">
+  <div class="card-top">
+    <div><span class="sym">IWM</span>
+      <span class="spot">&nbsp;296.01</span></div>
+    <span class="badge neg">negative gamma &middot; trend-amplifying</span>
+  </div>
+  <div class="grid">
+    <div class="metric"><div class="k">Gamma flip</div>
+      <div class="v">300.03<small> +1.36% vs spot</small></div></div>
+    <div class="metric"><div class="k">Net GEX</div>
+      <div class="v">-1.83<small> $Bn / 1%</small></div></div>
+    <div class="metric"><div class="k">Call wall</div>
+      <div class="v">300.00</div></div>
+    <div class="metric"><div class="k">Put wall</div>
+      <div class="v">290.00</div></div>
+  </div>
+  
+  <div class="sparkwrap">
+    <div class="k">Flip distance from spot &middot; last 1 obs</div>
+    <div class="spark-empty">not enough history yet</div>
+  </div>
+  <details><summary>Recent history</summary>
+    <table><thead><tr><th>Feed date</th><th>Spot</th><th>Flip</th>
+      <th>Net GEX $Bn</th><th>Regime</th></tr></thead>
+      <tbody><tr><td>2026-09-05</td><td>296.01</td><td>300.03</td><td>-1.83</td><td>negative</td></tr></tbody></table>
+  </details>
+  <details><summary>Chart</summary><div class='chartbox'><img src='charts/IWM.png' alt='IWM gamma exposure by strike' loading='lazy'></div></details>
+</section>
+  <footer>
+    <b>Feed date is not the session date.</b> A morning file dated the 5th
+    carries the 4th session's settled open interest.<br>
+    <b>Open interest settles overnight</b>, so this is prior-close
+    positioning, not live. The Cboe feed is ~15 minutes delayed.<br>
+    <b>Dealers assumed long calls, short puts</b> &mdash; the standard public
+    convention, not a measurement of real positioning.<br>
+    <b>Walls ignore strikes within 1% of spot.</b> Gamma peaks at the money,
+    so without that exclusion the "wall" is just the ATM strike.<br>
+    <b>Chart panels use different gamma sources</b> &mdash; bars from Cboe's
+    reported gamma, the profile from Black-Scholes with IV held fixed. The
+    flip location is robust; the profile's magnitudes are not comparable to
+    the bars.
+  </footer>
+</div>
+</body></html>
