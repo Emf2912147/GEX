@@ -9,3 +9,9 @@
 2026-09-06T01:00:55+00:00  IWM: spot 296.01  netGEX -1.83Bn  flip 300.0318  walls 300.0/290.0  negative
 2026-09-06T01:00:55+00:00  appended 4 metric row(s)
 2026-09-06T01:00:55+00:00  === capture done  ok=4  failed=0
+2026-09-06T01:06:22+00:00  === capture start  symbols=SPX SPY QQQ IWM
+2026-09-06T01:06:24+00:00  SPX: feed_ts 2026-09-05 03:44:36 already captured, skipping
+2026-09-06T01:06:25+00:00  SPY: feed_ts 2026-09-05 06:00:28 already captured, skipping
+2026-09-06T01:06:26+00:00  QQQ: feed_ts 2026-09-05 03:44:40 already captured, skipping
+2026-09-06T01:06:27+00:00  IWM: feed_ts 2026-09-05 03:44:35 already captured, skipping
+2026-09-06T01:06:27+00:00  === capture done  ok=0  failed=0
