@@ -13,3 +13,5 @@ history/.schwab_env
 history/.schwab_tokens.json
 history/.schwab_env
 history/.schwab_tokens.json
+history/rader.log
+history/rader_inspect_*.html
