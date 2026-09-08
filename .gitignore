@@ -4,3 +4,12 @@ __pycache__/
 # Charts from manual gamma_exposure.py runs at the repo root.
 /*.png
 /SPX_gex.csv
+# Restart scratch written by flow_poll.py every 15 minutes.
+history/intraday/*/_state_*.parquet
+history/.rader_session
+history/rader_raw/
+history/rader_daily.csv
+history/.schwab_env
+history/.schwab_tokens.json
+history/.schwab_env
+history/.schwab_tokens.json

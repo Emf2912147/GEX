@@ -1,0 +1,78 @@
+name: GEX intraday capture
+
+# Flow capture. Runs alongside the daily positioning capture in capture.yml,
+# which is unchanged and still owns settled open interest.
+#
+# Cadence note: GitHub Actions schedules are best-effort. Under load, runs
+# drift by 5-20 minutes and are sometimes dropped entirely. Do NOT treat the
+# resulting series as evenly spaced 15-minute bars -- gex_intraday.py records
+# elapsed_s per snapshot for exactly this reason, and any flow measure built
+# on it must normalise by elapsed minutes.
+
+on:
+  schedule:
+    # Every 15 min, 13:30-20:15 UTC, Mon-Fri.
+    # = 09:30-16:15 ET during EDT, 08:30-15:15 ET during EST.
+    # Winter time will need this shifted to '*/15 14-21 * * 1-5'.
+    - cron: '*/15 13-20 * * 1-5'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  # Shares a group with the daily capture so the two never race on a push.
+  group: gex-capture
+  cancel-in-progress: false
+
+jobs:
+  intraday:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: pip-intraday-${{ runner.os }}-v1
+
+      - name: Install dependencies
+        run: pip install requests pandas numpy pyarrow
+
+      - name: Capture intraday snapshot
+        id: capture
+        continue-on-error: true
+        run: python gex_intraday.py
+
+      - name: Commit results
+        if: always()
+        run: |
+          git config user.name  "gex-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --staged --quiet; then
+            echo "nothing new (feed timestamp unchanged, phantom bar avoided)"
+          else
+            git commit -m "intraday $(date -u +'%Y-%m-%d %H:%M UTC')"
+            # Retry the push: 27 runs a day against a shared branch will
+            # occasionally collide with the daily capture job.
+            for i in 1 2 3; do
+              git pull --rebase --autostash && git push && break
+              echo "push attempt $i failed, retrying"
+              sleep 5
+            done
+          fi
+
+      - name: Surface capture failures
+        if: always() && steps.capture.outcome == 'failure'
+        run: |
+          echo "::error::One or more symbols failed. See history/intraday.log."
+          tail -40 history/intraday.log || true
+          exit 1
