@@ -44,7 +44,7 @@ jobs:
           key: pip-intraday-${{ runner.os }}-v1
 
       - name: Install dependencies
-        run: pip install requests pandas numpy pyarrow
+        run: pip install requests pandas numpy matplotlib pyarrow
 
       - name: Capture intraday snapshot
         id: capture
