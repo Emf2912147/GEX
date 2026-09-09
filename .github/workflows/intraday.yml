@@ -1,5 +1,5 @@
 name: GEX intraday capture
-
+ 
 # Flow capture. Runs alongside the daily positioning capture in capture.yml,
 # which is unchanged and still owns settled open interest.
 #
@@ -8,7 +8,7 @@ name: GEX intraday capture
 # resulting series as evenly spaced 15-minute bars -- gex_intraday.py records
 # elapsed_s per snapshot for exactly this reason, and any flow measure built
 # on it must normalise by elapsed minutes.
-
+ 
 on:
   schedule:
     # Every 15 min, 13:30-20:15 UTC, Mon-Fri.
@@ -16,41 +16,44 @@ on:
     # Winter time will need this shifted to '*/15 14-21 * * 1-5'.
     - cron: '*/15 13-20 * * 1-5'
   workflow_dispatch:
-
+ 
 permissions:
   contents: write
-
+ 
 concurrency:
   # Shares a group with the daily capture so the two never race on a push.
   group: gex-capture
   cancel-in-progress: false
-
+ 
 jobs:
   intraday:
     runs-on: ubuntu-latest
     timeout-minutes: 10
-
+ 
     steps:
       - uses: actions/checkout@v4
-
+ 
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-
+ 
       - name: Cache pip
         uses: actions/cache@v4
         with:
           path: ~/.cache/pip
           key: pip-intraday-${{ runner.os }}-v1
-
+ 
       - name: Install dependencies
+        # matplotlib is required: gex_intraday.py imports gamma_exposure, which is
+        # the chart builder and pulls it in. Without it the job dies on import in
+        # ~17s. Keep this list in sync with capture.yml.
         run: pip install requests pandas numpy matplotlib pyarrow
-
+ 
       - name: Capture intraday snapshot
         id: capture
         continue-on-error: true
         run: python gex_intraday.py
-
+ 
       - name: Commit results
         if: always()
         run: |
@@ -69,10 +72,20 @@ jobs:
               sleep 5
             done
           fi
-
+ 
       - name: Surface capture failures
         if: always() && steps.capture.outcome == 'failure'
         run: |
-          echo "::error::One or more symbols failed. See history/intraday.log."
-          tail -40 history/intraday.log || true
+          # Distinguish "the script never started" from "a symbol failed". An
+          # import error writes no log at all, and reporting it as a symbol
+          # failure sends you looking in the wrong place.
+          if [ -f history/intraday.log ]; then
+            echo "::error::Capture step failed after starting. Last 40 log lines:"
+            tail -40 history/intraday.log
+          else
+            echo "::error::Capture step failed BEFORE writing any log --"
+            echo "::error::almost certainly an import or dependency error."
+            echo "::error::Check the 'Capture intraday snapshot' step output above."
+          fi
           exit 1
+ 
