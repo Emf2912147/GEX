@@ -26,10 +26,13 @@ does not:
     snapshot per day and makes volume deltas impossible to reconstruct.
     This writes one file per feed timestamp.
 
- 2. Duplicate feed timestamps are skipped. The Cboe delayed feed does not
-    refresh on our cadence. Capturing an unchanged feed_ts again would
-    create a phantom bar with zero volume delta and a real elapsed time,
-    which reads as "flow stopped" when nothing happened at all.
+ 2. Unchanged bars are skipped, on TWO tests. The Cboe delayed feed does not
+    refresh on our cadence. Capturing it again would create a phantom bar
+    with zero volume delta and a real elapsed time, which reads as "flow
+    stopped" when nothing happened at all. The obvious guard is the feed
+    timestamp -- but the feed also republishes itself with a FRESH timestamp
+    and identical content, so the timestamp guard alone is not enough. Spot
+    and net GEX are compared against the last row as well; see same_values().
 
  3. Elapsed time is recorded per snapshot. GitHub Actions cron drifts and
     occasionally skips runs entirely, so bars are NOT evenly spaced. Any
@@ -156,19 +159,56 @@ def parse_chain_full(payload):
 
 
 def last_snapshot(state_path, symbol):
-    """Most recent (feed_ts, capture_ts) already on file for this symbol."""
+    """The most recent row already on file for this symbol, or None.
+
+    Returns feed_ts, capture_ts, spot and net_gex_window, because deduping on
+    the timestamp alone is not enough -- see the content check in
+    capture_symbol().
+    """
+    empty = {"feed_ts": None, "capture_ts": None, "spot": None, "net_gex": None}
     if not os.path.exists(state_path):
-        return None, None
+        return empty
     try:
-        prior = pd.read_csv(state_path, usecols=["symbol", "feed_ts", "capture_ts"],
-                            dtype=str)
+        prior = pd.read_csv(
+            state_path,
+            usecols=["symbol", "feed_ts", "capture_ts", "spot", "net_gex_window"],
+            dtype=str,
+        )
     except Exception:
-        return None, None
+        return empty
     mine = prior[prior["symbol"] == symbol]
     if mine.empty:
-        return None, None
+        return empty
     row = mine.iloc[-1]
-    return row["feed_ts"], row["capture_ts"]
+    return {
+        "feed_ts": row["feed_ts"],
+        "capture_ts": row["capture_ts"],
+        "spot": row["spot"],
+        "net_gex": row["net_gex_window"],
+    }
+
+
+def same_values(prev, spot, net_gex):
+    """True when the feed has republished byte-identical numbers.
+
+    Observed 2026-09-09: runs four minutes apart on a closed market returned
+    DIFFERENT feed timestamps with IDENTICAL spot and net GEX. A timestamp-only
+    guard lets those through and manufactures a bar with real elapsed time and
+    zero flow -- the same phantom-bar failure the timestamp guard exists to
+    prevent, arriving by a different door.
+
+    Both fields must match. Spot alone would suppress a genuine repositioning
+    at an unchanged print; net GEX alone would suppress a move that happens to
+    leave the aggregate flat.
+    """
+    prior_spot, prior_gex = prev.get("spot"), prev.get("net_gex")
+    if prior_spot in (None, "") or prior_gex in (None, ""):
+        return False
+    try:
+        return (abs(float(prior_spot) - round(spot, 4)) < 1e-9 and
+                abs(float(prior_gex) - round(net_gex, 2)) < 1e-6)
+    except (TypeError, ValueError):
+        return False
 
 
 def elapsed_seconds(prev_capture_ts, now):
@@ -257,14 +297,14 @@ def capture_symbol(symbol, args, logpath, now):
     df = gx.normalize_iv(df, quiet=True)
 
     state_path = os.path.join(args.outdir, "intraday_state.csv")
-    prev_feed_ts, prev_capture_ts = last_snapshot(state_path, symbol)
+    prev = last_snapshot(state_path, symbol)
 
-    if prev_feed_ts == str(feed_ts) and not args.force:
+    if prev["feed_ts"] == str(feed_ts) and not args.force:
         log(logpath, f"{symbol}: feed_ts {feed_ts} unchanged, skipping "
                      "(phantom bar avoided)")
         return None, None
 
-    elapsed = elapsed_seconds(prev_capture_ts, now)
+    elapsed = elapsed_seconds(prev["capture_ts"], now)
     capture_ts = now.isoformat(timespec="seconds")
     feed_date = str(feed_ts)[:10]
 
@@ -280,6 +320,37 @@ def capture_symbol(symbol, args, logpath, now):
         log(logpath, f"{symbol}: nothing inside the capture window, skipped")
         return None, None
 
+    # ---- state vector ---------------------------------------------------
+    # Computed BEFORE anything is written, because net_gex_window is half the
+    # content check below and a skipped bar must leave no parquet behind.
+    metric_chain = df[df["dte"] <= args.max_dte].copy()
+
+    glo, ghi = spot * (1 - args.grid_window), spot * (1 + args.grid_window)
+    _, _, flip = gx.gamma_profile(metric_chain, glo, ghi)
+
+    plo, phi = spot * (1 - args.plot_window), spot * (1 + args.plot_window)
+    windowed = metric_chain[(metric_chain["strike"] >= plo) &
+                            (metric_chain["strike"] <= phi)]
+    win_ps, calls, puts = gx.gex_by_strike(windowed, spot)
+    call_wall, put_wall, _ = gx.find_walls(calls, puts, spot, args.wall_exclude)
+
+    net_gex_window = float(win_ps.sum())
+    atm30 = _atm_iv(df, spot, 30.0)
+    atm60 = _atm_iv(df, spot, 60.0)
+    rr = _rr25(df)
+
+    cvol = float(kept.loc[kept["type"] == "C", "volume"].sum())
+    pvol = float(kept.loc[kept["type"] == "P", "volume"].sum())
+
+    # ---- content check --------------------------------------------------
+    if same_values(prev, spot, net_gex_window) and not args.force:
+        log(logpath,
+            f"{symbol}: feed_ts advanced to {feed_ts} but spot and net GEX are "
+            f"unchanged from the last row -- republished feed, no-change bar "
+            f"avoided (nothing written)")
+        return None, None
+
+    # ---- slim snapshot --------------------------------------------------
     snap = kept.copy()
     snap["symbol"] = symbol
     snap["feed_ts"] = str(feed_ts)
@@ -302,26 +373,6 @@ def capture_symbol(symbol, args, logpath, now):
         log(logpath, f"{symbol}: {len(snap):,} contracts -> {os.path.basename(path)}")
     else:
         log(logpath, f"{symbol}: {len(snap):,} contracts (dry run, not written)")
-
-    # ---- state vector ---------------------------------------------------
-    metric_chain = df[df["dte"] <= args.max_dte].copy()
-
-    glo, ghi = spot * (1 - args.grid_window), spot * (1 + args.grid_window)
-    _, _, flip = gx.gamma_profile(metric_chain, glo, ghi)
-
-    plo, phi = spot * (1 - args.plot_window), spot * (1 + args.plot_window)
-    windowed = metric_chain[(metric_chain["strike"] >= plo) &
-                            (metric_chain["strike"] <= phi)]
-    win_ps, calls, puts = gx.gex_by_strike(windowed, spot)
-    call_wall, put_wall, _ = gx.find_walls(calls, puts, spot, args.wall_exclude)
-
-    net_gex_window = float(win_ps.sum())
-    atm30 = _atm_iv(df, spot, 30.0)
-    atm60 = _atm_iv(df, spot, 60.0)
-    rr = _rr25(df)
-
-    cvol = float(kept.loc[kept["type"] == "C", "volume"].sum())
-    pvol = float(kept.loc[kept["type"] == "P", "volume"].sum())
 
     state = {
         "feed_ts": str(feed_ts),
