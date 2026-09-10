@@ -39,15 +39,37 @@ does not:
     flow measure built on this must normalise by elapsed minutes rather
     than assume a 15-minute bar.
 
+VIX CAPTURE
+    Same 15-minute cycle also pulls VIX and VIX9D -- Cboe's own quotes
+    endpoint, not the options-chain one, so it needs its own parser and its
+    own file (history/vix_state.csv). Verified live 2026-09-10: VIX closed
+    17.84 (+8.4% on the day, +21.9% over the trailing 20 sessions -- a fresh
+    20-day high made that same day); VIX9D closed 17.70 (+13.5%).
+
+    True VX futures term structure (front-two-month slope) is NOT available
+    this way -- the same endpoint pattern for VX itself returns a flat 403.
+    VIX9D vs VIX30 is used as the term-structure proxy instead: it answers
+    the same shape question (short-dated vol richer or cheaper than 30-day)
+    without needing futures settlements. It is a substitute, not the real
+    thing, and is labelled as such in the output.
+
+    The 20d change is computed fresh each run from Cboe's full VIX_History.csv
+    (1990-present, ~470KB) rather than stored -- keeping 36 years of daily
+    closes in a git repo just to read the last 20 rows would be exactly the
+    kind of unbounded growth gex_intraday.py's slim-snapshot design exists to
+    avoid. Only the derived scalar is written to disk.
+
 Layout:
     history/
       intraday/<feed-date>/<SYMBOL>__<HHMMSS>.parquet   slim snapshots
       intraday_state.csv                                append-only state vector
+      vix_state.csv                                     append-only VIX/VIX9D
       intraday.log
 
 Usage:
-    python gex_intraday.py                    # SPX SPY QQQ IWM
+    python gex_intraday.py                    # SPX SPY QQQ IWM + VIX/VIX9D
     python gex_intraday.py --symbols SPX QQQ
+    python gex_intraday.py --no-vix            # skip the VIX capture
     python gex_intraday.py --dry-run
 """
 
@@ -60,6 +82,7 @@ from datetime import datetime, timezone
 
 import numpy as np
 import pandas as pd
+import requests
 
 import gamma_exposure as gx
 
@@ -87,6 +110,21 @@ STATE_COLUMNS = [
     "atm_iv_30", "atm_iv_60", "term_slope", "rr25", "skew_state",
     "session_call_volume", "session_put_volume", "session_pc_volume",
     "dte_window", "strike_window", "schema_version",
+]
+
+# ---- VIX capture ----------------------------------------------------------
+# Plain index quotes, not the options-chain endpoint -- underscore-prefixed
+# symbol convention (_VIX, _VIX9D). History CSVs are read fresh each run and
+# never stored; see the VIX CAPTURE docstring section above for why.
+VIX_QUOTE_URL = "https://cdn.cboe.com/api/global/delayed_quotes/quotes/_{sym}.json"
+VIX_HISTORY_URL = "https://cdn.cboe.com/api/global/us_indices/daily_prices/VIX_History.csv"
+
+VIX_COLUMNS = [
+    "feed_ts", "feed_date", "capture_ts", "elapsed_s",
+    "vix", "vix_chg_1d_pct", "vix_20d_change_pct", "vix_20d_high",
+    "vix9d", "vix9d_chg_1d_pct",
+    "term_spread_9d_vs_30d", "term_state",
+    "schema_version",
 ]
 
 
@@ -221,6 +259,161 @@ def elapsed_seconds(prev_capture_ts, now):
     if prev.tzinfo is None:
         prev = prev.replace(tzinfo=timezone.utc)
     return int((now - prev).total_seconds())
+
+
+# --------------------------------------------------------------------------
+# VIX / VIX9D
+
+
+def fetch_vix_quote(symbol):
+    """Cboe's plain index-quote endpoint -- not the options-chain one.
+
+    Verified live 2026-09-10 (_VIX9D): current_price 17.70, prev_day_close
+    15.59, last_trade_time "2026-09-10T16:15:02". Same field set for _VIX.
+    """
+    url = VIX_QUOTE_URL.format(sym=symbol)
+    r = requests.get(url, timeout=20)
+    r.raise_for_status()
+    payload = r.json()
+    return payload.get("data", payload)
+
+
+def fetch_20d_change(hist_url, today_price):
+    """20-session change and fresh-20d-high flag, from the full history CSV.
+
+    closes[-20] is the close from 20 sessions ago relative to today (the
+    history file is settled EOD data and does not yet contain today's
+    still-forming session). Returns (None, None) rather than guessing if the
+    column layout does not match what was verified live -- a silently wrong
+    number is worse than a blank one.
+    """
+    r = requests.get(hist_url, timeout=30)
+    r.raise_for_status()
+    from io import StringIO
+    hist = pd.read_csv(StringIO(r.text))
+    close_col = next((c for c in hist.columns if c.strip().upper() == "CLOSE"), None)
+    if close_col is None:
+        return None, None
+    closes = hist[close_col].astype(float).tolist()
+    if len(closes) < 20:
+        return None, None
+    look = closes[-20:]
+    baseline = closes[-20]
+    if not baseline:
+        return None, None
+    chg_20d = today_price / baseline - 1
+    is_20d_high = today_price > max(look)
+    return chg_20d, is_20d_high
+
+
+def last_vix_row(state_path):
+    """Mirrors last_snapshot() -- the most recent VIX/VIX9D row on file, or
+    None-filled, so the same two-test dedupe (timestamp + content) applies."""
+    empty = {"feed_ts": None, "capture_ts": None, "vix": None, "vix9d": None}
+    if not os.path.exists(state_path):
+        return empty
+    try:
+        prior = pd.read_csv(
+            state_path, usecols=["feed_ts", "capture_ts", "vix", "vix9d"], dtype=str,
+        )
+    except Exception:
+        return empty
+    if prior.empty:
+        return empty
+    row = prior.iloc[-1]
+    return {
+        "feed_ts": row["feed_ts"], "capture_ts": row["capture_ts"],
+        "vix": row["vix"], "vix9d": row["vix9d"],
+    }
+
+
+def same_vix_values(prev, vix, vix9d):
+    """Mirrors same_values() -- content dedupe for the republished-feed case."""
+    prior_vix, prior_vix9d = prev.get("vix"), prev.get("vix9d")
+    if prior_vix in (None, "") or prior_vix9d in (None, ""):
+        return False
+    try:
+        return (abs(float(prior_vix) - round(vix, 4)) < 1e-9 and
+                abs(float(prior_vix9d) - round(vix9d, 4)) < 1e-9)
+    except (TypeError, ValueError):
+        return False
+
+
+def capture_vix(args, logpath, now):
+    vix_data = fetch_vix_quote("VIX")
+    vix9d_data = fetch_vix_quote("VIX9D")
+
+    vix = vix_data.get("current_price")
+    vix9d = vix9d_data.get("current_price")
+    if vix is None or vix9d is None:
+        log(logpath, "VIX: current_price missing from one or both quotes, skipped")
+        return None
+    vix, vix9d = float(vix), float(vix9d)
+    vix_prev_close = vix_data.get("prev_day_close")
+    vix9d_prev_close = vix9d_data.get("prev_day_close")
+
+    feed_ts = vix_data.get("last_trade_time") or vix_data.get("timestamp") or "unknown"
+    state_path = os.path.join(args.outdir, "vix_state.csv")
+    prev = last_vix_row(state_path)
+
+    if prev["feed_ts"] == str(feed_ts) and not args.force:
+        log(logpath, f"VIX: feed_ts {feed_ts} unchanged, skipping (phantom bar avoided)")
+        return None
+
+    if same_vix_values(prev, vix, vix9d) and not args.force:
+        log(logpath, f"VIX: feed_ts advanced to {feed_ts} but VIX/VIX9D are "
+                     f"unchanged from the last row -- republished feed, no-change "
+                     f"bar avoided (nothing written)")
+        return None
+
+    elapsed = elapsed_seconds(prev["capture_ts"], now)
+    capture_ts = now.isoformat(timespec="seconds")
+    feed_date = str(feed_ts)[:10]
+
+    vix_chg_1d = (vix / float(vix_prev_close) - 1) if vix_prev_close else None
+    vix9d_chg_1d = (vix9d / float(vix9d_prev_close) - 1) if vix9d_prev_close else None
+
+    chg_20d, is_20d_high = None, None
+    try:
+        chg_20d, is_20d_high = fetch_20d_change(VIX_HISTORY_URL, vix)
+    except Exception as e:
+        log(logpath, f"VIX: 20d-change lookup failed ({e}), leaving blank")
+
+    term_spread = vix9d - vix
+    term_state = "backwardation(short-rich)" if term_spread > 0 else "contango(short-cheap)"
+
+    row = {
+        "feed_ts": str(feed_ts),
+        "feed_date": feed_date,
+        "capture_ts": capture_ts,
+        "elapsed_s": elapsed,
+        "vix": round(vix, 4),
+        "vix_chg_1d_pct": round(vix_chg_1d, 6) if vix_chg_1d is not None else "",
+        "vix_20d_change_pct": round(chg_20d, 6) if chg_20d is not None else "",
+        "vix_20d_high": bool(is_20d_high) if is_20d_high is not None else "",
+        "vix9d": round(vix9d, 4),
+        "vix9d_chg_1d_pct": round(vix9d_chg_1d, 6) if vix9d_chg_1d is not None else "",
+        "term_spread_9d_vs_30d": round(term_spread, 4),
+        "term_state": term_state,
+        "schema_version": SCHEMA_VERSION,
+    }
+
+    if not args.dry_run:
+        append_vix_state(state_path, [row])
+        d1 = f"{vix_chg_1d*100:+.1f}%" if vix_chg_1d is not None else "n/a"
+        d20 = f"{chg_20d*100:+.1f}%" if chg_20d is not None else "n/a"
+        log(logpath, f"VIX: {vix:.2f} ({d1} 1d, {d20} 20d)  VIX9D: {vix9d:.2f}  "
+                     f"term {term_state} -> vix_state.csv")
+    else:
+        log(logpath, f"VIX: {vix:.2f}  VIX9D: {vix9d:.2f} (dry run, not written)")
+
+    return row
+
+
+def append_vix_state(state_path, rows):
+    df = pd.DataFrame(rows, columns=VIX_COLUMNS)
+    header = not os.path.exists(state_path)
+    df.to_csv(state_path, mode="a", header=header, index=False)
 
 
 # --------------------------------------------------------------------------
@@ -431,6 +624,8 @@ def main():
                         "history exists (default 0.02)")
     p.add_argument("--force", action="store_true",
                    help="capture even if the feed timestamp has not changed")
+    p.add_argument("--no-vix", dest="no_vix", action="store_true",
+                   help="skip the VIX/VIX9D capture")
     p.add_argument("--dry-run", action="store_true")
     args = p.parse_args()
 
@@ -470,8 +665,17 @@ def main():
         append_state(os.path.join(args.outdir, "intraday_state.csv"), states)
         log(logpath, f"appended {len(states)} state row(s)")
 
+    vix_row = None
+    if not args.no_vix:
+        try:
+            vix_row = capture_vix(args, logpath, now)
+        except Exception as e:
+            failures.append(f"VIX: {e}")
+            log(logpath, f"VIX: FAILED -- {e}\n{traceback.format_exc()}")
+
     log(logpath, f"--- intraday done  ok={len(states)}  skipped={skipped}  "
-                 f"failed={len(failures)}")
+                 f"failed={len(failures)}"
+                 f"{'  vix=written' if vix_row else ''}")
     return 1 if failures else 0
 
 
