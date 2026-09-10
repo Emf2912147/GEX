@@ -261,3 +261,14 @@
 2026-09-10T19:13:04+00:00  IWM: spot 287.56  netGEX(win) -4.08Bn  flip 297.7901  walls 295.0/280.0  negative  RR25 -0.0524 (STEEP)  P/C 1.8834
 2026-09-10T19:13:04+00:00  appended 4 state row(s)
 2026-09-10T19:13:04+00:00  --- intraday done  ok=4  skipped=0  failed=0
+2026-09-10T19:25:52+00:00  --- intraday capture  symbols=SPX SPY QQQ IWM
+2026-09-10T19:25:54+00:00  SPX: 11,088 contracts -> SPX__192535.parquet
+2026-09-10T19:25:54+00:00  SPX: spot 7,592.44  netGEX(win) -73.85Bn  flip 7657.2196  walls 7700.0/7500.0  negative  RR25 -0.0549 (STEEP)  P/C 1.0965
+2026-09-10T19:25:55+00:00  SPY: 4,396 contracts -> SPY__192526.parquet
+2026-09-10T19:25:55+00:00  SPY: spot 757.91  netGEX(win) -13.37Bn  flip 766.7121  walls 770.0/750.0  negative  RR25 -0.0547 (STEEP)  P/C 1.3013
+2026-09-10T19:25:57+00:00  QQQ: 4,316 contracts -> QQQ__192516.parquet
+2026-09-10T19:25:57+00:00  QQQ: spot 709.31  netGEX(win) -5.89Bn  flip 715.5361  walls 720.0/700.0  negative  RR25 -0.0613 (STEEP)  P/C 1.2342
+2026-09-10T19:25:57+00:00  IWM: 2,450 contracts -> IWM__192527.parquet
+2026-09-10T19:25:57+00:00  IWM: spot 287.40  netGEX(win) -4.04Bn  flip 297.7919  walls 295.0/280.0  negative  RR25 -0.0555 (STEEP)  P/C 1.9385
+2026-09-10T19:25:57+00:00  appended 4 state row(s)
+2026-09-10T19:25:57+00:00  --- intraday done  ok=4  skipped=0  failed=0
