@@ -1,3 +1,4 @@
 feed_ts,feed_date,capture_ts,elapsed_s,vix,vix_chg_1d_pct,vix_20d_change_pct,vix_20d_high,vix9d,vix9d_chg_1d_pct,term_spread_9d_vs_30d,term_state,schema_version
 2026-09-10T16:15:01,2026-09-10,2026-09-11T13:12:49+00:00,,16.03,-0.101457,0.124912,False,17.7,0.0,1.67,backwardation(short-rich),1
 2026-09-11T09:57:16,2026-09-11,2026-09-11T14:13:09+00:00,3620,15.97,-0.104821,0.120702,False,14.54,-0.178531,-1.43,contango(short-cheap),1
+2026-09-11T10:15:16,2026-09-11,2026-09-11T14:30:59+00:00,1070,15.96,-0.105381,0.12,False,14.51,-0.180226,-1.45,contango(short-cheap),1
