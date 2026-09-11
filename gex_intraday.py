@@ -59,17 +59,78 @@ VIX CAPTURE
     kind of unbounded growth gex_intraday.py's slim-snapshot design exists to
     avoid. Only the derived scalar is written to disk.
 
+REALIZED VOL CAPTURE
+    WHY THIS EXISTS
+        The state vector carries ATM IV but had no realized vol to price it
+        against, so every "is vol rich or cheap" question -- the vol axis of
+        the decision table, and the whole edge/mispricing scan -- had to stop
+        and ask a human for an HV20 number off a broker screen. That works,
+        but it is manual, it is unrepeatable, and it cannot be backtested.
+
+        The blocker was never the data. Cboe publishes free daily closes; the
+        earlier attempts failed because they went through a fetch-and-
+        summarise path that silently truncated a multi-decade file and
+        reported 1984 rows as "the last 45 sessions". Read the same file with
+        an ordinary HTTP client and parse it deterministically and the
+        problem disappears entirely -- which is exactly how the VIX 20d change
+        above already works.
+
+    TWO SCHEMAS, NOT ONE -- verified live 2026-09-11
+        VIX / VXN / XSP   ->  DATE,OPEN,HIGH,LOW,CLOSE
+        SPX / RUT         ->  DATE,SPX       (date and close only, the price
+                                              column named for the symbol)
+        A CLOSE-only reader silently returns nothing on the second family, so
+        fetch_history_closes() handles both and refuses anything it cannot
+        identify rather than guessing at a column.
+
+    WHAT IS AND IS NOT AVAILABLE -- verified live 2026-09-11
+        SPX, RUT, XSP, VIX, VXN   200
+        SPY, NDX, _NDX            403
+        Cboe publishes S&P and Russell series and its own volatility indices
+        for free; Nasdaq-owned series are not theirs to republish. So:
+          SPX -> its own series
+          SPY -> SPX      (SPY tracks the S&P 500; a constant scale factor
+                           cancels out of log returns, so realized vol is the
+                           same series)
+          IWM -> RUT      (same reasoning, Russell 2000)
+          QQQ -> nothing. No free Nasdaq-100 price history exists here, and
+                 VXN is an IMPLIED vol index, not prices, so it cannot stand
+                 in. QQQ simply gets no row and the agent still asks. Three of
+                 four automated honestly beats four of four with one invented.
+        Every proxied read is written with rv_proxy=True and rv_source naming
+        the series actually used, so a substitute can never be mistaken for a
+        direct reading -- the same discipline the VIX9D term-structure proxy
+        already follows.
+
+    CADENCE
+        Realized vol changes once a day, at the close; the capture runs every
+        15 minutes. So this fetches at most ONCE PER SYMBOL PER UTC DAY, on
+        the first cycle of the day, and skips without touching the network
+        afterwards. A row is written on every such first cycle even when
+        rv_asof_date has not advanced (a holiday, or Cboe not having posted
+        yet): the alternative -- skip and retry -- re-fetches a multi-MB file
+        every 15 minutes all day on exactly the days the data is not there.
+        rv_asof_date states what the numbers are actually through, so a
+        repeated as-of date is visible rather than hidden.
+
+    NOTE ON HV: annualised with 252 trading days, sample stdev of log returns.
+    Broker platforms differ slightly in lookback and annualisation convention,
+    so expect the same neighbourhood as a ThinkOrSwim "Hist. Vol." reading,
+    not an identical decimal.
+
 Layout:
     history/
       intraday/<feed-date>/<SYMBOL>__<HHMMSS>.parquet   slim snapshots
       intraday_state.csv                                append-only state vector
       vix_state.csv                                     append-only VIX/VIX9D
+      realized_vol.csv                                  append-only HV + skew
       intraday.log
 
 Usage:
-    python gex_intraday.py                    # SPX SPY QQQ IWM + VIX/VIX9D
+    python gex_intraday.py                    # SPX SPY QQQ IWM + VIX + realized vol
     python gex_intraday.py --symbols SPX QQQ
     python gex_intraday.py --no-vix            # skip the VIX capture
+    python gex_intraday.py --no-rv             # skip the realized-vol capture
     python gex_intraday.py --dry-run
 """
 
@@ -125,6 +186,42 @@ VIX_COLUMNS = [
     "vix9d", "vix9d_chg_1d_pct",
     "term_spread_9d_vs_30d", "term_state",
     "schema_version",
+]
+
+# ---- realized vol ---------------------------------------------------------
+HISTORY_URL = "https://cdn.cboe.com/api/global/us_indices/daily_prices/{sym}_History.csv"
+
+# Trading days per year, for annualising. 252 is the convention the decision
+# table's RICH/CHEAP axis assumes when it compares ATM IV against HV.
+TRADING_DAYS = 252
+
+# symbol -> (history series to read, is_proxy). EVERY ENTRY HERE WAS FETCHED
+# LIVE 2026-09-11 and returned 200 with a parseable schema. Do not add a symbol
+# without actually fetching it first -- SPY and NDX both look like they belong
+# and both return 403. See the REALIZED VOL CAPTURE docstring section.
+RV_HISTORY = {
+    "SPX": ("SPX", False),
+    "SPY": ("SPX", True),      # SPY tracks the S&P 500
+    "IWM": ("RUT", True),      # IWM tracks the Russell 2000
+    "RUT": ("RUT", False),
+    "XSP": ("XSP", False),
+    "VIX": ("VIX", False),
+    # QQQ deliberately absent -- no free Nasdaq-100 price history on this
+    # endpoint. Leaving it out makes the gap explicit in the data instead of
+    # filling it with a series that is not the Nasdaq-100.
+}
+
+# Lookback for the asymmetry block. 60 sessions is long enough to hold a usable
+# number of down days while still describing the current regime rather than
+# last year's.
+RV_ASYM_LOOKBACK = 60
+RV_MIN_PER_SIDE = 5
+
+RV_COLUMNS = [
+    "symbol", "capture_ts", "rv_asof_date", "rv_source", "rv_proxy",
+    "hv10", "hv20", "hv60",
+    "rv_down_up_ratio_60", "rv_tail_ratio_60", "rv_skew_60",
+    "n_closes", "schema_version",
 ]
 
 
@@ -278,6 +375,68 @@ def fetch_vix_quote(symbol):
     return payload.get("data", payload)
 
 
+def fetch_history_closes(hist_url):
+    """(dates, closes) from a Cboe daily-price history CSV, oldest first.
+
+    TWO SCHEMAS are in use on this endpoint and they are not interchangeable
+    -- both verified live 2026-09-11:
+
+        VIX / VXN / XSP   DATE,OPEN,HIGH,LOW,CLOSE
+        SPX / RUT         DATE,SPX          <- date and close only, price
+                                               column named for the symbol
+
+    A reader that only knows the first family returns nothing at all on the
+    second, silently, which is how a missing HV20 looks identical to a broken
+    one. Resolution order:
+
+        1. a column literally named CLOSE                -> use it
+        2. exactly two columns, the first of them DATE   -> use the second
+        3. anything else                                 -> (None, None)
+
+    Rule 3 is the important one. Grabbing "whatever column looks numeric" out
+    of a five-column file whose headers changed would produce a number that is
+    wrong rather than absent, and a wrong realized vol flows straight into the
+    RICH/CHEAP axis of the decision table.
+
+    Dates come back as ISO strings. Cboe writes them MM/DD/YYYY; anything that
+    will not parse is passed through verbatim rather than dropped, so a format
+    change shows up in rv_asof_date instead of silently emptying the series.
+    """
+    r = requests.get(hist_url, timeout=30)
+    r.raise_for_status()
+    from io import StringIO
+    hist = pd.read_csv(StringIO(r.text))
+    if hist.empty or len(hist.columns) < 2:
+        return None, None
+
+    cols = [str(c).strip() for c in hist.columns]
+    close_col = next((c for c, name in zip(hist.columns, cols)
+                      if name.upper() == "CLOSE"), None)
+    if close_col is None:
+        if len(hist.columns) == 2 and cols[0].upper() == "DATE":
+            close_col = hist.columns[1]
+        else:
+            return None, None
+
+    closes = pd.to_numeric(hist[close_col], errors="coerce")
+    date_col = hist.columns[0]
+    parsed = pd.to_datetime(hist[date_col], format="%m/%d/%Y", errors="coerce")
+    if parsed.isna().all():
+        parsed = pd.to_datetime(hist[date_col], errors="coerce")
+
+    dates = [
+        p.strftime("%Y-%m-%d") if pd.notna(p) else str(raw)
+        for p, raw in zip(parsed, hist[date_col])
+    ]
+
+    keep = closes.notna() & (closes > 0)
+    if not keep.any():
+        return None, None
+    closes = closes[keep].astype(float).tolist()
+    dates = [d for d, k in zip(dates, keep) if k]
+    return dates, closes
+
+
 def fetch_20d_change(hist_url, today_price):
     """20-session change and fresh-20d-high flag, from the full history CSV.
 
@@ -287,15 +446,8 @@ def fetch_20d_change(hist_url, today_price):
     column layout does not match what was verified live -- a silently wrong
     number is worse than a blank one.
     """
-    r = requests.get(hist_url, timeout=30)
-    r.raise_for_status()
-    from io import StringIO
-    hist = pd.read_csv(StringIO(r.text))
-    close_col = next((c for c in hist.columns if c.strip().upper() == "CLOSE"), None)
-    if close_col is None:
-        return None, None
-    closes = hist[close_col].astype(float).tolist()
-    if len(closes) < 20:
+    _, closes = fetch_history_closes(hist_url)
+    if not closes or len(closes) < 20:
         return None, None
     look = closes[-20:]
     baseline = closes[-20]
@@ -414,6 +566,188 @@ def append_vix_state(state_path, rows):
     df = pd.DataFrame(rows, columns=VIX_COLUMNS)
     header = not os.path.exists(state_path)
     df.to_csv(state_path, mode="a", header=header, index=False)
+
+
+# --------------------------------------------------------------------------
+# realized vol
+
+
+def log_returns(closes):
+    """Close-to-close log returns. n closes -> n-1 returns."""
+    arr = np.asarray(closes, dtype=float)
+    if arr.size < 2:
+        return np.array([])
+    return np.diff(np.log(arr))
+
+
+def hv(returns, n, trading_days=TRADING_DAYS):
+    """Annualised realized vol over the last n returns, as a DECIMAL.
+
+    Decimal, not percent, to match atm_iv_30/atm_iv_60 in the state vector --
+    the two get divided by each other constantly and a unit mismatch there
+    would be invisible and wrong rather than obvious and wrong.
+
+    Sample stdev (ddof=1). Needs n returns, i.e. n+1 closes; returns None
+    rather than a vol computed from a shorter window than advertised.
+    """
+    if len(returns) < n or n < 2:
+        return None
+    sd = float(pd.Series(returns[-n:]).std(ddof=1))
+    if not np.isfinite(sd):
+        return None
+    return sd * float(np.sqrt(trading_days))
+
+
+def move_asymmetry(returns, n=RV_ASYM_LOOKBACK, min_side=RV_MIN_PER_SIDE):
+    """How lopsided the realized moves have actually been, over n sessions.
+
+    This is the missing half of the edge scan. RR25 says what the surface is
+    CHARGING for downside relative to upside; these say what the underlying has
+    actually DONE. Skew steeper than the realized asymmetry justifies means the
+    put wing is expensive; flatter means downside convexity is underpriced.
+    Neither reading means anything without the other, which is why the state
+    vector carrying RR25 but no realized counterpart left the comparison
+    permanently unanswerable.
+
+    Three views, because one number would hide too much:
+      down_up   mean down-day size / mean up-day size. The everyday asymmetry.
+      tail      deep down move / deep up move. The wing comparison, and the
+                closest analogue to what a 25-delta risk reversal prices.
+      skew      sample skewness of the return distribution. Negative = a long
+                left tail, the shape that justifies put skew existing at all.
+
+    The tail ratio is computed on EACH SIDE'S OWN distribution -- the 10th
+    percentile of the down days against the 90th percentile of the up days --
+    not as two percentiles of the pooled series. The pooled version has a
+    failure mode that a unit test caught and that would have been very hard to
+    spot in production: when down days are rarer than 10% of the window, the
+    10th percentile of all returns sits ABOVE every negative return, so a
+    series of 55 small gains and 5 crashes reports a tail ratio of exactly
+    1.00 -- "perfectly symmetric, no edge" -- about as wrong as an answer can
+    be while still looking like a reasonable number. Conditioning on each side
+    is well defined however lopsided the day count is. A put wing and a call
+    wing are each priced off their own side too, so this is also the closer
+    analogue.
+
+    All three are None when the window is too short or too one-sided to mean
+    anything -- a "ratio" computed from two down days is noise wearing a
+    number's clothing.
+    """
+    if len(returns) < n:
+        return None, None, None
+    w = pd.Series(returns[-n:])
+
+    ups, downs = w[w > 0], w[w < 0]
+    enough = len(ups) >= min_side and len(downs) >= min_side
+
+    down_up = None
+    if enough:
+        up_mean = float(ups.mean())
+        if up_mean > 0:
+            down_up = float(downs.abs().mean()) / up_mean
+
+    tail = None
+    if enough:
+        down_tail = abs(float(downs.quantile(0.10)))   # deep in the down tail
+        up_tail = float(ups.quantile(0.90))            # deep in the up tail
+        if up_tail > 0:
+            tail = down_tail / up_tail
+
+    skew = float(w.skew())
+    if not np.isfinite(skew):
+        skew = None
+
+    return down_up, tail, skew
+
+
+def captured_today(rv_path, symbol, now):
+    """True when realized vol for this symbol was already written today (UTC).
+
+    The gate that keeps a once-a-day number from pulling a multi-megabyte file
+    32 times a day. Deliberately keyed on capture_ts rather than rv_asof_date:
+    asking "has the as-of date advanced" cannot be answered without doing the
+    fetch first, which is the cost this exists to avoid.
+    """
+    if not os.path.exists(rv_path):
+        return False
+    try:
+        prior = pd.read_csv(rv_path, usecols=["symbol", "capture_ts"], dtype=str)
+    except Exception:
+        return False
+    mine = prior[prior["symbol"] == symbol]
+    if mine.empty:
+        return False
+    last_ts = str(mine.iloc[-1]["capture_ts"])
+    return last_ts[:10] == now.date().isoformat()
+
+
+def capture_realized_vol(args, logpath, now):
+    """One realized-vol row per mapped symbol per day. Never raises."""
+    rv_path = os.path.join(args.outdir, "realized_vol.csv")
+    rows = []
+
+    for sym in args.symbols:
+        sym = sym.upper()
+        mapping = RV_HISTORY.get(sym)
+        if mapping is None:
+            log(logpath, f"RV {sym}: no free Cboe daily-close series for this "
+                         f"symbol, skipped (see RV_HISTORY)")
+            continue
+        if captured_today(rv_path, sym, now) and not args.force:
+            continue
+
+        source, is_proxy = mapping
+        try:
+            dates, closes = fetch_history_closes(HISTORY_URL.format(sym=source))
+        except Exception as e:
+            log(logpath, f"RV {sym}: history fetch failed ({e}), skipped")
+            continue
+
+        if not closes:
+            log(logpath, f"RV {sym}: {source}_History.csv returned no usable "
+                         f"closes (schema change?), skipped")
+            continue
+
+        rets = log_returns(closes)
+        hv10, hv20, hv60 = hv(rets, 10), hv(rets, 20), hv(rets, 60)
+        down_up, tail, skew = move_asymmetry(rets)
+
+        rows.append({
+            "symbol": sym,
+            "capture_ts": now.isoformat(timespec="seconds"),
+            "rv_asof_date": dates[-1] if dates else "",
+            "rv_source": source,
+            "rv_proxy": bool(is_proxy),
+            "hv10": round(hv10, 6) if hv10 is not None else "",
+            "hv20": round(hv20, 6) if hv20 is not None else "",
+            "hv60": round(hv60, 6) if hv60 is not None else "",
+            "rv_down_up_ratio_60": round(down_up, 4) if down_up is not None else "",
+            "rv_tail_ratio_60": round(tail, 4) if tail is not None else "",
+            "rv_skew_60": round(skew, 4) if skew is not None else "",
+            "n_closes": len(closes),
+            "schema_version": SCHEMA_VERSION,
+        })
+
+        proxy_note = f" (via {source})" if is_proxy else ""
+        hv20_txt = f"{hv20 * 100:.2f}%" if hv20 is not None else "n/a"
+        asym_txt = f"{down_up:.2f}x" if down_up is not None else "n/a"
+        log(logpath,
+            f"RV {sym}{proxy_note}: HV20 {hv20_txt}  down/up {asym_txt}  "
+            f"through {dates[-1] if dates else '?'}  ({len(closes):,} closes)")
+
+    if rows and not args.dry_run:
+        append_rv_state(rv_path, rows)
+        log(logpath, f"appended {len(rows)} realized-vol row(s) -> realized_vol.csv")
+    elif rows:
+        log(logpath, f"{len(rows)} realized-vol row(s) (dry run, not written)")
+
+    return rows
+
+
+def append_rv_state(rv_path, rows):
+    df = pd.DataFrame(rows, columns=RV_COLUMNS)
+    header = not os.path.exists(rv_path)
+    df.to_csv(rv_path, mode="a", header=header, index=False)
 
 
 # --------------------------------------------------------------------------
@@ -626,6 +960,8 @@ def main():
                    help="capture even if the feed timestamp has not changed")
     p.add_argument("--no-vix", dest="no_vix", action="store_true",
                    help="skip the VIX/VIX9D capture")
+    p.add_argument("--no-rv", dest="no_rv", action="store_true",
+                   help="skip the realized-vol capture")
     p.add_argument("--dry-run", action="store_true")
     args = p.parse_args()
 
@@ -673,9 +1009,21 @@ def main():
             failures.append(f"VIX: {e}")
             log(logpath, f"VIX: FAILED -- {e}\n{traceback.format_exc()}")
 
+    # Independent of the chain capture on purpose: realized vol comes from the
+    # daily-close history, so a symbol whose chain fetch failed above still
+    # gets its HV, and a failure here can never cost us the flow snapshot.
+    rv_rows = []
+    if not args.no_rv:
+        try:
+            rv_rows = capture_realized_vol(args, logpath, now)
+        except Exception as e:
+            failures.append(f"RV: {e}")
+            log(logpath, f"RV: FAILED -- {e}\n{traceback.format_exc()}")
+
     log(logpath, f"--- intraday done  ok={len(states)}  skipped={skipped}  "
                  f"failed={len(failures)}"
-                 f"{'  vix=written' if vix_row else ''}")
+                 f"{'  vix=written' if vix_row else ''}"
+                 f"{f'  rv={len(rv_rows)}' if rv_rows else ''}")
     return 1 if failures else 0
 
 
