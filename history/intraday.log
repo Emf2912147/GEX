@@ -354,3 +354,16 @@
 2026-09-11T13:12:55+00:00  RV IWM (via RUT): HV20 13.11%  down/up 1.05x  through 2026-09-10  (1,452 closes)
 2026-09-11T13:12:55+00:00  appended 3 realized-vol row(s) -> realized_vol.csv
 2026-09-11T13:12:55+00:00  --- intraday done  ok=4  skipped=0  failed=0  vix=written  rv=3
+2026-09-11T13:30:08+00:00  --- intraday capture  symbols=SPX SPY QQQ IWM
+2026-09-11T13:30:09+00:00  SPX: 11,304 contracts -> SPX__132921.parquet
+2026-09-11T13:30:09+00:00  SPX: spot 7,591.70  netGEX(win) -0.29Bn  flip 7662.4815  walls 7700.0/7700.0  negative  RR25 -0.0451 (STEEP)  P/C 1.3412
+2026-09-11T13:30:10+00:00  SPY: 4,288 contracts -> SPY__132905.parquet
+2026-09-11T13:30:10+00:00  SPY: spot 764.90  netGEX(win) -11.67Bn  flip 766.2567  walls 775.0/750.0  negative  RR25 -0.0552 (STEEP)  P/C 1.7095
+2026-09-11T13:30:11+00:00  QQQ: 4,196 contracts -> QQQ__132908.parquet
+2026-09-11T13:30:11+00:00  QQQ: spot 716.17  netGEX(win) -3.47Bn  flip 715.0341  walls 725.0/700.0  negative  RR25 -0.0642 (STEEP)  P/C 1.4908
+2026-09-11T13:30:11+00:00  IWM: 2,404 contracts -> IWM__132908.parquet
+2026-09-11T13:30:11+00:00  IWM: spot 290.60  netGEX(win) -3.66Bn  flip 296.9604  walls 295.0/285.0  negative  RR25 -0.0547 (STEEP)  P/C 2.8135
+2026-09-11T13:30:11+00:00  appended 4 state row(s)
+2026-09-11T13:30:11+00:00  VIX: feed_ts 2026-09-10T16:15:01 unchanged, skipping (phantom bar avoided)
+2026-09-11T13:30:11+00:00  RV QQQ: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
+2026-09-11T13:30:11+00:00  --- intraday done  ok=4  skipped=0  failed=0
