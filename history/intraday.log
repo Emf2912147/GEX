@@ -337,3 +337,20 @@
 2026-09-10T20:55:14+00:00  IWM: feed_ts advanced to 2026-09-10 20:54:30 but spot and net GEX are unchanged from the last row -- republished feed, no-change bar avoided (nothing written)
 2026-09-10T20:55:14+00:00  appended 3 state row(s)
 2026-09-10T20:55:14+00:00  --- intraday done  ok=3  skipped=1  failed=0
+2026-09-11T13:12:49+00:00  --- intraday capture  symbols=SPX SPY QQQ IWM
+2026-09-11T13:12:50+00:00  SPX: 11,304 contracts -> SPX__131219.parquet
+2026-09-11T13:12:50+00:00  SPX: spot 7,591.70  netGEX(win) 4.64Bn  flip 7662.8093  walls 7700.0/7700.0  positive  RR25 -0.0434 (STEEP)  P/C 1.3412
+2026-09-11T13:12:51+00:00  SPY: 4,320 contracts -> SPY__131234.parquet
+2026-09-11T13:12:51+00:00  SPY: spot 765.29  netGEX(win) -11.69Bn  flip 766.2892  walls 775.0/750.0  negative  RR25 -0.0551 (STEEP)  P/C 1.7093
+2026-09-11T13:12:52+00:00  QQQ: 4,196 contracts -> QQQ__131207.parquet
+2026-09-11T13:12:52+00:00  QQQ: spot 716.40  netGEX(win) -3.47Bn  flip 715.0747  walls 725.0/700.0  negative  RR25 -0.0642 (STEEP)  P/C 1.4908
+2026-09-11T13:12:53+00:00  IWM: 2,404 contracts -> IWM__131207.parquet
+2026-09-11T13:12:53+00:00  IWM: spot 290.65  netGEX(win) -3.66Bn  flip 296.9721  walls 295.0/285.0  negative  RR25 -0.0547 (STEEP)  P/C 2.8135
+2026-09-11T13:12:53+00:00  appended 4 state row(s)
+2026-09-11T13:12:53+00:00  VIX: 16.03 (-10.1% 1d, +12.5% 20d)  VIX9D: 17.70  term backwardation(short-rich) -> vix_state.csv
+2026-09-11T13:12:54+00:00  RV SPX: HV20 8.73%  down/up 0.74x  through 2026-09-10  (13,031 closes)
+2026-09-11T13:12:54+00:00  RV SPY (via SPX): HV20 8.73%  down/up 0.74x  through 2026-09-10  (13,031 closes)
+2026-09-11T13:12:54+00:00  RV QQQ: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
+2026-09-11T13:12:55+00:00  RV IWM (via RUT): HV20 13.11%  down/up 1.05x  through 2026-09-10  (1,452 closes)
+2026-09-11T13:12:55+00:00  appended 3 realized-vol row(s) -> realized_vol.csv
+2026-09-11T13:12:55+00:00  --- intraday done  ok=4  skipped=0  failed=0  vix=written  rv=3
