@@ -39,12 +39,43 @@ does not:
     flow measure built on this must normalise by elapsed minutes rather
     than assume a 15-minute bar.
 
+ 4. A chain with no Greeks in it is REFUSED, not stored. Cboe occasionally
+    serves a structurally valid payload with every gamma and every IV
+    zeroed; every metric downstream then degrades silently into a
+    normal-looking row (net GEX exactly 0, flip pinned to the search
+    grid's floor, both walls on one strike). See check_chain_integrity().
+
+WHAT THIS SCRIPT REFUSES TO DO
+    Three guards, all the same principle -- write nothing rather than write
+    something wrong, because a wrong row is indistinguishable from a right one
+    once it is on disk and the agent reading it downstream has no way to tell:
+
+      unchanged feed        -> skip  (nothing happened)
+      unchanged content     -> skip  (nothing happened, feed republished)
+      Greeks missing        -> FAIL  (something happened, and it was bad)
+
+    The third is deliberately not a skip. A skip is a normal, silent, expected
+    outcome that reads as zero in the summary; a refusal has to be loud or it
+    is not a guard at all.
+
 VIX CAPTURE
     Same 15-minute cycle also pulls VIX and VIX9D -- Cboe's own quotes
     endpoint, not the options-chain one, so it needs its own parser and its
     own file (history/vix_state.csv). Verified live 2026-09-10: VIX closed
     17.84 (+8.4% on the day, +21.9% over the trailing 20 sessions -- a fresh
     20-day high made that same day); VIX9D closed 17.70 (+13.5%).
+
+    DEDUPE HERE IS CONTENT-ONLY. That is a simplification rather than a fix --
+    an earlier note in this file claimed the quotes endpoint's last_trade_time
+    never advances intraday, and that was simply wrong; see the corrected
+    history in capture_vix().
+
+    The two legs DO refresh independently, and that one is real: on 2026-09-11
+    the 13:12 UTC row had VIX down 10.1% with vix9d_chg_1d_pct exactly 0.0,
+    which read as backwardation, spread +1.67. An hour later, with both legs
+    live, the same pair read contango, spread -1.43 -- a full sign flip caused
+    by nothing but which file had refreshed. term_state is therefore suppressed
+    to "unreliable(vix9d-stale)" in that situation; see term_structure_state().
 
     True VX futures term structure (front-two-month slope) is NOT available
     this way -- the same endpoint pattern for VX itself returns a flat 403.
@@ -149,6 +180,16 @@ import gamma_exposure as gx
 
 # Bump when the slim schema or the state-vector definitions change.
 SCHEMA_VERSION = 1
+
+
+class ChainIntegrityError(Exception):
+    """The payload parsed cleanly but carries no usable Greeks.
+
+    Raised instead of returning a skip, because this is a FAILURE and the run
+    summary must say so. A skip means "nothing changed"; this means "the feed
+    lied and we refused it" -- collapsing the two would hide the fault in a
+    number that normally reads zero.
+    """
 
 DEFAULT_SYMBOLS = ["SPX", "SPY", "QQQ", "IWM"]
 
@@ -346,6 +387,68 @@ def same_values(prev, spot, net_gex):
         return False
 
 
+def greek_fill(chain):
+    """(gamma fill, iv fill) -- share of contracts carrying a usable Greek."""
+    if chain.empty:
+        return 0.0, 0.0
+    return float((chain["gamma"] != 0).mean()), float((chain["iv"] > 0).mean())
+
+
+def check_chain_integrity(symbol, chain, min_fill):
+    """Refuse a chain whose Greeks came back empty. Raises ChainIntegrityError.
+
+    WHY THIS EXISTS
+        2026-09-10 13:45:29: Cboe served SPX and QQQ chains with every gamma and
+        every IV zeroed. SPY and IWM were fine in the same cycle, so this is
+        per-symbol and not a whole-feed outage. Nothing downstream noticed:
+
+          gex_by_strike()  summed to exactly 0.0
+          gamma_profile()  found no zero crossing and returned the FLOOR of its
+                           search grid, so flip came out at exactly 0.85 x spot
+          find_walls()     collapsed both walls onto the same lowest strike
+          _atm_iv()        filters on iv > 0, found none, returned NaN
+          regime           "negative", because 0 > 0 is False
+
+        Every one of those is a silent degradation that produces a
+        normal-LOOKING row: real spot, real contract count, a confident regime
+        label, a flip and two walls. The run logged "ok=4 skipped=0 failed=0".
+        Two corrupt state rows and two corrupt parquet snapshots were written
+        and pushed. The Trade Agent reads the most recent row per symbol, so a
+        row like that is one unlucky timing away from being the basis of a
+        trade.
+
+    WHAT IS CHECKED
+        The primary test has no threshold to tune and cannot false-positive:
+        if NOT ONE contract in the window carries a non-zero gamma, or not one
+        carries a positive IV, the payload is empty of the only thing it is
+        being read for. A real chain of thousands of contracts cannot look like
+        that.
+
+        `min_fill` is the secondary, tunable guard, for PARTIAL zeroing -- a
+        failure mode not yet observed. It is deliberately LOW. The honest
+        position is that the true fill rate of a healthy chain has not been
+        measured (reading the stored parquet snapshots needs pyarrow, and this
+        session could reach neither PyPI nor the raw files), so a high floor
+        would be a guess that rejects good data. Instead every run now LOGS its
+        observed fill, which turns the log into the measuring instrument: after
+        a week of sessions, set this from the observed distribution rather than
+        from anyone's intuition.
+    """
+    g_fill, iv_fill = greek_fill(chain)
+    if g_fill == 0.0 or iv_fill == 0.0:
+        raise ChainIntegrityError(
+            f"{symbol}: chain carries no usable Greeks "
+            f"(gamma fill {g_fill:.1%}, IV fill {iv_fill:.1%} over "
+            f"{len(chain):,} contracts) -- refusing to write"
+        )
+    if g_fill < min_fill:
+        raise ChainIntegrityError(
+            f"{symbol}: gamma fill {g_fill:.1%} is below the {min_fill:.0%} "
+            f"floor over {len(chain):,} contracts -- refusing to write"
+        )
+    return g_fill, iv_fill
+
+
 def elapsed_seconds(prev_capture_ts, now):
     if not prev_capture_ts:
         return ""
@@ -491,6 +594,37 @@ def same_vix_values(prev, vix, vix9d):
         return False
 
 
+# A VIX move this large with VIX9D exactly unchanged means the two legs are not
+# from the same moment. 0.5% is well outside quote noise and well inside a real
+# session move.
+VIX_STALE_LEG_MOVE = 0.005
+
+
+def term_structure_state(vix_chg_1d, vix9d_chg_1d, term_spread):
+    """contango / backwardation -- or a refusal to call it.
+
+    The two legs come from two separate files on a CDN and do not update in
+    lockstep. Observed 2026-09-11: VIX had moved -10.1% on the day while
+    vix9d_chg_1d was EXACTLY 0.0 -- VIX9D had not begun ticking. Comparing a
+    live leg against a stale one flipped the reading from contango (yesterday)
+    to backwardation, purely as an artifact of which file had refreshed.
+
+    Backwardation is a meaningful signal -- short-dated vol bid over 30-day,
+    the shape that argues against calendars and diagonals (gate G4). Publishing
+    a fake one is worse than publishing nothing, so this returns an explicit
+    unreliable marker rather than a regime label. Downstream readers looking
+    for "contango"/"backwardation" will not match it, which is the point: an
+    unusable reading should fail to match, not quietly pass as a regime.
+    """
+    legs_mismatched = (
+        vix_chg_1d is not None and vix9d_chg_1d is not None
+        and abs(vix_chg_1d) > VIX_STALE_LEG_MOVE and vix9d_chg_1d == 0.0
+    )
+    if legs_mismatched:
+        return "unreliable(vix9d-stale)"
+    return "backwardation(short-rich)" if term_spread > 0 else "contango(short-cheap)"
+
+
 def capture_vix(args, logpath, now):
     vix_data = fetch_vix_quote("VIX")
     vix9d_data = fetch_vix_quote("VIX9D")
@@ -508,14 +642,32 @@ def capture_vix(args, logpath, now):
     state_path = os.path.join(args.outdir, "vix_state.csv")
     prev = last_vix_row(state_path)
 
-    if prev["feed_ts"] == str(feed_ts) and not args.force:
-        log(logpath, f"VIX: feed_ts {feed_ts} unchanged, skipping (phantom bar avoided)")
-        return None
-
+    # ---- dedupe: CONTENT ONLY --------------------------------------------
+    # A simplification, NOT a bug fix. Read the history before changing it
+    # back, because the reasoning here was wrong once already.
+    #
+    # 2026-09-11 this was believed to be fixing a defect: vix_state.csv held
+    # exactly one row for the day, and last_trade_time was observed still
+    # reading the prior close ("2026-09-10T16:15:01") well after the open. The
+    # conclusion drawn -- that last_trade_time never advances intraday, so a
+    # feed_ts gate freezes the series after the first row -- was WRONG on both
+    # counts. Later the same session the file held four rows with feed_ts
+    # advancing normally (09:57, 10:15, 10:39 ET, each about 15 minutes behind
+    # the capture, which is just the delayed feed). The single stuck value at
+    # 13:12 UTC was correct: that cycle ran PRE-OPEN, before any print existed.
+    # The corroborating "live" fetch had hit a stale CDN node serving the
+    # previous day's file.
+    #
+    # Content-only is kept anyway because it is the honest test -- if neither
+    # leg has moved there is nothing to record, whatever any timestamp says --
+    # and it subsumes what the feed_ts gate did. But it buys little, and the
+    # real lesson is the one above: one observation plus one ad-hoc fetch of a
+    # CDN-served file is not evidence about how a field behaves over a session.
+    #
+    # feed_ts is still written to every row for provenance.
     if same_vix_values(prev, vix, vix9d) and not args.force:
-        log(logpath, f"VIX: feed_ts advanced to {feed_ts} but VIX/VIX9D are "
-                     f"unchanged from the last row -- republished feed, no-change "
-                     f"bar avoided (nothing written)")
+        log(logpath, f"VIX: {vix:.2f}/{vix9d:.2f} unchanged from the last row, "
+                     f"nothing written (feed_ts {feed_ts})")
         return None
 
     elapsed = elapsed_seconds(prev["capture_ts"], now)
@@ -532,7 +684,7 @@ def capture_vix(args, logpath, now):
         log(logpath, f"VIX: 20d-change lookup failed ({e}), leaving blank")
 
     term_spread = vix9d - vix
-    term_state = "backwardation(short-rich)" if term_spread > 0 else "contango(short-cheap)"
+    term_state = term_structure_state(vix_chg_1d, vix9d_chg_1d, term_spread)
 
     row = {
         "feed_ts": str(feed_ts),
@@ -852,6 +1004,14 @@ def capture_symbol(symbol, args, logpath, now):
     # content check below and a skipped bar must leave no parquet behind.
     metric_chain = df[df["dte"] <= args.max_dte].copy()
 
+    # Integrity gate. Deliberately placed BEFORE the first derived number, so a
+    # payload with no Greeks in it never reaches gamma_profile()/find_walls()
+    # and never leaves a parquet behind. Raises rather than returning a skip --
+    # see check_chain_integrity() for the 2026-09-10 incident this exists for.
+    g_fill, iv_fill = check_chain_integrity(symbol, metric_chain, args.min_greek_fill)
+    log(logpath, f"{symbol}: greek fill gamma {g_fill:.1%} / iv {iv_fill:.1%} "
+                 f"over {len(metric_chain):,} in-window contracts")
+
     glo, ghi = spot * (1 - args.grid_window), spot * (1 + args.grid_window)
     _, _, flip = gx.gamma_profile(metric_chain, glo, ghi)
 
@@ -953,6 +1113,11 @@ def main():
     p.add_argument("--wall-exclude", type=float, default=0.01)
     p.add_argument("--grid-window", type=float, default=0.15)
     p.add_argument("--plot-window", type=float, default=0.10)
+    p.add_argument("--min-greek-fill", type=float, default=0.10,
+                   help="minimum share of in-window contracts carrying a "
+                        "non-zero gamma before a chain is accepted (default "
+                        "0.10; deliberately low -- recalibrate from the logged "
+                        "fill rates once a few weeks exist)")
     p.add_argument("--skew-steep", type=float, default=0.02,
                    help="provisional RR25 threshold for STEEP; calibrate once "
                         "history exists (default 0.02)")
@@ -975,7 +1140,7 @@ def main():
     log(logpath, f"--- intraday capture  symbols={' '.join(args.symbols)}"
                  f"{'  (dry run)' if args.dry_run else ''}")
 
-    states, failures, skipped = [], [], 0
+    states, failures, skipped, refused = [], [], 0, 0
     for sym in args.symbols:
         sym = sym.upper()
         try:
@@ -990,6 +1155,13 @@ def main():
                 f"walls {state['call_wall']}/{state['put_wall']}  "
                 f"{state['regime']}  RR25 {state['rr25']} "
                 f"({state['skew_state']})  P/C {state['session_pc_volume']}")
+        except ChainIntegrityError as e:
+            # A refusal, not a crash: the payload was structurally sound and
+            # empty of Greeks. Counted as a failure so the run is non-zero and
+            # the summary cannot read like a clean cycle.
+            refused += 1
+            failures.append(str(e))
+            log(logpath, f"REFUSED -- {e}")
         except SystemExit as e:
             failures.append(f"{sym}: {e}")
             log(logpath, f"{sym}: FAILED -- {e}")
@@ -1022,6 +1194,7 @@ def main():
 
     log(logpath, f"--- intraday done  ok={len(states)}  skipped={skipped}  "
                  f"failed={len(failures)}"
+                 f"{f'  REFUSED={refused}' if refused else ''}"
                  f"{'  vix=written' if vix_row else ''}"
                  f"{f'  rv={len(rv_rows)}' if rv_rows else ''}")
     return 1 if failures else 0
