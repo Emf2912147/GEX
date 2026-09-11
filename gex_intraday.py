@@ -39,24 +39,32 @@ does not:
     flow measure built on this must normalise by elapsed minutes rather
     than assume a 15-minute bar.
 
- 4. A chain with no Greeks in it is REFUSED, not stored. Cboe occasionally
-    serves a structurally valid payload with every gamma and every IV
-    zeroed; every metric downstream then degrades silently into a
-    normal-looking row (net GEX exactly 0, flip pinned to the search
-    grid's floor, both walls on one strike). See check_chain_integrity().
+ 4. A chain with no Greeks in it is RETRIED, then REFUSED -- never stored.
+    Cboe serves a structurally valid payload with every gamma and every IV
+    zeroed on the first post-open cycle, most days; every metric downstream
+    then degrades silently into a normal-looking row (net GEX exactly 0,
+    flip pinned to the search grid's floor, both walls on one strike).
+    See check_chain_integrity() and fetch_valid_chain().
 
 WHAT THIS SCRIPT REFUSES TO DO
-    Three guards, all the same principle -- write nothing rather than write
-    something wrong, because a wrong row is indistinguishable from a right one
-    once it is on disk and the agent reading it downstream has no way to tell:
+    Guards, all the same principle -- write nothing rather than write something
+    wrong, because a wrong row is indistinguishable from a right one once it is
+    on disk and the agent reading it downstream has no way to tell:
 
-      unchanged feed        -> skip  (nothing happened)
-      unchanged content     -> skip  (nothing happened, feed republished)
-      Greeks missing        -> FAIL  (something happened, and it was bad)
+      unchanged feed        -> skip     (nothing happened)
+      unchanged content     -> skip     (nothing happened, feed republished)
+      Greeks missing        -> retry, then REFUSE (write nothing at all)
 
-    The third is deliberately not a skip. A skip is a normal, silent, expected
-    outcome that reads as zero in the summary; a refusal has to be loud or it
-    is not a guard at all.
+    Severity on that last one is by SCOPE, not by occurrence. A couple of
+    symbols refused at the post-open rollover is the known daily condition:
+    logged, counted, not an alarm. EVERY symbol refused means the feed is
+    unusable, and that exits non-zero.
+
+    The distinction matters more than it looks. An earlier version failed the
+    run on any refusal, which -- once the condition turned out to be daily --
+    would have painted the workflow red every single day, and a signal that is
+    always on is not a signal. Same lesson already learned the hard way with
+    _RADER_NEEDS_ATTENTION.txt.
 
 VIX CAPTURE
     Same 15-minute cycle also pulls VIX and VIX9D -- Cboe's own quotes
@@ -169,6 +177,7 @@ import argparse
 import os
 import re
 import sys
+import time
 import traceback
 from datetime import datetime, timezone
 
@@ -400,7 +409,11 @@ def check_chain_integrity(symbol, chain, min_fill):
     WHY THIS EXISTS
         2026-09-10 13:45:29: Cboe served SPX and QQQ chains with every gamma and
         every IV zeroed. SPY and IWM were fine in the same cycle, so this is
-        per-symbol and not a whole-feed outage. Nothing downstream noticed:
+        per-symbol and not a whole-feed outage. It recurred the very next
+        session at 13:46:09, that time hitting SPX and SPY -- same cycle
+        position, different symbols. See fetch_valid_chain() for what that
+        timing means and why the response is a retry rather than a refusal.
+        Nothing downstream noticed:
 
           gex_by_strike()  summed to exactly 0.0
           gamma_profile()  found no zero crossing and returned the FLOOR of its
@@ -970,10 +983,67 @@ def _skew_state(rr, steep_threshold):
 # capture
 
 
+def fetch_valid_chain(symbol, args, logpath):
+    """Fetch and parse a chain, waiting for the Greeks if they are merely late.
+
+    WHY A RETRY AND NOT JUST A REFUSAL
+        The zeroed-Greek payload is not random. Measured across the first two
+        sessions of the series, it lands on the FIRST POST-OPEN CYCLE both
+        days -- 13:45:29 then 13:46:09, +15 and +16 minutes past a 13:30 open
+        -- and hits two of the four symbols each time, though not the same two
+        (SPX+QQQ, then SPX+SPY).
+
+        13:45 is not a coincidence: the feed is ~15 minutes delayed, so that is
+        the exact moment it first serves data timestamped from the live
+        session. The Greeks appear to be LATE rather than absent -- quotes and
+        contracts are published, the analytics follow a beat behind, and
+        whichever symbols are mid-recompute come back empty.
+
+        Late is recoverable. Refusing outright throws away the first post-open
+        bar of every trading day, which is one of the more interesting ones;
+        waiting a few seconds and asking again most likely gets it. So: retry,
+        then refuse only if the second look is empty too.
+
+        The wait is a starting guess, not a measurement -- how long Cboe takes
+        to populate them has not been observed. Both outcomes are logged
+        ("RECOVERED on attempt N" / "REFUSED"), so the right value can be read
+        off a few weeks of logs instead of argued about.
+    """
+    err = None
+    for attempt in range(args.integrity_retries + 1):
+        if attempt:
+            log(logpath, f"{symbol}: {err}")
+            log(logpath, f"{symbol}: waiting {args.integrity_retry_wait}s and "
+                         f"refetching (attempt {attempt} of "
+                         f"{args.integrity_retries}) -- Greeks are usually late, "
+                         f"not missing")
+            time.sleep(args.integrity_retry_wait)
+
+        payload = gx.fetch_chain(symbol)
+        df, spot, feed_ts = parse_chain_full(payload)
+        df = gx.normalize_iv(df, quiet=True)
+        metric_chain = df[df["dte"] <= args.max_dte]
+
+        try:
+            g_fill, iv_fill = check_chain_integrity(
+                symbol, metric_chain, args.min_greek_fill)
+        except ChainIntegrityError as e:
+            err = e
+            continue
+
+        if attempt:
+            log(logpath, f"{symbol}: RECOVERED on attempt {attempt} -- gamma "
+                         f"{g_fill:.1%} / iv {iv_fill:.1%}, feed_ts {feed_ts}")
+        return df, spot, feed_ts, g_fill, iv_fill
+
+    raise err
+
+
 def capture_symbol(symbol, args, logpath, now):
-    payload = gx.fetch_chain(symbol)
-    df, spot, feed_ts = parse_chain_full(payload)
-    df = gx.normalize_iv(df, quiet=True)
+    # Fetch and validate first. A chain with no Greeks in it never reaches the
+    # dedupe, the metrics, or the disk -- see fetch_valid_chain().
+    df, spot, feed_ts, g_fill, iv_fill = fetch_valid_chain(symbol, args, logpath)
+    log(logpath, f"{symbol}: greek fill gamma {g_fill:.1%} / iv {iv_fill:.1%}")
 
     state_path = os.path.join(args.outdir, "intraday_state.csv")
     prev = last_snapshot(state_path, symbol)
@@ -1003,14 +1073,6 @@ def capture_symbol(symbol, args, logpath, now):
     # Computed BEFORE anything is written, because net_gex_window is half the
     # content check below and a skipped bar must leave no parquet behind.
     metric_chain = df[df["dte"] <= args.max_dte].copy()
-
-    # Integrity gate. Deliberately placed BEFORE the first derived number, so a
-    # payload with no Greeks in it never reaches gamma_profile()/find_walls()
-    # and never leaves a parquet behind. Raises rather than returning a skip --
-    # see check_chain_integrity() for the 2026-09-10 incident this exists for.
-    g_fill, iv_fill = check_chain_integrity(symbol, metric_chain, args.min_greek_fill)
-    log(logpath, f"{symbol}: greek fill gamma {g_fill:.1%} / iv {iv_fill:.1%} "
-                 f"over {len(metric_chain):,} in-window contracts")
 
     glo, ghi = spot * (1 - args.grid_window), spot * (1 + args.grid_window)
     _, _, flip = gx.gamma_profile(metric_chain, glo, ghi)
@@ -1113,6 +1175,14 @@ def main():
     p.add_argument("--wall-exclude", type=float, default=0.01)
     p.add_argument("--grid-window", type=float, default=0.15)
     p.add_argument("--plot-window", type=float, default=0.10)
+    p.add_argument("--integrity-retries", type=int, default=1,
+                   help="refetches to attempt when a chain comes back without "
+                        "Greeks (default 1; the failure is usually the feed "
+                        "being a beat behind at the post-open rollover)")
+    p.add_argument("--integrity-retry-wait", type=float, default=30.0,
+                   help="seconds to wait before a refetch (default 30; a "
+                        "starting guess -- read the logged RECOVERED/REFUSED "
+                        "outcomes to calibrate it)")
     p.add_argument("--min-greek-fill", type=float, default=0.10,
                    help="minimum share of in-window contracts carrying a "
                         "non-zero gamma before a chain is accepted (default "
@@ -1140,7 +1210,8 @@ def main():
     log(logpath, f"--- intraday capture  symbols={' '.join(args.symbols)}"
                  f"{'  (dry run)' if args.dry_run else ''}")
 
-    states, failures, skipped, refused = [], [], 0, 0
+    states, failures, refusals, skipped, refused = [], [], [], 0, 0
+    attempted = len(args.symbols)
     for sym in args.symbols:
         sym = sym.upper()
         try:
@@ -1157,10 +1228,23 @@ def main():
                 f"({state['skew_state']})  P/C {state['session_pc_volume']}")
         except ChainIntegrityError as e:
             # A refusal, not a crash: the payload was structurally sound and
-            # empty of Greeks. Counted as a failure so the run is non-zero and
-            # the summary cannot read like a clean cycle.
+            # empty of Greeks, and a refetch did not rescue it.
+            #
+            # NOT counted in `failures`, and that is a deliberate reversal of
+            # how this was first written. The original reasoning -- make it a
+            # failure so the run goes non-zero and nobody mistakes it for a
+            # clean cycle -- assumed this was rare. It is not: it lands on the
+            # first post-open cycle every session measured so far. A workflow
+            # that reports red every single day for a condition already
+            # understood is the `_RADER_NEEDS_ATTENTION.txt` mistake again --
+            # flag a known standing condition daily and you train yourself to
+            # scroll past the flag, which costs you the day it means something.
+            #
+            # Escalation is by SCOPE instead, below: a couple of symbols
+            # refused is the known rollover blip; EVERY symbol refused is the
+            # feed being broken, and that still goes red.
             refused += 1
-            failures.append(str(e))
+            refusals.append(str(e))
             log(logpath, f"REFUSED -- {e}")
         except SystemExit as e:
             failures.append(f"{sym}: {e}")
@@ -1192,12 +1276,21 @@ def main():
             failures.append(f"RV: {e}")
             log(logpath, f"RV: FAILED -- {e}\n{traceback.format_exc()}")
 
+    # Every symbol refused means this is not the post-open rollover blip, it is
+    # the feed being unusable -- that is worth going red for. A subset is the
+    # known condition: recorded, counted, visible in the log, but not an alarm.
+    total_refusal = refused and refused == attempted
+    if total_refusal:
+        log(logpath, f"ALL {attempted} symbols refused -- this is not the usual "
+                     f"post-open rollover, the feed is unusable this cycle")
+
     log(logpath, f"--- intraday done  ok={len(states)}  skipped={skipped}  "
                  f"failed={len(failures)}"
                  f"{f'  REFUSED={refused}' if refused else ''}"
+                 f"{'  (ALL SYMBOLS)' if total_refusal else ''}"
                  f"{'  vix=written' if vix_row else ''}"
                  f"{f'  rv={len(rv_rows)}' if rv_rows else ''}")
-    return 1 if failures else 0
+    return 1 if (failures or total_refusal) else 0
 
 
 if __name__ == "__main__":
