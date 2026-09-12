@@ -49,10 +49,14 @@ jobs:
       - name: Install dependencies
         run: pip install pandas numpy requests openpyxl yfinance
 
+      - name: Ensure output directory exists
+        run: mkdir -p history/sector
+
       - name: Run technicals capture
         run: python sector_technicals.py --outdir history/sector
 
       - name: Score and pair long/short candidates
+        continue-on-error: true
         run: python sector_candidates.py --outdir history/sector
 
       - name: Commit and push (history/sector only)
