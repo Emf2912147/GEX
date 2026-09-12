@@ -96,3 +96,9 @@
 2026-09-12T23:34:50+00:00  IWM: feed_ts 2026-09-12 03:44:37 already captured, skipping
 2026-09-12T23:34:50+00:00  appended 2 metric row(s)
 2026-09-12T23:34:50+00:00  === capture done  ok=2  failed=0
+2026-09-12T23:40:44+00:00  === capture start  symbols=SPX SPY QQQ IWM
+2026-09-12T23:40:45+00:00  SPX: feed_ts 2026-09-12 18:49:37 already captured, skipping
+2026-09-12T23:40:46+00:00  SPY: feed_ts 2026-09-12 10:14:30 already captured, skipping
+2026-09-12T23:40:47+00:00  QQQ: feed_ts 2026-09-12 18:43:40 already captured, skipping
+2026-09-12T23:40:47+00:00  IWM: feed_ts 2026-09-12 03:44:37 already captured, skipping
+2026-09-12T23:40:47+00:00  === capture done  ok=0  failed=0
