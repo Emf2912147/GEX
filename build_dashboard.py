@@ -15,6 +15,7 @@ re-fetching, so the page can never disagree with the stored history.
 import argparse
 import glob
 import html
+import json
 import os
 from datetime import datetime, timezone
 
@@ -393,4 +394,133 @@ def build_latest_json():
             indent=2
         )
     
+    main()
+    def build_latest_json(histdir, docsdir):
+    """
+    Build lightweight JSON feed for the trading agent.
+
+    Output:
+        docs/latest.json
+    """
+
+    metrics_file = os.path.join(
+        histdir,
+        "daily_metrics.csv"
+    )
+
+    if not os.path.exists(metrics_file):
+        print("latest.json skipped - daily_metrics.csv not found")
+        return
+
+    df = pd.read_csv(metrics_file)
+
+    if df.empty:
+        print("latest.json skipped - no rows")
+        return
+
+    latest = (
+        df.sort_values("feed_ts")
+          .groupby("symbol")
+          .tail(1)
+    )
+
+    output = {
+        "generated_utc":
+        datetime.now(timezone.utc).isoformat()
+    }
+
+    for _, row in latest.iterrows():
+
+        symbol = str(row["symbol"])
+
+        output[symbol] = {
+
+            "spot":
+                float(row["spot"]),
+
+            "flip":
+                float(row["flip"]),
+
+            "call_wall":
+                float(row["call_wall"]),
+
+            "put_wall":
+                float(row["put_wall"]),
+
+            "regime":
+                str(row["regime"]),
+
+            "net_gex_full":
+                float(row["net_gex_full"]),
+
+            "flip_pct_vs_spot":
+                float(row["flip_pct_vs_spot"])
+        }
+
+    outfile = os.path.join(
+        docsdir,
+        "latest.json"
+    )
+
+    with open(
+        outfile,
+        "w",
+        encoding="utf-8"
+    ) as fh:
+
+        json.dump(
+            output,
+            fh,
+            indent=2
+        )
+
+    print(f"agent feed -> {outfile}")
+
+
+def main():
+
+    p = argparse.ArgumentParser(
+        description="Build the GEX dashboard page."
+    )
+
+    here = os.path.dirname(
+        os.path.abspath(__file__)
+    )
+
+    p.add_argument(
+        "--histdir",
+        default=os.path.join(
+            here,
+            "history"
+        )
+    )
+
+    p.add_argument(
+        "--docsdir",
+        default=os.path.join(
+            here,
+            "docs"
+        )
+    )
+
+    p.add_argument(
+        "--no-charts",
+        action="store_true"
+    )
+
+    a = p.parse_args()
+
+    build(
+        a.histdir,
+        a.docsdir,
+        charts=not a.no_charts
+    )
+
+    build_latest_json(
+        a.histdir,
+        a.docsdir
+    )
+
+
+if __name__ == "__main__":
     main()
