@@ -1,0 +1,63 @@
+name: Sector agent - fundamentals capture
+
+# Twice weekly (Tue/Fri, ~9pm ET post-close) -- fundamentals move slowly,
+# no value refreshing daily. Cron is UTC and does NOT auto-adjust for US
+# DST. The times below assume EDT (UTC-4), in effect now. After the clock
+# change to EST (UTC-5, first Sunday in November) and back to EDT (second
+# Sunday in March), shift both "0 1" entries by one hour to keep the real
+# capture at ~9pm ET -- see sector_fundamentals.py's module docstring.
+#
+# ISOLATION: this workflow only ever runs sector_fundamentals.py and only
+# ever stages history/sector/* in its commit. It never touches
+# intraday_state.csv, vix_state.csv, daily_metrics.csv, or rader_daily.csv
+# -- those belong to the Trade Agent / Agent007 pipeline and are committed
+# separately, by Eugenio, from his own machine.
+
+on:
+  schedule:
+    - cron: "0 1 * * 3,6"   # Tue 21:00 ET -> Wed 01:00 UTC; Fri 21:00 ET -> Sat 01:00 UTC
+  workflow_dispatch: {}      # lets Eugenio trigger a run manually from the Actions tab
+
+permissions:
+  contents: write
+
+concurrency:
+  # Joins the trading pipeline's own group (capture.yml / intraday.yml) so a
+  # sector-agent push can never race theirs -- GitHub Actions serializes
+  # everything in a shared group instead of letting two jobs push at once.
+  # This is pure push-sequencing, not data sharing: it changes nothing about
+  # which files each job touches.
+  group: gex-capture
+  cancel-in-progress: false
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install pandas numpy requests openpyxl
+
+      - name: Run fundamentals capture
+        run: python sector_fundamentals.py --outdir history/sector
+
+      - name: Commit and push (history/sector only)
+        run: |
+          git config user.name "sector-agent-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add history/sector
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git commit -m "sector-agent: fundamentals capture $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          # A local push from Eugenio's own trading-pipeline workflow can land
+          # in between checkout and push; rebase onto it rather than fail --
+          # the two never touch the same files, so this always resolves clean.
+          git pull --rebase origin main
+          git push

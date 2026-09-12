@@ -1,0 +1,70 @@
+name: Sector agent - technicals capture
+
+# Twice daily on trading days, ~11:00 and ~15:15 ET, per Eugenio's stated
+# cadence. Cron is UTC and does NOT auto-adjust for US DST. The times below
+# assume EDT (UTC-4), in effect now. After the clock change to EST (UTC-5,
+# first Sunday in November) and back to EDT (second Sunday in March), shift
+# both cron lines by one hour -- see sector_technicals.py's module docstring.
+# This fires on weekdays regardless of market holidays; a holiday run just
+# finds Stooq/Cboe data unchanged from the prior session and, for Stooq,
+# possibly stale by one extra day -- harmless, logged, not treated as an error.
+#
+# Runs sector_technicals.py, then sector_candidates.py to refresh the ranked
+# long/short pairs against the freshest technicals and the latest fundamentals
+# capture. ISOLATION: only ever stages history/sector/* -- never touches the
+# Trade Agent / Agent007 pipeline's files (intraday_state.csv, vix_state.csv,
+# daily_metrics.csv, rader_daily.csv), which stay local-machine-committed.
+
+on:
+  schedule:
+    - cron: "0 15 * * 1-5"    # 11:00 ET (EDT)
+    - cron: "15 19 * * 1-5"   # 15:15 ET (EDT)
+  workflow_dispatch: {}        # lets Eugenio trigger a run manually from the Actions tab
+
+permissions:
+  contents: write
+
+concurrency:
+  # Joins the trading pipeline's own group (capture.yml / intraday.yml) so a
+  # sector-agent push can never race theirs -- intraday.yml fires every 15
+  # minutes 13:30-20:15 UTC, and both of this workflow's cron times land
+  # inside that window. GitHub Actions serializes everything in a shared
+  # group instead of letting two jobs push at once. Pure push-sequencing,
+  # not data sharing: it changes nothing about which files each job touches.
+  group: gex-capture
+  cancel-in-progress: false
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install pandas numpy requests openpyxl
+
+      - name: Run technicals capture
+        run: python sector_technicals.py --outdir history/sector
+
+      - name: Score and pair long/short candidates
+        run: python sector_candidates.py --outdir history/sector
+
+      - name: Commit and push (history/sector only)
+        run: |
+          git config user.name "sector-agent-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add history/sector
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git commit -m "sector-agent: technicals + candidates capture $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          # A local push from Eugenio's own trading-pipeline workflow can land
+          # in between checkout and push; rebase onto it rather than fail --
+          # the two never touch the same files, so this always resolves clean.
+          git pull --rebase origin main
+          git push
