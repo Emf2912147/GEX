@@ -17,9 +17,8 @@ name: Sector agent - technicals capture
 
 on:
   schedule:
-    - cron: "0 15 * * 1-5"    # 11:00 ET (EDT)
-    - cron: "15 19 * * 1-5"   # 15:15 ET (EDT)
-  workflow_dispatch: {}        # lets Eugenio trigger a run manually from the Actions tab
+    - cron: "0 1 * * 3,4"
+  workflow_dispatch: {}
 
 permissions:
   contents: write
