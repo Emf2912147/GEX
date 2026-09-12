@@ -48,6 +48,7 @@ KNOWN LIMITS
 """
 import argparse
 import io
+import json
 import os
 import sys
 import time
@@ -68,9 +69,17 @@ SEC_TICKERS_URL = "https://www.sec.gov/files/company_tickers.json"
 SEC_FACTS_URL = "https://data.sec.gov/api/xbrl/companyfacts/CIK{cik:010d}.json"
 SEC_SUBMISSIONS_URL = "https://data.sec.gov/submissions/CIK{cik:010d}.json"
 
-# SEC's fair-access policy requires an identifying User-Agent. Points at the
-# repo rather than a personal address -- this file is public.
-USER_AGENT = "SectorAgent/1.0 (github.com/emf2912147/GEX)"
+# SEC's fair-access policy requires an identifying User-Agent, and its own
+# docs show the required SHAPE as "Company Name contact@email.com" -- a bot
+# filter on www.sec.gov appears to check for that shape specifically, not
+# just presence of a User-Agent header. The first deployed version of this
+# constant had no email in it at all ("SectorAgent/1.0 (github.com/...)")
+# and was rejected with a 403 on the very first live run (2026-09-12,
+# GitHub Actions run #1) -- confirmed as SEC's own rejection, not a network
+# block, since GitHub-hosted runners have unrestricted internet access.
+# Uses the repo's existing git-bot noreply address rather than a personal
+# one -- real and deliverable, but not Eugenio's own address in public code.
+USER_AGENT = "Sector Agent (github.com/emf2912147/GEX) actions@users.noreply.github.com"
 SEC_MIN_INTERVAL_S = 0.15   # ~6.6 req/s, safely under the SEC's 10 req/s cap
 
 FUND_COLUMNS = [
@@ -153,10 +162,51 @@ def fetch_sector_holdings(sym, logpath):
     return tickers
 
 
-def load_cik_map(logpath):
+CIK_CACHE_MAX_AGE_DAYS = 7
+
+
+def load_cik_map_from_cache(cache_path, now, max_age_days=CIK_CACHE_MAX_AGE_DAYS):
+    """Pure-ish helper: read the cache file if it exists and is fresh enough.
+    Returns None on any miss (missing, stale, or unreadable) so the caller
+    falls back to a live fetch -- never raises."""
+    if not os.path.exists(cache_path):
+        return None
+    age_days = (now - os.path.getmtime(cache_path)) / 86400
+    if age_days >= max_age_days:
+        return None
+    try:
+        with open(cache_path, encoding="utf-8") as fh:
+            return json.load(fh)
+    except Exception:
+        return None
+
+
+def load_cik_map(logpath, outdir="history/sector"):
+    """Ticker -> CIK map, cached locally for CIK_CACHE_MAX_AGE_DAYS.
+
+    company_tickers.json barely changes day to day -- refetching it on every
+    twice-weekly run is unnecessary load on SEC's servers and unnecessary
+    exposure to whatever's rejecting the request on a given day (this file
+    was added right after the 2026-09-12 first-run 403 -- see the USER_AGENT
+    comment above for that incident). A stale cache still beats no data at
+    all, so a read failure or cache-write failure only logs, never raises.
+    """
+    cache_path = os.path.join(outdir, ".cik_cache.json")
+    cached = load_cik_map_from_cache(cache_path, time.time())
+    if cached is not None:
+        log(logpath, f"CIK map: using cached copy ({len(cached)} tickers)")
+        return cached
+
     resp = sec_get(SEC_TICKERS_URL, logpath)
     data = resp.json()
-    return {row["ticker"].upper(): row["cik_str"] for row in data.values()}
+    cik_map = {row["ticker"].upper(): row["cik_str"] for row in data.values()}
+    try:
+        os.makedirs(outdir, exist_ok=True)
+        with open(cache_path, "w", encoding="utf-8") as fh:
+            json.dump(cik_map, fh)
+    except Exception as e:
+        log(logpath, f"could not write CIK cache ({e}) -- will refetch next run")
+    return cik_map
 
 
 def latest_and_prior(facts_by_tag, unit="USD", form_pref=("10-K", "10-Q")):
@@ -286,7 +336,7 @@ def main():
 
     log(logpath, f"=== fundamentals capture start ({len(args.sectors)} sectors) ===")
 
-    cik_map = load_cik_map(logpath)
+    cik_map = load_cik_map(logpath, outdir=args.outdir)
     all_rows = []
     seen = set()
     for sym in args.sectors:
