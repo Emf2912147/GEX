@@ -347,60 +347,9 @@ def main():
     a = p.parse_args()
     build(a.histdir, a.docsdir, charts=not a.no_charts)
 
-
-if __name__ == "__main__":
-import json
-import pandas as pd
-
-
-def build_latest_json():
-
-    df = pd.read_csv(
-        "history/daily_metrics.csv"
-    )
-
-    latest = (
-        df.sort_values("feed_date")
-          .groupby("symbol")
-          .tail(1)
-    )
-
-    output = {}
-
-    for _, row in latest.iterrows():
-
-        output[row["symbol"]] = {
-
-            "spot": float(row["spot"]),
-            "flip": float(row["flip"]),
-            "call_wall": float(row["call_wall"]),
-            "put_wall": float(row["put_wall"]),
-
-            "plus_1_sigma":
-                float(row["plus_1_sigma"]),
-
-            "minus_1_sigma":
-                float(row["minus_1_sigma"])
-        }
-
-    with open(
-        "docs/latest.json",
-        "w"
-    ) as f:
-
-        json.dump(
-            output,
-            f,
-            indent=2
-        )
-    
-    main()
-    def build_latest_json(histdir, docsdir):
+def build_latest_json(histdir, docsdir):
     """
     Build lightweight JSON feed for the trading agent.
-
-    Output:
-        docs/latest.json
     """
 
     metrics_file = os.path.join(
@@ -420,8 +369,8 @@ def build_latest_json():
 
     latest = (
         df.sort_values("feed_ts")
-          .groupby("symbol")
-          .tail(1)
+        .groupby("symbol")
+        .tail(1)
     )
 
     output = {
@@ -431,9 +380,7 @@ def build_latest_json():
 
     for _, row in latest.iterrows():
 
-        symbol = str(row["symbol"])
-
-        output[symbol] = {
+        output[str(row["symbol"])] = {
 
             "spot":
                 float(row["spot"]),
