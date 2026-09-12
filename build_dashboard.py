@@ -348,4 +348,49 @@ def main():
 
 
 if __name__ == "__main__":
+import json
+import pandas as pd
+
+
+def build_latest_json():
+
+    df = pd.read_csv(
+        "history/daily_metrics.csv"
+    )
+
+    latest = (
+        df.sort_values("feed_date")
+          .groupby("symbol")
+          .tail(1)
+    )
+
+    output = {}
+
+    for _, row in latest.iterrows():
+
+        output[row["symbol"]] = {
+
+            "spot": float(row["spot"]),
+            "flip": float(row["flip"]),
+            "call_wall": float(row["call_wall"]),
+            "put_wall": float(row["put_wall"]),
+
+            "plus_1_sigma":
+                float(row["plus_1_sigma"]),
+
+            "minus_1_sigma":
+                float(row["minus_1_sigma"])
+        }
+
+    with open(
+        "docs/latest.json",
+        "w"
+    ) as f:
+
+        json.dump(
+            output,
+            f,
+            indent=2
+        )
+    
     main()
