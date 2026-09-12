@@ -39,13 +39,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
       - name: Install dependencies
-        run: pip install pandas numpy requests openpyxl
+        run: pip install pandas numpy requests openpyxl yfinance
 
       - name: Run technicals capture
         run: python sector_technicals.py --outdir history/sector
