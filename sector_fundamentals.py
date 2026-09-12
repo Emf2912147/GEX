@@ -1,54 +1,63 @@
 #!/usr/bin/env python3
 """
-Sector Agent -- fundamentals capture (SEC EDGAR + SSGA holdings).
+Sector Agent -- fundamentals capture (Yahoo Finance + SSGA holdings).
 
 SCOPE
     Feeds the sector long/short screening agent only. Writes exclusively
     under history/sector/. Never reads or writes intraday_state.csv,
-    vix_state.csv, daily_metrics.csv, rader_daily.csv, or anything the
-    Trade Agent / Agent007 pipeline touches -- see the isolation note in
-    claude/sector-agent.md. That boundary is enforced two ways: this script
-    literally has no code path that opens any file outside --outdir, and the
+    vix_state.csv, daily_metrics.csv, or rader_daily.csv -- see the
+    isolation note in claude/sector-agent.md. Enforced two ways: this
+    script has no code path that opens a file outside --outdir, and the
     GitHub Actions workflow that runs it stages its commit with
     `git add history/sector` specifically, never `git add -A`.
 
 CADENCE
     Twice weekly (Tue/Fri by default -- see
     .github/workflows/sector_fundamentals.yml). Fundamentals move slowly;
-    there is no value refreshing them daily, unlike the technicals capture.
+    there is no value refreshing them daily.
 
-SOURCES (both free, both keyless)
-    Universe  : State Street's daily holdings file per SPDR sector ETF --
-                https://www.ssga.com/library-content/products/fund-data/etfs/us/holdings-daily-us-en-<ticker>.xlsx
-    Financials: SEC EDGAR companyfacts API (data.sec.gov). U.S. government
-                work product -- public domain, free, no redistribution
-                restriction. The only conditions are on the client: identify
-                yourself via User-Agent and stay under the SEC's 10 req/s
-                rate limit (enforced here client-side via SEC_MIN_INTERVAL_S).
+SOURCE CHANGE, 2026-09-12: SEC EDGAR -> Yahoo Finance
+    The first live run against SEC EDGAR (data.sec.gov / www.sec.gov) was
+    rejected with a 403 on the very first request -- before any rate limit
+    could have been hit, and after the User-Agent was already fixed to
+    match SEC's own documented format. That combination points to an
+    IP-range block on GitHub-hosted runners rather than anything fixable
+    client-side (SEC has a documented history of blocking cloud-provider IP
+    ranges wholesale). Eugenio chose to switch to Yahoo Finance instead,
+    explicitly as personal use with no redistribution -- Yahoo's blocking is
+    rate/pattern-based rather than a blanket IP ban, so twice-weekly volume
+    should not trigger it, but note this is a real trade-off from EDGAR's
+    clean public-domain status: Yahoo's terms are more restrictive about
+    retaining/republishing their data, accepted here knowingly.
+
+    yfinance (the library used here) scrapes Yahoo's own web endpoints --
+    it is not an official, versioned API, and its exact field/row names have
+    shifted before when Yahoo changed their site internally. Every field
+    below is read defensively: multiple plausible labels are tried in order,
+    and a field that matches nothing is left blank (logged, not guessed) --
+    the same discipline used for SEC's XBRL tag-name drift in the prior
+    version of this script. This version has NOT been run against live data
+    (PyPI and Yahoo are both unreachable from the environment this was
+    built in) -- the first real Actions run is the actual test. Watch
+    fundamentals_capture.log for how many fields come back blank.
+
+SOURCES (both free, no API key)
+    Universe    : State Street's daily holdings file per SPDR sector ETF --
+                  https://www.ssga.com/library-content/products/fund-data/etfs/us/holdings-daily-us-en-<ticker>.xlsx
+    Financials  : Yahoo Finance via the yfinance library (Ticker.info,
+                  .financials, .balance_sheet, .cashflow, .get_earnings_dates).
 
 WHAT IT COMPUTES
-    Per constituent: revenue growth (YoY), gross/operating margin (current
-    AND prior period, so "compressing" is a checkable comparison, not an
-    assertion), free cash flow (operating cash flow - capex), net debt /
-    EBITDA (EBITDA approximated as operating income + D&A), and an
-    ESTIMATED next filing date extrapolated from EDGAR's own filing
-    cadence. That last field is NOT an earnings calendar -- filings lag
-    earnings announcements by days to weeks -- and is labelled an estimate
-    everywhere it's consumed (see sector_candidates.py).
-
-KNOWN LIMITS
-    XBRL tag names are not fully standardized across filers -- financials
-    in particular tag things differently than industrials or REITs. This
-    reader tries a short list of common alternate tags per concept (TAGS
-    below) and leaves a field blank -- logged, not guessed -- when nothing
-    matches. A blank field is an honest answer; a guessed number is not.
-    This is a first pass tuned for large-cap SPDR-sector constituents, which
-    mostly file standard GAAP tags; smaller or unusual filers may come back
-    thin. Check fundamentals_capture.log after the first real run.
+    Per constituent: revenue growth (YoY, from annual figures), gross/
+    operating margin (current AND prior year, so "compressing" is a
+    checkable comparison), free cash flow (prefers Yahoo's own trailing
+    figure; falls back to operating cash flow - capex from the annual
+    cash-flow statement), net debt / EBITDA, and the next estimated
+    earnings date from Yahoo's own earnings calendar -- a real calendar
+    now, an improvement over the EDGAR version's filing-cadence estimate,
+    though still Yahoo's own estimate and not guaranteed.
 """
 import argparse
-import io
-import json
 import os
 import sys
 import time
@@ -56,6 +65,11 @@ from datetime import datetime, timezone
 
 import pandas as pd
 import requests
+
+try:
+    import yfinance as yf
+except ImportError:
+    yf = None  # import failure surfaces clearly at first use, not at module load
 
 SECTOR_ETFS = {
     "XLE": "Energy", "XLF": "Financials", "XLK": "Technology",
@@ -65,25 +79,9 @@ SECTOR_ETFS = {
 }
 
 SSGA_HOLDINGS_URL = "https://www.ssga.com/library-content/products/fund-data/etfs/us/holdings-daily-us-en-{sym}.xlsx"
-SEC_TICKERS_URL = "https://www.sec.gov/files/company_tickers.json"
-SEC_FACTS_URL = "https://data.sec.gov/api/xbrl/companyfacts/CIK{cik:010d}.json"
-SEC_SUBMISSIONS_URL = "https://data.sec.gov/submissions/CIK{cik:010d}.json"
-
-# SEC's fair-access policy requires an identifying User-Agent, and its own
-# docs show the required SHAPE as "Company Name contact@email.com" -- a bot
-# filter on www.sec.gov appears to check for that shape specifically, not
-# just presence of a User-Agent header. The first deployed version of this
-# constant had no email in it at all ("SectorAgent/1.0 (github.com/...)")
-# and was rejected with a 403 on the very first live run (2026-09-12,
-# GitHub Actions run #1) -- confirmed as SEC's own rejection, not a network
-# block, since GitHub-hosted runners have unrestricted internet access.
-# Uses the repo's existing git-bot noreply address rather than a personal
-# one -- real and deliverable, but not Eugenio's own address in public code.
-USER_AGENT = "Sector Agent (github.com/emf2912147/GEX) actions@users.noreply.github.com"
-SEC_MIN_INTERVAL_S = 0.15   # ~6.6 req/s, safely under the SEC's 10 req/s cap
 
 FUND_COLUMNS = [
-    "capture_ts", "sector_etf", "ticker", "cik", "fiscal_year_end",
+    "capture_ts", "sector_etf", "ticker",
     "revenue", "revenue_prior", "revenue_growth_yoy",
     "gross_margin", "gross_margin_prior",
     "operating_margin", "operating_margin_prior",
@@ -92,25 +90,32 @@ FUND_COLUMNS = [
     "shares_outstanding",
     "next_filing_est", "schema_version",
 ]
-SCHEMA_VERSION = 1
+# Bumped from 1 -> 2: source changed EDGAR -> Yahoo Finance and the `cik`
+# column was dropped (yfinance needs no CIK lookup). A reader that assumes
+# the old column set should see this change, not silently misalign columns
+# -- the exact failure mode a schema_version bump exists to prevent.
+SCHEMA_VERSION = 2
 
-# Common alternate US-GAAP tags per concept, tried in order until one has data.
-TAGS = {
-    "revenue": ["Revenues", "RevenueFromContractWithCustomerExcludingAssessedTax",
-                "RevenueFromContractWithCustomerIncludingAssessedTax", "SalesRevenueNet"],
-    "gross_profit": ["GrossProfit"],
-    "operating_income": ["OperatingIncomeLoss"],
-    "op_cash_flow": ["NetCashProvidedByUsedInOperatingActivities",
-                      "NetCashProvidedByUsedInOperatingActivitiesContinuingOperations"],
-    "capex": ["PaymentsToAcquirePropertyPlantAndEquipment",
-              "PaymentsToAcquireProductiveAssets"],
-    "total_debt_lt": ["LongTermDebtNoncurrent", "LongTermDebt"],
-    "total_debt_st": ["LongTermDebtCurrent", "ShortTermBorrowings", "DebtCurrent"],
-    "cash": ["CashAndCashEquivalentsAtCarryingValue",
-             "CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalentsAtCarryingValueIncludingDiscontinuedOperations"],
-    "dep_amort": ["DepreciationDepletionAndAmortization",
-                  "DepreciationAmortizationAndAccretionNet", "DepreciationAndAmortization"],
-    "shares": ["CommonStockSharesOutstanding", "EntityCommonStockSharesOutstanding"],
+YF_MIN_INTERVAL_S = 0.5   # spacing between tickers -- twice-weekly volume, no rush
+
+# Candidate row labels per concept, tried in order, on yfinance's annual
+# statement DataFrames (columns = fiscal year end, most recent first).
+# yfinance has renamed these before between versions -- this list is a
+# defense against drift, not a guarantee every label here is current.
+ROW_LABELS = {
+    "revenue": ["Total Revenue", "TotalRevenue", "Operating Revenue"],
+    "gross_profit": ["Gross Profit", "GrossProfit"],
+    "operating_income": ["Operating Income", "OperatingIncome", "EBIT"],
+    "op_cash_flow": ["Operating Cash Flow", "Cash Flow From Continuing Operating Activities",
+                      "Total Cash From Operating Activities"],
+    "capex": ["Capital Expenditure", "CapitalExpenditures", "Purchase Of PP&E"],
+    "dep_amort": ["Depreciation And Amortization", "Depreciation Amortization Depletion",
+                  "Depreciation"],
+    "cash": ["Cash And Cash Equivalents", "CashAndCashEquivalents",
+             "Cash Cash Equivalents And Short Term Investments"],
+    "total_debt": ["Total Debt", "TotalDebt"],
+    "long_term_debt": ["Long Term Debt", "LongTermDebt"],
+    "current_debt": ["Current Debt", "CurrentDebt", "Short Long Term Debt"],
 }
 
 
@@ -120,16 +125,6 @@ def log(path, msg):
     if path:
         with open(path, "a", encoding="utf-8") as fh:
             fh.write(line + "\n")
-
-
-def sec_get(url, logpath, params=None):
-    """Rate-limited GET against an SEC endpoint, with the required User-Agent."""
-    time.sleep(SEC_MIN_INTERVAL_S)
-    resp = requests.get(url, headers={"User-Agent": USER_AGENT,
-                                       "Accept-Encoding": "gzip, deflate"},
-                         params=params, timeout=30)
-    resp.raise_for_status()
-    return resp
 
 
 def fetch_sector_holdings(sym, logpath):
@@ -143,9 +138,7 @@ def fetch_sector_holdings(sym, logpath):
         log(logpath, f"{sym}: holdings fetch failed -- {e}")
         return []
     try:
-        # SSGA's daily holdings xlsx carries a few descriptive rows before the
-        # real table -- observed at 4 header rows; if the file layout changes
-        # this raises and is caught below rather than silently misreading.
+        import io
         df = pd.read_excel(io.BytesIO(resp.content), skiprows=4)
     except Exception as e:
         log(logpath, f"{sym}: holdings parse failed -- {e}")
@@ -162,157 +155,115 @@ def fetch_sector_holdings(sym, logpath):
     return tickers
 
 
-CIK_CACHE_MAX_AGE_DAYS = 7
-
-
-def load_cik_map_from_cache(cache_path, now, max_age_days=CIK_CACHE_MAX_AGE_DAYS):
-    """Pure-ish helper: read the cache file if it exists and is fresh enough.
-    Returns None on any miss (missing, stale, or unreadable) so the caller
-    falls back to a live fetch -- never raises."""
-    if not os.path.exists(cache_path):
-        return None
-    age_days = (now - os.path.getmtime(cache_path)) / 86400
-    if age_days >= max_age_days:
-        return None
-    try:
-        with open(cache_path, encoding="utf-8") as fh:
-            return json.load(fh)
-    except Exception:
-        return None
-
-
-def load_cik_map(logpath, outdir="history/sector"):
-    """Ticker -> CIK map, cached locally for CIK_CACHE_MAX_AGE_DAYS.
-
-    company_tickers.json barely changes day to day -- refetching it on every
-    twice-weekly run is unnecessary load on SEC's servers and unnecessary
-    exposure to whatever's rejecting the request on a given day (this file
-    was added right after the 2026-09-12 first-run 403 -- see the USER_AGENT
-    comment above for that incident). A stale cache still beats no data at
-    all, so a read failure or cache-write failure only logs, never raises.
-    """
-    cache_path = os.path.join(outdir, ".cik_cache.json")
-    cached = load_cik_map_from_cache(cache_path, time.time())
-    if cached is not None:
-        log(logpath, f"CIK map: using cached copy ({len(cached)} tickers)")
-        return cached
-
-    resp = sec_get(SEC_TICKERS_URL, logpath)
-    data = resp.json()
-    cik_map = {row["ticker"].upper(): row["cik_str"] for row in data.values()}
-    try:
-        os.makedirs(outdir, exist_ok=True)
-        with open(cache_path, "w", encoding="utf-8") as fh:
-            json.dump(cik_map, fh)
-    except Exception as e:
-        log(logpath, f"could not write CIK cache ({e}) -- will refetch next run")
-    return cik_map
-
-
-def latest_and_prior(facts_by_tag, unit="USD", form_pref=("10-K", "10-Q")):
-    """From one XBRL us-gaap fact block, return (latest_value, prior_value)
-    for the most recent two periods of the SAME form/period-length, so a
-    YoY comparison never pits a quarter against a full year."""
-    if not facts_by_tag or unit not in facts_by_tag.get("units", {}):
+def annual_latest_and_prior(df, concept):
+    """df: a yfinance annual statement DataFrame (rows=line items, columns=
+    fiscal-year-end dates, most recent first). Tries each candidate label
+    for `concept` until one has data. Returns (latest, prior) -- prior is
+    None if there's only one period. Never raises on a missing/renamed row."""
+    if df is None or not hasattr(df, "empty") or df.empty:
         return None, None
-    rows = [r for r in facts_by_tag["units"][unit]
-            if r.get("form") in form_pref and r.get("val") is not None and r.get("end")]
-    if not rows:
-        return None, None
-    rows.sort(key=lambda r: r["end"])
-    latest_form = rows[-1]["form"]
-    same_form = [r for r in rows if r["form"] == latest_form]
-    if len(same_form) < 2:
-        return (same_form[-1]["val"] if same_form else None), None
-    return same_form[-1]["val"], same_form[-2]["val"]
-
-
-def first_available(facts, concept):
-    """Try each alternate tag for a concept until one has usable data."""
-    for tag in TAGS[concept]:
-        block = facts.get("facts", {}).get("us-gaap", {}).get(tag)
-        if block:
-            latest, prior = latest_and_prior(block)
-            if latest is not None:
-                return latest, prior
+    for label in ROW_LABELS[concept]:
+        if label in df.index:
+            row = df.loc[label].dropna()
+            if len(row) == 0:
+                continue
+            vals = row.tolist()
+            return vals[0], (vals[1] if len(vals) > 1 else None)
     return None, None
 
 
-def estimate_next_filing(cik, logpath):
-    """Extrapolate the next likely 10-Q/10-K filing date from filing cadence.
-    NOT an earnings calendar -- filings lag earnings by days to weeks. Every
-    consumer of this field must treat it as an estimate, not a fact."""
+def estimate_next_earnings(ticker_obj, logpath, ticker):
+    """Yahoo's own earnings calendar -- a real calendar, not a proxy, but
+    still Yahoo's own estimate and one of yfinance's more fragile calls
+    historically. Returns an ISO date string or None; never raises."""
     try:
-        resp = sec_get(SEC_SUBMISSIONS_URL.format(cik=cik), logpath)
-        recent = resp.json().get("filings", {}).get("recent", {})
-        forms = recent.get("form", [])
-        dates = recent.get("filingDate", [])
-        qtrly = sorted(d for f, d in zip(forms, dates) if f in ("10-Q", "10-K"))
-        if len(qtrly) < 2:
+        dates = ticker_obj.get_earnings_dates(limit=8)
+        if dates is None or dates.empty:
             return None
-        last = datetime.strptime(qtrly[-1], "%Y-%m-%d")
-        prev = datetime.strptime(qtrly[-2], "%Y-%m-%d")
-        cadence_days = (last - prev).days
-        if cadence_days <= 0:
+        now = pd.Timestamp.now(tz=dates.index.tz) if dates.index.tz else pd.Timestamp.now()
+        future = dates.index[dates.index >= now]
+        if len(future) == 0:
             return None
-        est = last + pd.Timedelta(days=cadence_days)
-        return est.date().isoformat()
+        return future.min().date().isoformat()
     except Exception as e:
-        log(logpath, f"filing-date estimate failed for CIK {cik} -- {e}")
+        log(logpath, f"{ticker}: earnings-date lookup failed -- {e}")
         return None
 
 
-def capture_one(ticker, cik, sector_etf, logpath):
-    try:
-        resp = sec_get(SEC_FACTS_URL.format(cik=cik), logpath)
-        facts = resp.json()
-    except Exception as e:
-        log(logpath, f"{ticker}: companyfacts fetch failed -- {e}")
-        return None
-    return build_row(ticker, cik, sector_etf, facts, estimate_next_filing(cik, logpath))
+def build_row(ticker, sector_etf, info, financials, balance_sheet, cashflow, next_filing):
+    """Pure function: yfinance data -> output row. Separated from the
+    network calls so it's unit-testable against fixtures."""
+    info = info or {}
 
+    revenue, revenue_prior = annual_latest_and_prior(financials, "revenue")
+    gp, gp_prior = annual_latest_and_prior(financials, "gross_profit")
+    oi, oi_prior = annual_latest_and_prior(financials, "operating_income")
+    ocf, ocf_prior = annual_latest_and_prior(cashflow, "op_cash_flow")
+    capex, capex_prior = annual_latest_and_prior(cashflow, "capex")
+    dep_amort, _ = annual_latest_and_prior(cashflow, "dep_amort")
+    cash, _ = annual_latest_and_prior(balance_sheet, "cash")
+    total_debt, _ = annual_latest_and_prior(balance_sheet, "total_debt")
+    if total_debt is None:
+        lt_debt, _ = annual_latest_and_prior(balance_sheet, "long_term_debt")
+        cur_debt, _ = annual_latest_and_prior(balance_sheet, "current_debt")
+        if lt_debt is not None or cur_debt is not None:
+            total_debt = (lt_debt or 0) + (cur_debt or 0)
 
-def build_row(ticker, cik, sector_etf, facts, next_filing):
-    """Pure function: facts JSON -> output row. Separated from capture_one
-    so it can be unit tested against fixtures with no network involved."""
-    revenue, revenue_prior = first_available(facts, "revenue")
-    gp, gp_prior = first_available(facts, "gross_profit")
-    oi, oi_prior = first_available(facts, "operating_income")
-    ocf, ocf_prior = first_available(facts, "op_cash_flow")
-    capex, capex_prior = first_available(facts, "capex")
-    debt_lt, _ = first_available(facts, "total_debt_lt")
-    debt_st, _ = first_available(facts, "total_debt_st")
-    cash, _ = first_available(facts, "cash")
-    dep_amort, _ = first_available(facts, "dep_amort")
-    shares, _ = first_available(facts, "shares")
-
-    gross_margin = (gp / revenue) if gp is not None and revenue else None
-    gross_margin_prior = (gp_prior / revenue_prior) if gp_prior is not None and revenue_prior else None
-    op_margin = (oi / revenue) if oi is not None and revenue else None
-    op_margin_prior = (oi_prior / revenue_prior) if oi_prior is not None and revenue_prior else None
-    fcf = (ocf - capex) if ocf is not None and capex is not None else None
+    # Prefer info's own values where the statement-derived one is missing
+    # or where Yahoo's precomputed TTM figure is simply the better number
+    # (freeCashflow, ebitda are both TTM in .info, not fiscal-year).
+    fcf = info.get("freeCashflow")
     fcf_prior = (ocf_prior - capex_prior) if ocf_prior is not None and capex_prior is not None else None
-    total_debt = None
-    if debt_lt is not None or debt_st is not None:
-        total_debt = (debt_lt or 0) + (debt_st or 0)
+    if fcf is None and ocf is not None and capex is not None:
+        fcf = ocf - capex
+
+    cash = cash if cash is not None else info.get("totalCash")
+    total_debt = total_debt if total_debt is not None else info.get("totalDebt")
+    shares = info.get("sharesOutstanding")
+
+    ebitda = info.get("ebitda")
+    if ebitda is None and oi is not None and dep_amort is not None:
+        ebitda = oi + dep_amort
+
+    gross_margin = (gp / revenue) if gp is not None and revenue else info.get("grossMargins")
+    gross_margin_prior = (gp_prior / revenue_prior) if gp_prior is not None and revenue_prior else None
+    operating_margin = (oi / revenue) if oi is not None and revenue else info.get("operatingMargins")
+    operating_margin_prior = (oi_prior / revenue_prior) if oi_prior is not None and revenue_prior else None
+
     net_debt = (total_debt - cash) if total_debt is not None and cash is not None else None
-    ebitda = (oi + dep_amort) if oi is not None and dep_amort is not None else None
     net_debt_to_ebitda = (net_debt / ebitda) if net_debt is not None and ebitda not in (None, 0) else None
-    revenue_growth = (revenue / revenue_prior - 1) if revenue is not None and revenue_prior else None
+    revenue_growth = (revenue / revenue_prior - 1) if revenue is not None and revenue_prior else info.get("revenueGrowth")
 
     return {
         "capture_ts": datetime.now(timezone.utc).isoformat(),
-        "sector_etf": sector_etf, "ticker": ticker, "cik": cik,
-        "fiscal_year_end": facts.get("fiscalYearEnd", ""),
+        "sector_etf": sector_etf, "ticker": ticker,
         "revenue": revenue, "revenue_prior": revenue_prior, "revenue_growth_yoy": revenue_growth,
         "gross_margin": gross_margin, "gross_margin_prior": gross_margin_prior,
-        "operating_margin": op_margin, "operating_margin_prior": op_margin_prior,
+        "operating_margin": operating_margin, "operating_margin_prior": operating_margin_prior,
         "fcf": fcf, "fcf_prior": fcf_prior,
         "total_debt": total_debt, "cash_and_equiv": cash, "net_debt": net_debt,
         "ebitda_approx": ebitda, "net_debt_to_ebitda": net_debt_to_ebitda,
         "shares_outstanding": shares,
         "next_filing_est": next_filing, "schema_version": SCHEMA_VERSION,
     }
+
+
+def capture_one(ticker, sector_etf, logpath):
+    if yf is None:
+        log(logpath, f"{ticker}: yfinance not installed -- skipped")
+        return None
+    time.sleep(YF_MIN_INTERVAL_S)
+    try:
+        t = yf.Ticker(ticker)
+        info = t.info
+        financials = t.financials
+        balance_sheet = t.balance_sheet
+        cashflow = t.cashflow
+    except Exception as e:
+        log(logpath, f"{ticker}: yfinance fetch failed -- {e}")
+        return None
+    next_filing = estimate_next_earnings(t, logpath, ticker)
+    return build_row(ticker, sector_etf, info, financials, balance_sheet, cashflow, next_filing)
 
 
 def append_rows(out_path, rows):
@@ -324,7 +275,7 @@ def append_rows(out_path, rows):
 
 
 def main():
-    p = argparse.ArgumentParser(description="Sector agent -- fundamentals capture (SEC EDGAR + SSGA).")
+    p = argparse.ArgumentParser(description="Sector agent -- fundamentals capture (Yahoo Finance + SSGA).")
     p.add_argument("--outdir", default="history/sector")
     p.add_argument("--sectors", nargs="*", default=list(SECTOR_ETFS.keys()))
     p.add_argument("--dry-run", action="store_true")
@@ -336,7 +287,6 @@ def main():
 
     log(logpath, f"=== fundamentals capture start ({len(args.sectors)} sectors) ===")
 
-    cik_map = load_cik_map(logpath, outdir=args.outdir)
     all_rows = []
     seen = set()
     for sym in args.sectors:
@@ -345,11 +295,7 @@ def main():
             if t in seen:
                 continue  # a name can sit in more than one sector fund -- capture it once
             seen.add(t)
-            cik = cik_map.get(t)
-            if cik is None:
-                log(logpath, f"{t}: no CIK match in SEC ticker map -- skipped")
-                continue
-            row = capture_one(t, cik, sym, logpath)
+            row = capture_one(t, sym, logpath)
             if row:
                 all_rows.append(row)
 

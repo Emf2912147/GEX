@@ -12,6 +12,11 @@ name: Sector agent - fundamentals capture
 # intraday_state.csv, vix_state.csv, daily_metrics.csv, or rader_daily.csv
 # -- those belong to the Trade Agent / Agent007 pipeline and are committed
 # separately, by Eugenio, from his own machine.
+#
+# SOURCE, 2026-09-12: switched from SEC EDGAR to Yahoo Finance (yfinance)
+# after the first live run against EDGAR was rejected with a 403 on its very
+# first request -- almost certainly an IP-range block on GitHub-hosted
+# runners, not fixable client-side. See sector_fundamentals.py's docstring.
 
 on:
   schedule:
@@ -41,7 +46,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install dependencies
-        run: pip install pandas numpy requests openpyxl
+        run: pip install pandas numpy requests openpyxl yfinance
 
       - name: Run fundamentals capture
         run: python sector_fundamentals.py --outdir history/sector
