@@ -1877,3 +1877,20 @@
 2026-09-16T18:14:58+00:00  VIX: 16.88 (-1.9% 1d, +13.4% 20d)  VIX9D: 16.59  term contango(short-cheap) -> vix_state.csv
 2026-09-16T18:14:58+00:00  RV QQQ: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
 2026-09-16T18:14:58+00:00  --- intraday done  ok=4  skipped=0  failed=0  vix=written
+2026-09-16T18:35:04+00:00  --- intraday capture  symbols=SPX SPY QQQ IWM
+2026-09-16T18:35:06+00:00  SPX: greek fill gamma 69.0% / iv 91.5%
+2026-09-16T18:35:06+00:00  SPX: 11,760 contracts -> SPX__183314.parquet
+2026-09-16T18:35:06+00:00  SPX: spot 7,610.92  netGEX(win) -30.07Bn  flip 7651.1226  walls 7700.0/7500.0  negative  RR25 -0.0496 (STEEP)  P/C 1.036
+2026-09-16T18:35:06+00:00  SPY: greek fill gamma 78.3% / iv 82.1%
+2026-09-16T18:35:06+00:00  SPY: 4,386 contracts -> SPY__183215.parquet
+2026-09-16T18:35:06+00:00  SPY: spot 760.01  netGEX(win) -10.18Bn  flip 765.7188  walls 770.0/750.0  negative  RR25 -0.0514 (STEEP)  P/C 1.0606
+2026-09-16T18:35:07+00:00  QQQ: greek fill gamma 78.6% / iv 84.0%
+2026-09-16T18:35:07+00:00  QQQ: 4,146 contracts -> QQQ__183220.parquet
+2026-09-16T18:35:07+00:00  QQQ: spot 709.95  netGEX(win) -2.05Bn  flip 712.9909  walls 720.0/700.0  negative  RR25 -0.0612 (STEEP)  P/C 1.35
+2026-09-16T18:35:08+00:00  IWM: greek fill gamma 80.7% / iv 81.4%
+2026-09-16T18:35:08+00:00  IWM: 2,360 contracts -> IWM__183214.parquet
+2026-09-16T18:35:08+00:00  IWM: spot 285.80  netGEX(win) -4.46Bn  flip 295.9407  walls 290.0/290.0  negative  RR25 -0.049 (STEEP)  P/C 1.7491
+2026-09-16T18:35:08+00:00  appended 4 state row(s)
+2026-09-16T18:35:08+00:00  VIX: 16.73 (-2.7% 1d, +12.4% 20d)  VIX9D: 16.08  term contango(short-cheap) -> vix_state.csv
+2026-09-16T18:35:08+00:00  RV QQQ: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
+2026-09-16T18:35:08+00:00  --- intraday done  ok=4  skipped=0  failed=0  vix=written
