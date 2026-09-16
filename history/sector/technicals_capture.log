@@ -12,3 +12,10 @@
 2026-09-12T19:53:25.811550+00:00Z  XASU6: Stooq fetch failed -- 503 Server Error: Service Temporarily Unavailable for url: https://stooq.com/q/d/l/?s=xasu6.us&i=d
 2026-09-12T19:53:25.812422+00:00Z  XASU6: no usable data from either source -- skipped entirely
 2026-09-12T19:53:25.812645+00:00Z  === technicals capture done: 0/1 names captured ===
+2026-09-16T01:02:48.921195+00:00Z  universe: 1 names from fundamentals capture_ts=2026-09-12T18:54:02.507436+00:00
+2026-09-16T01:02:48.921310+00:00Z  === technicals capture start (1 names) ===
+2026-09-16T01:02:50.163760+00:00Z  XLC: Stooq fetch failed -- 404 Client Error: Not Found for url: https://stooq.com/q/d/l/?s=xlc.us&i=d
+2026-09-16T01:02:50.833641+00:00Z  XASU6: Cboe fetch failed -- 403 Client Error: Forbidden for url: https://cdn.cboe.com/api/global/delayed_quotes/options/XASU6.json
+2026-09-16T01:02:51.809375+00:00Z  XASU6: Stooq fetch failed -- 404 Client Error: Not Found for url: https://stooq.com/q/d/l/?s=xasu6.us&i=d
+2026-09-16T01:02:51.810311+00:00Z  XASU6: no usable data from either source -- skipped entirely
+2026-09-16T01:02:51.810532+00:00Z  === technicals capture done: 0/1 names captured ===
