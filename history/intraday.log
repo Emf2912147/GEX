@@ -2029,3 +2029,24 @@
 2026-09-16T20:46:33+00:00  VIX: 17.71/17.40 unchanged from the last row, nothing written (feed_ts 2026-09-16T16:15:01)
 2026-09-16T20:46:33+00:00  RV QQQ: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
 2026-09-16T20:46:33+00:00  --- intraday done  ok=3  skipped=1  failed=0
+2026-09-17T13:13:58+00:00  --- intraday capture  symbols=SPX SPY QQQ IWM
+2026-09-17T13:14:00+00:00  SPX: greek fill gamma 67.5% / iv 97.4%
+2026-09-17T13:14:00+00:00  SPX: 11,818 contracts -> SPX__131320.parquet
+2026-09-17T13:14:00+00:00  SPX: spot 7,551.81  netGEX(win) 3.66Bn  flip 7648.4701  walls 7700.0/7700.0  positive  RR25 -0.0432 (STEEP)  P/C 1.223
+2026-09-17T13:14:01+00:00  SPY: greek fill gamma 75.2% / iv 76.7%
+2026-09-17T13:14:01+00:00  SPY: 4,220 contracts -> SPY__131310.parquet
+2026-09-17T13:14:01+00:00  SPY: spot 763.66  netGEX(win) -15.52Bn  flip 764.3787  walls 755.0/745.0  negative  RR25 -0.056 (STEEP)  P/C 1.3938
+2026-09-17T13:14:03+00:00  QQQ: greek fill gamma 75.1% / iv 86.5%
+2026-09-17T13:14:03+00:00  QQQ: 3,916 contracts -> QQQ__131305.parquet
+2026-09-17T13:14:03+00:00  QQQ: spot 716.19  netGEX(win) -5.53Bn  flip 712.2775  walls 700.0/700.0  negative  RR25 -0.0612 (STEEP)  P/C 1.3268
+2026-09-17T13:14:04+00:00  IWM: greek fill gamma 73.9% / iv 76.1%
+2026-09-17T13:14:04+00:00  IWM: 2,378 contracts -> IWM__131304.parquet
+2026-09-17T13:14:04+00:00  IWM: spot 287.89  netGEX(win) -5.80Bn  flip 294.3796  walls 285.0/285.0  negative  RR25 -0.0549 (STEEP)  P/C 2.0762
+2026-09-17T13:14:04+00:00  appended 4 state row(s)
+2026-09-17T13:14:04+00:00  VIX: 15.45 (-12.8% 1d, -3.5% 20d)  VIX9D: 17.40  term unreliable(vix9d-stale) -> vix_state.csv
+2026-09-17T13:14:05+00:00  RV SPX: HV20 8.89%  down/up 0.72x  through 2026-09-16  (13,035 closes)
+2026-09-17T13:14:05+00:00  RV SPY (via SPX): HV20 8.89%  down/up 0.72x  through 2026-09-16  (13,035 closes)
+2026-09-17T13:14:05+00:00  RV QQQ: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
+2026-09-17T13:14:06+00:00  RV IWM (via RUT): HV20 12.52%  down/up 1.11x  through 2026-09-16  (1,456 closes)
+2026-09-17T13:14:06+00:00  appended 3 realized-vol row(s) -> realized_vol.csv
+2026-09-17T13:14:06+00:00  --- intraday done  ok=4  skipped=0  failed=0  vix=written  rv=3
