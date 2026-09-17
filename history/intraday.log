@@ -2441,3 +2441,20 @@
 2026-09-17T20:30:16+00:00  VIX: 15.44 (-12.8% 1d, -3.6% 20d)  VIX9D: 13.39  term contango(short-cheap) -> vix_state.csv
 2026-09-17T20:30:16+00:00  RV QQQ: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
 2026-09-17T20:30:16+00:00  --- intraday done  ok=4  skipped=0  failed=0  vix=written
+2026-09-17T20:44:18+00:00  --- intraday capture  symbols=SPX SPY QQQ IWM
+2026-09-17T20:44:19+00:00  SPX: greek fill gamma 67.8% / iv 94.7%
+2026-09-17T20:44:19+00:00  SPX: 11,260 contracts -> SPX__204340.parquet
+2026-09-17T20:44:19+00:00  SPX: spot 7,637.76  netGEX(win) -20.62Bn  flip 7670.6417  walls 8000.0/7500.0  negative  RR25 -0.04 (STEEP)  P/C 1.4714
+2026-09-17T20:44:19+00:00  SPY: FAILED -- Could not reach Cboe: ('Connection aborted.', ConnectionResetError(104, 'Connection reset by peer'))
+If you are behind a corporate proxy or a sandbox with restricted
+egress, this endpoint has to be reachable for the script to work.
+2026-09-17T20:44:20+00:00  QQQ: greek fill gamma 73.7% / iv 85.0%
+2026-09-17T20:44:20+00:00  QQQ: 3,622 contracts -> QQQ__204312.parquet
+2026-09-17T20:44:20+00:00  QQQ: spot 716.25  netGEX(win) 0.54Bn  flip 715.3393  walls 725.0/700.0  positive  RR25 -0.0492 (STEEP)  P/C 1.3018
+2026-09-17T20:44:21+00:00  IWM: greek fill gamma 76.9% / iv 80.8%
+2026-09-17T20:44:21+00:00  IWM: 2,172 contracts -> IWM__204311.parquet
+2026-09-17T20:44:21+00:00  IWM: spot 285.15  netGEX(win) -6.74Bn  flip 292.3733  walls 290.0/280.0  negative  RR25 -0.0445 (STEEP)  P/C 3.1678
+2026-09-17T20:44:21+00:00  appended 3 state row(s)
+2026-09-17T20:44:21+00:00  VIX: 15.44/13.39 unchanged from the last row, nothing written (feed_ts 2026-09-17T16:15:01)
+2026-09-17T20:44:21+00:00  RV QQQ: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
+2026-09-17T20:44:21+00:00  --- intraday done  ok=3  skipped=0  failed=1
