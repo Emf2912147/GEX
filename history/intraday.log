@@ -2496,3 +2496,19 @@ egress, this endpoint has to be reachable for the script to work.
 2026-09-18T13:12:05+00:00  RV IWM (via RUT): HV20 12.56%  down/up 1.10x  through 2026-09-17  (1,457 closes)
 2026-09-18T13:12:05+00:00  appended 3 realized-vol row(s) -> realized_vol.csv
 2026-09-18T13:12:05+00:00  --- intraday done  ok=4  skipped=0  failed=0  vix=written  rv=3
+2026-09-18T13:28:16+00:00  --- intraday capture  symbols=SPX SPY QQQ IWM
+2026-09-18T13:28:18+00:00  SPX: greek fill gamma 64.2% / iv 86.9%
+2026-09-18T13:28:18+00:00  SPX: 11,682 contracts -> SPX__132718.parquet
+2026-09-18T13:28:18+00:00  SPX: spot 7,637.76  netGEX(win) -17.68Bn  flip 7651.4065  walls 8000.0/7500.0  negative  RR25 -0.0409 (STEEP)  P/C 1.4714
+2026-09-18T13:28:19+00:00  SPY: greek fill gamma 59.2% / iv 77.5%
+2026-09-18T13:28:19+00:00  SPY: 4,152 contracts -> SPY__132708.parquet
+2026-09-18T13:28:19+00:00  SPY: spot 760.54  netGEX(win) -8.46Bn  flip 764.959  walls 770.0/745.0  negative  RR25 -0.0424 (STEEP)  P/C 0.8329
+2026-09-18T13:28:20+00:00  QQQ: greek fill gamma 69.8% / iv 80.4%
+2026-09-18T13:28:20+00:00  QQQ: 3,810 contracts -> QQQ__132705.parquet
+2026-09-18T13:28:20+00:00  QQQ: spot 718.11  netGEX(win) -1.00Bn  flip 717.3299  walls 710.0/710.0  negative  RR25 -0.0492 (STEEP)  P/C 1.2919
+2026-09-18T13:28:20+00:00  IWM: greek fill gamma 73.7% / iv 77.5%
+2026-09-18T13:28:20+00:00  IWM: feed_ts advanced to 2026-09-18 13:27:14 but spot and net GEX are unchanged from the last row -- republished feed, no-change bar avoided (nothing written)
+2026-09-18T13:28:20+00:00  appended 3 state row(s)
+2026-09-18T13:28:21+00:00  VIX: 15.41 (-0.2% 1d, +1.9% 20d)  VIX9D: 13.39  term contango(short-cheap) -> vix_state.csv
+2026-09-18T13:28:21+00:00  RV QQQ: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
+2026-09-18T13:28:21+00:00  --- intraday done  ok=3  skipped=1  failed=0  vix=written
