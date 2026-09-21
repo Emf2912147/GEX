@@ -3028,3 +3028,20 @@ egress, this endpoint has to be reachable for the script to work.
 2026-09-21T13:28:57+00:00  VIX: 14.88 (+0.5% 1d, -6.1% 20d)  VIX9D: 12.27  term contango(short-cheap) -> vix_state.csv
 2026-09-21T13:28:57+00:00  RV QQQ: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
 2026-09-21T13:28:57+00:00  --- intraday done  ok=4  skipped=0  failed=0  vix=written
+2026-09-21T13:45:08+00:00  --- intraday capture  symbols=SPX SPY QQQ IWM
+2026-09-21T13:45:09+00:00  SPX: SPX: chain carries no usable Greeks (gamma fill 0.0%, IV fill 0.0% over 10,880 contracts) -- refusing to write
+2026-09-21T13:45:09+00:00  SPX: waiting 30.0s and refetching (attempt 1 of 1) -- Greeks are usually late, not missing
+2026-09-21T13:45:40+00:00  REFUSED -- SPX: chain carries no usable Greeks (gamma fill 0.0%, IV fill 0.0% over 10,880 contracts) -- refusing to write
+2026-09-21T13:45:41+00:00  SPY: greek fill gamma 75.9% / iv 76.2%
+2026-09-21T13:45:41+00:00  SPY: 3,864 contracts -> SPY__134108.parquet
+2026-09-21T13:45:41+00:00  SPY: spot 766.28  netGEX(win) -4.04Bn  flip 764.0545  walls 775.0/745.0  negative  RR25 -0.0417 (STEEP)  P/C 1.1837
+2026-09-21T13:45:41+00:00  QQQ: QQQ: chain carries no usable Greeks (gamma fill 0.0%, IV fill 0.0% over 4,494 contracts) -- refusing to write
+2026-09-21T13:45:41+00:00  QQQ: waiting 30.0s and refetching (attempt 1 of 1) -- Greeks are usually late, not missing
+2026-09-21T13:46:11+00:00  REFUSED -- QQQ: chain carries no usable Greeks (gamma fill 0.0%, IV fill 0.0% over 4,494 contracts) -- refusing to write
+2026-09-21T13:46:12+00:00  IWM: greek fill gamma 83.9% / iv 88.2%
+2026-09-21T13:46:12+00:00  IWM: 2,216 contracts -> IWM__133647.parquet
+2026-09-21T13:46:12+00:00  IWM: spot 286.41  netGEX(win) -2.91Bn  flip 293.6031  walls 290.0/280.0  negative  RR25 -0.0434 (STEEP)  P/C 2.4579
+2026-09-21T13:46:12+00:00  appended 2 state row(s)
+2026-09-21T13:46:12+00:00  VIX: 14.90 (+0.6% 1d, -6.0% 20d)  VIX9D: 12.27  term unreliable(vix9d-stale) -> vix_state.csv
+2026-09-21T13:46:12+00:00  RV QQQ: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
+2026-09-21T13:46:12+00:00  --- intraday done  ok=2  skipped=0  failed=0  REFUSED=2  vix=written
