@@ -3487,3 +3487,24 @@ egress, this endpoint has to be reachable for the script to work.
 2026-09-21T20:53:42+00:00  VIX: 14.87/13.14 unchanged from the last row, nothing written (feed_ts 2026-09-21T16:15:01)
 2026-09-21T20:53:42+00:00  RV QQQ: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
 2026-09-21T20:53:42+00:00  --- intraday done  ok=4  skipped=0  failed=0
+2026-09-22T13:13:22+00:00  --- intraday capture  symbols=SPX SPY QQQ IWM
+2026-09-22T13:13:23+00:00  SPX: greek fill gamma 70.3% / iv 99.1%
+2026-09-22T13:13:23+00:00  SPX: 11,210 contracts -> SPX__131310.parquet
+2026-09-22T13:13:23+00:00  SPX: spot 7,764.70  netGEX(win) 77.06Bn  flip 7706.3034  walls 8000.0/8000.0  positive  RR25 -0.0296 (STEEP)  P/C 0.9525
+2026-09-22T13:13:24+00:00  SPY: greek fill gamma 71.4% / iv 83.6%
+2026-09-22T13:13:24+00:00  SPY: 3,864 contracts -> SPY__131308.parquet
+2026-09-22T13:13:24+00:00  SPY: spot 774.07  netGEX(win) 5.83Bn  flip 770.8787  walls 785.0/761.0  positive  RR25 -0.0306 (STEEP)  P/C 0.9709
+2026-09-22T13:13:25+00:00  QQQ: greek fill gamma 69.2% / iv 79.5%
+2026-09-22T13:13:25+00:00  QQQ: 3,988 contracts -> QQQ__131314.parquet
+2026-09-22T13:13:25+00:00  QQQ: spot 740.75  netGEX(win) 3.50Bn  flip 736.216  walls 750.0/730.0  positive  RR25 -0.0361 (STEEP)  P/C 1.1232
+2026-09-22T13:13:25+00:00  IWM: greek fill gamma 76.2% / iv 86.6%
+2026-09-22T13:13:25+00:00  IWM: 2,232 contracts -> IWM__131313.parquet
+2026-09-22T13:13:25+00:00  IWM: spot 287.53  netGEX(win) -2.31Bn  flip 292.2108  walls 293.0/280.0  negative  RR25 -0.034 (STEEP)  P/C 1.4737
+2026-09-22T13:13:25+00:00  appended 4 state row(s)
+2026-09-22T13:13:25+00:00  VIX: 14.67 (-1.3% 1d, -5.0% 20d)  VIX9D: 13.14  term unreliable(vix9d-stale) -> vix_state.csv
+2026-09-22T13:13:26+00:00  RV SPX: HV20 10.66%  down/up 0.68x  through 2026-09-21  (13,038 closes)
+2026-09-22T13:13:26+00:00  RV SPY (via SPX): HV20 10.66%  down/up 0.68x  through 2026-09-21  (13,038 closes)
+2026-09-22T13:13:26+00:00  RV QQQ: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
+2026-09-22T13:13:26+00:00  RV IWM (via RUT): HV20 11.61%  down/up 1.09x  through 2026-09-21  (1,459 closes)
+2026-09-22T13:13:26+00:00  appended 3 realized-vol row(s) -> realized_vol.csv
+2026-09-22T13:13:26+00:00  --- intraday done  ok=4  skipped=0  failed=0  vix=written  rv=3
