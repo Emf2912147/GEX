@@ -212,3 +212,14 @@
 2026-09-22T11:38:55+00:00  IWM: spot 286.97  netGEX -2.31Bn  flip 292.249  walls 290.0/280.0  negative
 2026-09-22T11:38:55+00:00  appended 4 metric row(s)
 2026-09-22T11:38:55+00:00  === capture done  ok=4  failed=0
+2026-09-23T11:38:52+00:00  === capture start  symbols=SPX SPY QQQ IWM
+2026-09-23T11:38:53+00:00  SPX: 29,942 contracts -> SPX.parquet
+2026-09-23T11:38:53+00:00  SPX: spot 7,764.64  netGEX 66.52Bn  flip 7693.3802  walls 8000.0/8000.0  positive
+2026-09-23T11:38:54+00:00  SPY: 12,066 contracts -> SPY.parquet
+2026-09-23T11:38:54+00:00  SPY: spot 773.38  netGEX 4.37Bn  flip 770.3288  walls 785.0/761.0  positive
+2026-09-23T11:38:55+00:00  QQQ: 10,478 contracts -> QQQ.parquet
+2026-09-23T11:38:55+00:00  QQQ: spot 748.32  netGEX 4.24Bn  flip 734.3638  walls 740.0/730.0  positive
+2026-09-23T11:38:55+00:00  IWM: 5,186 contracts -> IWM.parquet
+2026-09-23T11:38:56+00:00  IWM: spot 287.21  netGEX -1.81Bn  flip 292.4907  walls 293.0/280.0  negative
+2026-09-23T11:38:56+00:00  appended 4 metric row(s)
+2026-09-23T11:38:56+00:00  === capture done  ok=4  failed=0
