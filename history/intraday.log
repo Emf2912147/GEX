@@ -4388,3 +4388,15 @@ egress, this endpoint has to be reachable for the script to work.
 2026-09-24T15:42:20+00:00  VIX: 14.21/12.13 unchanged from the last row, nothing written (feed_ts 2026-09-22T16:15:01)
 2026-09-24T15:42:20+00:00  RV QQQ: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
 2026-09-24T15:42:20+00:00  --- intraday done  ok=0  skipped=4  failed=0
+2026-09-24T15:54:56+00:00  --- intraday capture  symbols=SPX SPY QQQ IWM
+2026-09-24T15:54:57+00:00  SPX: greek fill gamma 70.4% / iv 84.5%
+2026-09-24T15:54:57+00:00  SPX: feed_ts 2026-09-23 03:56:05 unchanged, skipping (phantom bar avoided)
+2026-09-24T15:54:58+00:00  SPY: greek fill gamma 73.8% / iv 84.9%
+2026-09-24T15:54:58+00:00  SPY: feed_ts 2026-09-23 03:54:59 unchanged, skipping (phantom bar avoided)
+2026-09-24T15:54:59+00:00  QQQ: greek fill gamma 78.6% / iv 88.8%
+2026-09-24T15:54:59+00:00  QQQ: feed_ts 2026-09-23 03:56:14 unchanged, skipping (phantom bar avoided)
+2026-09-24T15:54:59+00:00  IWM: greek fill gamma 82.6% / iv 82.5%
+2026-09-24T15:54:59+00:00  IWM: feed_ts 2026-09-23 03:35:33 unchanged, skipping (phantom bar avoided)
+2026-09-24T15:54:59+00:00  VIX: 14.21/12.13 unchanged from the last row, nothing written (feed_ts 2026-09-22T16:15:01)
+2026-09-24T15:54:59+00:00  RV QQQ: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
+2026-09-24T15:54:59+00:00  --- intraday done  ok=0  skipped=4  failed=0
