@@ -186,6 +186,7 @@ import pandas as pd
 import requests
 
 import gamma_exposure as gx
+import market_calendar as cal
 
 # Bump when the slim schema or the state-vector definitions change.
 SCHEMA_VERSION = 1
@@ -1262,6 +1263,8 @@ def main():
                    help="skip the VIX/VIX9D capture")
     p.add_argument("--no-rv", dest="no_rv", action="store_true",
                    help="skip the realized-vol capture")
+    p.add_argument("--ignore-calendar", action="store_true",
+                   help="run even on a day the NYSE calendar says is closed")
     p.add_argument("--dry-run", action="store_true")
     args = p.parse_args()
 
@@ -1271,6 +1274,14 @@ def main():
     os.makedirs(args.outdir, exist_ok=True)
     logpath = os.path.join(args.outdir, "intraday.log")
     now = datetime.now(timezone.utc)
+
+    # On a closed day Cboe serves the prior session's file, so every symbol
+    # would fail the freshness guard -- four hard failures and a red run every
+    # 15 minutes, all day. The cron is already Mon-Fri; this covers holidays.
+    if not cal.is_trading_day(now.date()) and not args.ignore_calendar:
+        log(logpath, f"--- intraday skipped  {now.date():%Y-%m-%d %a}: "
+                     f"not an NYSE session")
+        return 0
 
     log(logpath, f"--- intraday capture  symbols={' '.join(args.symbols)}"
                  f"{'  (dry run)' if args.dry_run else ''}")
