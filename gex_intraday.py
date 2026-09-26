@@ -191,6 +191,10 @@ import gamma_exposure as gx
 SCHEMA_VERSION = 1
 
 
+class StaleFeedError(Exception):
+    """Cboe served a chain far older than the moment we asked for it."""
+
+
 class ChainIntegrityError(Exception):
     """The payload parsed cleanly but carries no usable Greeks.
 
@@ -401,6 +405,55 @@ def greek_fill(chain):
     if chain.empty:
         return 0.0, 0.0
     return float((chain["gamma"] != 0).mean()), float((chain["iv"] > 0).mean())
+
+
+def check_feed_freshness(symbol, feed_ts, now, max_lag_s, max_skew_s):
+    """Refuse a chain whose feed_ts is far behind the capture. Raises StaleFeedError.
+
+    WHY THIS EXISTS
+        2026-09-23 13:14:15: every symbol came back carrying a feed_ts from
+        03:35-03:56 UTC -- between 9.3 and 9.6 HOURS stale. The payload was
+        structurally perfect: Greeks populated, nonzero net gamma, flip not
+        pinned, regime agreeing with sign, all four symbols present. Every
+        existing guard passed it. The spot was Tuesday's close to the cent,
+        so the row recorded Tuesday's gamma structure under a Wednesday
+        timestamp, and the next capture did not land until 17:43 the
+        following day -- roughly 28 hours reading a stale surface as current.
+
+        Missing data announces itself. This did not.
+
+    THRESHOLD
+        Measured over the first 1,131 stored rows, capture-minus-feed runs a
+        median of 39 seconds, p90 1.1 min, p99 5.6 min. Only five rows exceed
+        30 min and four of those are the incident above. 15 minutes therefore
+        sits ~2.7x above the p99 of normal operation and ~37x below the
+        failure it is built to catch.
+
+    CLOCK SKEW
+        Two stored rows show feed_ts slightly AHEAD of capture_ts (to -1.4
+        min): Cboe's clock and the runner's disagree a little. A small
+        negative lag is normal and must not be treated as an error; a large
+        one means something is genuinely wrong with one of the two clocks.
+    """
+    try:
+        feed = datetime.fromisoformat(str(feed_ts))
+    except (TypeError, ValueError):
+        # "unknown" or a schema change. Not evidence of staleness, so do not
+        # refuse on it -- but say so loudly, because the guard is now blind.
+        return None
+    if feed.tzinfo is None:
+        feed = feed.replace(tzinfo=timezone.utc)
+
+    lag = (now - feed).total_seconds()
+    if lag > max_lag_s:
+        raise StaleFeedError(
+            f"feed_ts {feed_ts} is {lag / 60:.1f} min behind the capture "
+            f"(limit {max_lag_s / 60:.0f} min) -- serving a stale chain")
+    if lag < -max_skew_s:
+        raise StaleFeedError(
+            f"feed_ts {feed_ts} is {-lag / 60:.1f} min AHEAD of the capture "
+            f"-- clock skew beyond {max_skew_s / 60:.0f} min")
+    return lag
 
 
 def check_chain_integrity(symbol, chain, min_fill):
@@ -983,7 +1036,7 @@ def _skew_state(rr, steep_threshold):
 # capture
 
 
-def fetch_valid_chain(symbol, args, logpath):
+def fetch_valid_chain(symbol, args, logpath, now):
     """Fetch and parse a chain, waiting for the Greeks if they are merely late.
 
     WHY A RETRY AND NOT JUST A REFUSAL
@@ -1025,9 +1078,14 @@ def fetch_valid_chain(symbol, args, logpath):
         metric_chain = df[df["dte"] <= args.max_dte]
 
         try:
+            lag = check_feed_freshness(symbol, feed_ts, now,
+                                       args.max_feed_lag, args.max_feed_skew)
+            if lag is None:
+                log(logpath, f"{symbol}: WARNING feed_ts {feed_ts!r} "
+                             f"unparseable -- staleness unchecked this cycle")
             g_fill, iv_fill = check_chain_integrity(
                 symbol, metric_chain, args.min_greek_fill)
-        except ChainIntegrityError as e:
+        except (ChainIntegrityError, StaleFeedError) as e:
             err = e
             continue
 
@@ -1042,7 +1100,8 @@ def fetch_valid_chain(symbol, args, logpath):
 def capture_symbol(symbol, args, logpath, now):
     # Fetch and validate first. A chain with no Greeks in it never reaches the
     # dedupe, the metrics, or the disk -- see fetch_valid_chain().
-    df, spot, feed_ts, g_fill, iv_fill = fetch_valid_chain(symbol, args, logpath)
+    df, spot, feed_ts, g_fill, iv_fill = fetch_valid_chain(
+        symbol, args, logpath, now)
     log(logpath, f"{symbol}: greek fill gamma {g_fill:.1%} / iv {iv_fill:.1%}")
 
     state_path = os.path.join(args.outdir, "intraday_state.csv")
@@ -1169,6 +1228,12 @@ def main():
                    help="DTE ceiling for the stored slim snapshot (default 45)")
     p.add_argument("--strike-window", type=float, default=0.15,
                    help="strikes kept, as a fraction either side of spot (default 0.15)")
+    p.add_argument("--max-feed-lag", type=float, default=900,
+                   help="refuse a chain whose feed_ts is more than this many "
+                        "seconds behind the capture (default 900 = 15 min)")
+    p.add_argument("--max-feed-skew", type=float, default=300,
+                   help="tolerate feed_ts this many seconds AHEAD of capture "
+                        "before calling it clock skew (default 300)")
     p.add_argument("--max-dte", type=float, default=30,
                    help="DTE filter for the derived state vector, matching "
                         "gex_capture.py's default so the two series are comparable")
