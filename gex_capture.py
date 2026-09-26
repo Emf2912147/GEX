@@ -35,9 +35,11 @@ import io
 import os
 import sys
 import traceback
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import pandas as pd
+
+import market_calendar as cal
 
 import gamma_exposure as gx
 
@@ -48,7 +50,7 @@ SCHEMA_VERSION = 2
 DEFAULT_SYMBOLS = ["SPX", "SPY", "QQQ", "IWM"]
 
 METRIC_COLUMNS = [
-    "feed_ts", "feed_date", "capture_ts", "symbol", "spot",
+    "feed_ts", "feed_date", "session_date", "capture_ts", "symbol", "spot",
     "contracts_total", "contracts_dte", "contracts_window",
     "net_gex_full", "net_gex_window", "flip", "flip_pct_vs_spot",
     "call_wall", "put_wall", "wall_fallback", "regime",
@@ -80,21 +82,25 @@ def write_raw(df, outdir, symbol):
         return path
 
 
-def already_captured(metrics_path, symbol, feed_ts):
-    """True if this exact (symbol, feed timestamp) is already on file.
+def session_already_captured(metrics_path, symbol, session_date):
+    """True if this (symbol, SESSION) is already on file.
 
-    Weekends and holidays serve a stale file. Without this check, Saturday and
-    Sunday each log Friday's data as a separate observation and quietly corrupt
-    every time series built on top.
+    Keyed on the trading session, never on feed_ts. Cboe re-stamps feed_ts on
+    every serve -- including weekend re-serves of the same settled chain -- so
+    a feed_ts key silently admits duplicates. Worse, a late re-serve pairs the
+    PRIOR session's open interest with a LIVE spot: on 2026-09-21 the file
+    carried Friday's OI against Monday's 766.78 SPY quote while Friday closed
+    at 762.79. Gamma computed on that pairing is wrong, not merely redundant.
     """
     if not os.path.exists(metrics_path):
         return False
     try:
-        prior = pd.read_csv(metrics_path, usecols=["symbol", "feed_ts"],
+        prior = pd.read_csv(metrics_path, usecols=["symbol", "session_date"],
                             dtype=str)
     except Exception:
         return False
-    hit = prior[(prior["symbol"] == symbol) & (prior["feed_ts"] == str(feed_ts))]
+    hit = prior[(prior["symbol"] == symbol) &
+                (prior["session_date"] == str(session_date))]
     return len(hit) > 0
 
 
@@ -107,16 +113,25 @@ def capture_symbol(symbol, args, logpath):
     df = gx.normalize_iv(df, quiet=True)
     iv_rescaled = iv_median_before > 3.0
 
+    now = datetime.now(timezone.utc)
+    session_date = cal.session_for(now.date())
+
     metrics_path = os.path.join(args.outdir, "daily_metrics.csv")
-    if already_captured(metrics_path, symbol, feed_ts) and not args.force:
-        log(logpath, f"{symbol}: feed_ts {feed_ts} already captured, skipping")
+    if session_already_captured(metrics_path, symbol, session_date) and not args.force:
+        log(logpath, f"{symbol}: session {session_date} already captured, skipping")
         return None
 
-    capture_ts = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    capture_ts = now.isoformat(timespec="seconds")
     # feed_date is the date stamped on the Cboe file. A morning run's file
     # reflects the PRIOR session's settled open interest -- it is not the
     # trading session date. Kept verbatim rather than guessed at.
     feed_date = str(feed_ts)[:10]
+
+    # feed_date is the date Cboe stamped on the FILE. session_date is the
+    # trading session that file describes -- always the prior calendar day,
+    # because the calendar gate in main() only lets this run when that day
+    # was a session. Everything downstream should key on session_date.
+    session_date = str(session_date)
 
     raw = df.copy()
     raw.insert(0, "symbol", symbol)
@@ -127,7 +142,7 @@ def capture_symbol(symbol, args, logpath):
     raw = raw.drop(columns=["T"], errors="ignore")
 
     if not args.dry_run:
-        path = write_raw(raw, os.path.join(args.outdir, "raw", feed_date), symbol)
+        path = write_raw(raw, os.path.join(args.outdir, "raw", session_date), symbol)
         log(logpath, f"{symbol}: {len(raw):,} contracts -> {os.path.basename(path)}")
     else:
         log(logpath, f"{symbol}: {len(raw):,} contracts (dry run, not written)")
@@ -154,6 +169,7 @@ def capture_symbol(symbol, args, logpath):
     return {
         "feed_ts": str(feed_ts),
         "feed_date": feed_date,
+        "session_date": session_date,
         "capture_ts": capture_ts,
         "symbol": symbol,
         "spot": round(spot, 4),
@@ -198,6 +214,8 @@ def main():
     p.add_argument("--plot-window", type=float, default=0.10)
     p.add_argument("--force", action="store_true",
                    help="capture even if this feed timestamp is already on file")
+    p.add_argument("--ignore-calendar", action="store_true",
+                   help="run even on a day the trading calendar would skip")
     p.add_argument("--dry-run", action="store_true",
                    help="fetch and compute, write nothing")
     args = p.parse_args()
@@ -207,6 +225,12 @@ def main():
                                    "history")
     os.makedirs(args.outdir, exist_ok=True)
     logpath = os.path.join(args.outdir, "capture.log")
+
+    today = datetime.now(timezone.utc).date()
+    if not cal.should_capture(today) and not args.ignore_calendar:
+        log(logpath, f"=== capture skipped  {today:%Y-%m-%d %a}: "
+                     f"{today - timedelta(days=1)} was not a trading session")
+        return 0
 
     log(logpath, f"=== capture start  symbols={' '.join(args.symbols)}"
                  f"{'  (dry run)' if args.dry_run else ''}")
