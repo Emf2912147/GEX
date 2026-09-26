@@ -1,19 +1,43 @@
 __pycache__/
 *.pyc
 .venv/
+
 # Charts from manual gamma_exposure.py runs at the repo root.
 /*.png
 /SPX_gex.csv
+
 # Restart scratch written by flow_poll.py every 15 minutes.
 history/intraday/*/_state_*.parquet
+
+# --- Credentials and vendor session state -------------------------------
+# THIS REPO IS PUBLIC. Nothing below may ever be committed.
+history/.schwab_env
+history/.schwab_tokens.json
 history/.rader_session
 history/rader_raw/
 history/rader_daily.csv
-history/.schwab_env
-history/.schwab_tokens.json
-history/.schwab_env
-history/.schwab_tokens.json
 history/rader.log
 history/rader_inspect_*.html
 history/rader_status.json
 _RADER_NEEDS_ATTENTION.txt
+
+# Local scripts that handle broker credentials or vendor-licensed data.
+# Kept out of the public repo deliberately -- if one ever needs to be
+# tracked, strip the secrets first and force it with `git add -f`.
+schwab_*.py
+rader_*.py
+flow_poll.py
+compare_sources.py
+history/flow_15m.csv
+
+# --- Local working files ------------------------------------------------
+# Timestamped backups written by migrate_history.py and backfill_walls.py.
+# The migrations they protect are already committed; these are scratch.
+*.bak.*
+
+# Patch files handed over for review, not part of the repo.
+*.patch
+
+# Scratch and notes.
+Claude outputs/
+*.docx
