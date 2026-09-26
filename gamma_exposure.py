@@ -217,34 +217,54 @@ def gex_by_strike(df, spot, use_volume=False, bin_size=None):
 
 def find_walls(calls, puts, spot, exclude=0.01):
     """
-    Call/put walls, ignoring strikes within `exclude` of spot.
+    Call/put walls from NET per-strike gamma, constrained by side of spot.
 
-    Gamma peaks at the money, so a plain idxmax/idxmin on gamma-weighted GEX
-    just finds the ATM strike -- especially once strikes are binned, which
-    gathers the tight near-money increments into one bucket. That is gamma
-    density, not a wall. Excluding a band around spot leaves the structural
-    open-interest concentrations that dealers actually hedge against.
+    A wall is where dealer hedging resists price movement, so it is defined by
+    the NET gamma at a strike and by which side of spot it sits on:
 
-    Returns (call_wall, put_wall, fell_back) -- fell_back is True when the
-    exclusion emptied a side and the unfiltered strike was used instead.
+        call wall = strike ABOVE spot with the largest positive net gamma
+        put wall  = strike BELOW spot with the most negative net gamma
+
+    The previous version ranked each side in isolation (calls.idxmax(),
+    puts.idxmin()) with no directional constraint. A round-number strike
+    carrying a large TWO-SIDED open-interest pile therefore won both contests
+    at once. On 2026-09-21 that put SPX's call wall and put wall both at 8,000
+    -- 235 stored rows carry that degenerate pairing -- while 8,000's net was
+    only +2.9Bn against 7,800's +14.2Bn. Ranking on net, and requiring the
+    call wall above spot and the put wall below it, makes call_wall ==
+    put_wall structurally impossible.
+
+    Strikes within `exclude` of spot are ignored: gamma peaks at the money, so
+    without the band both walls collapse onto the ATM strike, which is gamma
+    density rather than structure.
+
+    Returns (call_wall, put_wall, fell_back). fell_back is True when a side had
+    no strike of the expected sign and the largest magnitude was used instead --
+    the chart should mark that wall as weak rather than drawing it confidently.
     """
+    net = calls.add(puts, fill_value=0.0)
     lo, hi = spot * (1 - exclude), spot * (1 + exclude)
-    c_out = calls[(calls.index < lo) | (calls.index > hi)]
-    p_out = puts[(puts.index < lo) | (puts.index > hi)]
+
+    above = net[net.index > max(hi, spot)]
+    below = net[net.index < min(lo, spot)]
     fell_back = False
 
-    # A side with nothing meaningful left outside the band (empty, or all zero)
-    # falls back rather than reporting an arbitrary strike.
-    if len(c_out) and c_out.max() > 0:
-        call_wall = c_out.idxmax()
-    else:
-        call_wall = calls.idxmax() if len(calls) else None
+    if len(above) and above.max() > 0:
+        call_wall = above.idxmax()
+    elif len(above):
+        call_wall = above.idxmax()      # no positive net overhead: weak wall
         fell_back = True
-    if len(p_out) and p_out.min() < 0:
-        put_wall = p_out.idxmin()
     else:
-        put_wall = puts.idxmin() if len(puts) else None
+        call_wall, fell_back = None, True
+
+    if len(below) and below.min() < 0:
+        put_wall = below.idxmin()
+    elif len(below):
+        put_wall = below.idxmin()       # no negative net beneath: weak wall
         fell_back = True
+    else:
+        put_wall, fell_back = None, True
+
     return call_wall, put_wall, fell_back
 
 

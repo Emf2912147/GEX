@@ -29,6 +29,12 @@ import gamma_exposure as gx
 SYMBOL_ORDER = ["SPX", "SPY", "QQQ", "IWM"]
 TRAIL = 90          # sparkline lookback, observations
 
+# Strike binning per symbol. SPX lists 5/10/25 increments in one chain; the
+# ETFs list 1-point strikes, so a 25 bin would collapse the plot window into
+# three buckets.
+BIN_SIZE = {"SPX": 25, "SPY": 5, "QQQ": 5, "IWM": 2.5}
+DEFAULT_BIN = 5
+
 
 # --------------------------------------------------------------------------
 # Data
@@ -55,16 +61,19 @@ def latest_raw(histdir, symbol):
     return pd.read_csv(path)
 
 
-def render_chart(raw, row, outpath, max_dte=30, plot_window=0.10,
-                 grid_window=0.15, wall_exclude=0.01, bin_size=25):
+def strike_view(raw, row, max_dte=30, plot_window=0.10, grid_window=0.15,
+                wall_exclude=0.01, bin_size=None):
+    """Everything both the PNG and the inline bars need, computed once."""
     df = raw.copy()
     df["dte"] = pd.to_numeric(df["dte"], errors="coerce")
     df = df[df["dte"] > 0]
     spot = float(row["spot"])
     chain = df[df["dte"] <= max_dte].copy()
     if chain.empty:
-        return False
+        return None
     chain["T"] = chain["dte"] / 365.0
+    if bin_size is None:
+        bin_size = BIN_SIZE.get(str(row["symbol"]), DEFAULT_BIN)
 
     glo, ghi = spot * (1 - grid_window), spot * (1 + grid_window)
     grid, net, flip = gx.gamma_profile(chain, glo, ghi)
@@ -72,9 +81,23 @@ def render_chart(raw, row, outpath, max_dte=30, plot_window=0.10,
     plo, phi = spot * (1 - plot_window), spot * (1 + plot_window)
     win = chain[(chain["strike"] >= plo) & (chain["strike"] <= phi)]
     if win.empty:
-        return False
+        return None
     _, calls, puts = gx.gex_by_strike(win, spot, False, bin_size)
-    cw, pw, _ = gx.find_walls(calls, puts, spot, wall_exclude)
+    cw, pw, fell_back = gx.find_walls(calls, puts, spot, wall_exclude)
+    return dict(spot=spot, calls=calls, puts=puts, grid=grid, net=net,
+                flip=flip, call_wall=cw, put_wall=pw, fell_back=fell_back,
+                bin_size=bin_size)
+
+
+def render_chart(raw, row, outpath, max_dte=30, plot_window=0.10,
+                 grid_window=0.15, wall_exclude=0.01, bin_size=None):
+    v = strike_view(raw, row, max_dte, plot_window, grid_window, wall_exclude,
+                    bin_size)
+    if v is None:
+        return False
+    spot, calls, puts = v["spot"], v["calls"], v["puts"]
+    grid, net, flip = v["grid"], v["net"], v["flip"]
+    cw, pw, bin_size = v["call_wall"], v["put_wall"], v["bin_size"]
 
     os.makedirs(os.path.dirname(outpath), exist_ok=True)
     gx.plot(row["symbol"], row["feed_ts"], spot, calls, puts, grid, net, flip,
@@ -110,6 +133,98 @@ def sparkline(values, width=260, height=44, pad=4):
         f'{zero}<polyline points="{" ".join(pts)}" class="spark-line"/>'
         f'<circle cx="{last_x}" cy="{last_y}" r="3.5" class="spark-dot"/></svg>'
     )
+
+
+# --------------------------------------------------------------------------
+# Strike bars -- inline SVG, not a raster. The PNG is 1820px wide and gets
+# squeezed to a phone, which makes every bar 2-3px and the wall labels
+# sub-pixel. SVG scales, so the walls stay legible at any width.
+# --------------------------------------------------------------------------
+
+def strike_bars(sym, calls, puts, spot, call_wall, put_wall, flip,
+                width=320, height=170, pad=10, foot=16):
+    """Two SVGs -- split (call up / put down) and net -- plus a toggle."""
+    net = calls.add(puts, fill_value=0.0)
+    strikes = sorted(set(calls.index) | set(puts.index))
+    if len(strikes) < 2:
+        return ""
+
+    x0, x1 = pad, width - pad
+    lo_k, hi_k = strikes[0], strikes[-1]
+    span = (hi_k - lo_k) or 1.0
+    step = span / max(len(strikes) - 1, 1)
+    bw = max((x1 - x0) / len(strikes) * 0.78, 1.2)
+
+    def sx(k):
+        return x0 + (k - lo_k) / span * (x1 - x0)
+
+    def panel(series_list, mode):
+        """series_list: [(Series, css class, walls-to-flag)] as signed bars."""
+        vals = [v for s, _c, _f in series_list for v in s.values]
+        hi = max(max(vals, default=0.0), 0.0)
+        lo = min(min(vals, default=0.0), 0.0)
+        rng = (hi - lo) or 1.0
+        top, bot = pad, height - pad - foot
+
+        def sy(v):
+            return bot - (v - lo) / rng * (bot - top)
+
+        zero = sy(0.0)
+        out = [f'<line x1="{x0}" y1="{zero:.1f}" x2="{x1}" y2="{zero:.1f}" '
+               f'class="gb-zero"/>']
+
+        for series, cls, flag in series_list:
+            for k, v in series.items():
+                if v == 0:
+                    continue
+                y = sy(v)
+                h = abs(y - zero)
+                if h < 0.6:
+                    continue
+                # Only outline a wall on the series it belongs to: in split
+                # view the put bar at the call wall is not itself a wall.
+                wall = k in flag
+                c = f"{cls} gb-wall" if wall else cls
+                out.append(f'<rect x="{sx(k) - bw / 2:.1f}" y="{min(y, zero):.1f}" '
+                           f'width="{bw:.1f}" height="{h:.1f}" class="{c}"/>')
+
+        out.append(f'<line x1="{sx(spot):.1f}" y1="{top}" x2="{sx(spot):.1f}" '
+                   f'y2="{bot}" class="gb-spot"/>')
+        if flip is not None and lo_k <= flip <= hi_k:
+            out.append(f'<line x1="{sx(flip):.1f}" y1="{top}" '
+                       f'x2="{sx(flip):.1f}" y2="{bot}" class="gb-flip"/>')
+
+        # Wall labels, clamped inside the viewBox so they never clip.
+        for k, label, cls in ((call_wall, "call wall", "gb-lab-c"),
+                              (put_wall, "put wall", "gb-lab-p")):
+            if k is None or not (lo_k <= k <= hi_k):
+                continue
+            tx = min(max(sx(k), x0 + 26), x1 - 26)
+            ty = top + 9 if cls == "gb-lab-c" else bot - 3
+            out.append(f'<text x="{tx:.1f}" y="{ty:.1f}" class="gb-lab {cls}">'
+                       f'{label} {k:,.0f}</text>')
+
+        # Axis: first, spot, last.
+        for k in (lo_k, hi_k):
+            anchor = "start" if k == lo_k else "end"
+            out.append(f'<text x="{sx(k):.1f}" y="{height - 4}" '
+                       f'class="gb-ax" text-anchor="{anchor}">{k:,.0f}</text>')
+        out.append(f'<text x="{sx(spot):.1f}" y="{height - 4}" '
+                   f'class="gb-ax gb-ax-spot" text-anchor="middle">'
+                   f'{spot:,.0f}</text>')
+
+        return (f'<svg class="gbars" data-mode="{mode}" viewBox="0 0 {width} {height}" '
+                f'role="img" aria-label="{sym} gamma by strike, {mode} view">'
+                + "".join(out) + "</svg>")
+
+    split = panel([(calls, "gb-call", {call_wall}),
+                   (puts, "gb-put", {put_wall})], "split")
+    netsv = panel([(net, "gb-net", {call_wall, put_wall})], "net")
+    return (f'<div class="gbwrap" data-show="split">'
+            f'<div class="gbhead"><span class="gbtitle">Gamma by strike</span>'
+            f'<button class="gbtog" type="button" '
+            f'onclick="gbToggle(this)">net</button></div>'
+            f'{split}{netsv}</div>')
 
 
 # --------------------------------------------------------------------------
@@ -166,6 +281,30 @@ h1{font-size:20px;margin:0 0 4px;letter-spacing:-0.01em}
 .spark-dot{fill:var(--line)}
 .spark-zero{stroke:var(--border);stroke-width:1;stroke-dasharray:3 3}
 .spark-empty{color:var(--ink-3);font-size:12px;padding:12px 0}
+.gbwrap{margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+.gbhead{display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:2px}
+.gbtitle{font-size:12px;color:var(--ink-3);letter-spacing:.02em}
+.gbtog{font:inherit;font-size:11px;padding:3px 9px;border-radius:999px;
+  border:1px solid var(--border);background:var(--surface);color:var(--ink-2);
+  cursor:pointer;min-height:26px}
+.gbtog:active{background:var(--border)}
+.gbars{width:100%;height:auto;display:block}
+.gbwrap[data-show="split"] .gbars[data-mode="net"]{display:none}
+.gbwrap[data-show="net"] .gbars[data-mode="split"]{display:none}
+.gb-call{fill:var(--pos);opacity:.80}
+.gb-put{fill:var(--neg);opacity:.80}
+.gb-net{fill:var(--line);opacity:.70}
+.gb-wall{opacity:1;stroke:var(--ink);stroke-width:.9}
+.gb-zero{stroke:var(--border);stroke-width:1}
+.gb-spot{stroke:var(--ink);stroke-width:1.2;stroke-dasharray:3 3}
+.gb-flip{stroke:var(--flip);stroke-width:1.4}
+.gb-lab{font-size:8.5px;font-weight:600;text-anchor:middle}
+.gb-lab-c{fill:var(--pos)}
+.gb-lab-p{fill:var(--neg)}
+.gb-ax{font-size:8px;fill:var(--ink-3)}
+.gb-ax-spot{fill:var(--ink-2);font-weight:600}
+
 .coil{margin-top:9px;font-size:12.5px;line-height:1.45;color:var(--flip);
   display:flex;gap:6px;align-items:flex-start}
 .coil svg{flex:0 0 auto;margin-top:2px}
@@ -197,7 +336,7 @@ def fmt(v, nd=2):
     return f"{f:,.{nd}f}"
 
 
-def card(row, hist, has_chart):
+def card(row, hist, has_chart, bars=""):
     sym = row["symbol"]
     spot = float(row["spot"])
     pos = str(row["regime"]) == "positive"
@@ -233,6 +372,8 @@ def card(row, hist, has_chart):
             "</svg><span>Spot is within 0.5% of the flip &mdash; regime "
             "boundary, expect chop.</span></div>") if near else ""
 
+    bars_html = bars or ""
+
     chart = ""
     if has_chart:
         chart = (f"<details><summary>Chart</summary><div class='chartbox'>"
@@ -257,6 +398,7 @@ def card(row, hist, has_chart):
       <div class="v">{fmt(row.get('put_wall'))}</div></div>
   </div>
   {coil}
+  {bars_html}
   <div class="sparkwrap">
     <div class="k">Flip distance from spot &middot; last {len(h)} obs</div>
     {spark}
@@ -287,16 +429,23 @@ def build(histdir, docsdir, charts=True):
         for sym in order:
             sub = metrics[metrics["symbol"] == sym]
             row = sub.iloc[-1]
-            ok = False
-            if charts:
-                raw = latest_raw(histdir, sym)
-                if raw is not None:
+            ok, bars = False, ""
+            raw = latest_raw(histdir, sym)
+            if raw is not None:
+                try:
+                    v = strike_view(raw, row)
+                    if v is not None:
+                        bars = strike_bars(sym, v["calls"], v["puts"], v["spot"],
+                                           v["call_wall"], v["put_wall"], v["flip"])
+                except Exception as e:
+                    print(f"{sym}: bars failed -- {e}")
+                if charts:
                     try:
                         ok = render_chart(raw, row,
                                           os.path.join(docsdir, "charts", f"{sym}.png"))
                     except Exception as e:
                         print(f"{sym}: chart failed -- {e}")
-            body += card(row, metrics, ok)
+            body += card(row, metrics, ok, bars)
 
     page = f"""<!doctype html>
 <html lang="en"><head>
@@ -306,6 +455,14 @@ def build(histdir, docsdir, charts=True):
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>GEX Monitor</title>
 <style>{CSS}</style>
+<script>
+function gbToggle(btn){{
+  var w = btn.closest('.gbwrap');
+  var toNet = w.getAttribute('data-show') === 'split';
+  w.setAttribute('data-show', toNet ? 'net' : 'split');
+  btn.textContent = toNet ? 'split' : 'net';
+}}
+</script>
 </head><body>
 <div class="wrap">
   <header>
