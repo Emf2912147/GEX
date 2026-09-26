@@ -209,7 +209,7 @@ def main():
     p.add_argument("--max-dte", type=float, default=30,
                    help="DTE filter for the DERIVED metrics only. Raw chains "
                         "are always stored in full. (default 30)")
-    p.add_argument("--wall-exclude", type=float, default=0.01)
+    p.add_argument("--wall-exclude", type=float, default=0.004)
     p.add_argument("--grid-window", type=float, default=0.15)
     p.add_argument("--plot-window", type=float, default=0.10)
     p.add_argument("--force", action="store_true",

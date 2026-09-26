@@ -62,7 +62,7 @@ def latest_raw(histdir, symbol):
 
 
 def strike_view(raw, row, max_dte=30, plot_window=0.10, grid_window=0.15,
-                wall_exclude=0.01, bin_size=None):
+                wall_exclude=0.004, bin_size=None):
     """Everything both the PNG and the inline bars need, computed once."""
     df = raw.copy()
     df["dte"] = pd.to_numeric(df["dte"], errors="coerce")
@@ -90,7 +90,7 @@ def strike_view(raw, row, max_dte=30, plot_window=0.10, grid_window=0.15,
 
 
 def render_chart(raw, row, outpath, max_dte=30, plot_window=0.10,
-                 grid_window=0.15, wall_exclude=0.01, bin_size=None):
+                 grid_window=0.15, wall_exclude=0.004, bin_size=None):
     v = strike_view(raw, row, max_dte, plot_window, grid_window, wall_exclude,
                     bin_size)
     if v is None:

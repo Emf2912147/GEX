@@ -1238,7 +1238,7 @@ def main():
     p.add_argument("--max-dte", type=float, default=30,
                    help="DTE filter for the derived state vector, matching "
                         "gex_capture.py's default so the two series are comparable")
-    p.add_argument("--wall-exclude", type=float, default=0.01)
+    p.add_argument("--wall-exclude", type=float, default=0.004)
     p.add_argument("--grid-window", type=float, default=0.15)
     p.add_argument("--plot-window", type=float, default=0.10)
     p.add_argument("--integrity-retries", type=int, default=1,

@@ -215,7 +215,7 @@ def gex_by_strike(df, spot, use_volume=False, bin_size=None):
     return per_strike, calls, puts
 
 
-def find_walls(calls, puts, spot, exclude=0.01):
+def find_walls(calls, puts, spot, exclude=0.004):
     """
     Call/put walls from NET per-strike gamma, constrained by side of spot.
 
@@ -234,9 +234,20 @@ def find_walls(calls, puts, spot, exclude=0.01):
     call wall above spot and the put wall below it, makes call_wall ==
     put_wall structurally impossible.
 
-    Strikes within `exclude` of spot are ignored: gamma peaks at the money, so
-    without the band both walls collapse onto the ATM strike, which is gamma
-    density rather than structure.
+    Strikes within `exclude` of spot are ignored, but the band is deliberately
+    THIN. Under the old side-isolated ranking it had to be wide, because call
+    gamma is strictly positive and peaks at the money, so the band was the only
+    thing stopping both walls collapsing onto the ATM strike. Ranking on NET
+    gamma removes most of that: calls and puts largely cancel at the money, so
+    the ATM peak is mostly not there to exclude.
+
+    What remains is a tail. Measured over 1,139 stored snapshots, with no band
+    at all 8-15% of walls still land within 0.3% of spot; a 0.003 band removes
+    100% of those on every symbol. Widening further does not clip anything more
+    -- it just pushes walls outward. At 0.01 the QQQ call wall moves from a
+    0.64% median to 1.49% and the IWM put wall from 0.71% to 1.58%, both more
+    than doubled by the parameter rather than by the book. 0.004 leaves a
+    little margin over 0.003 without entering that range.
 
     Returns (call_wall, put_wall, fell_back). fell_back is True when a side had
     no strike of the expected sign and the largest magnitude was used instead --
@@ -394,7 +405,7 @@ def main():
                    help="bucket strikes to the nearest N points in the bar chart "
                         "(e.g. 25 or 50 for SPX). Makes walls legible; does not "
                         "change totals or the flip.")
-    p.add_argument("--wall-exclude", type=float, default=0.01,
+    p.add_argument("--wall-exclude", type=float, default=0.004,
                    help="ignore strikes within +/- this fraction of spot when "
                         "picking the call/put walls (default 0.01). Gamma peaks "
                         "at the money, so without this the 'wall' is just the "
