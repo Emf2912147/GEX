@@ -359,7 +359,10 @@ def card(row, hist, has_chart, bars=""):
 
     rows = ""
     for _, r in h.tail(7)[::-1].iterrows():
-        rows += (f"<tr><td>{html.escape(str(r['feed_date']))}</td>"
+        # session_date, not feed_date: feed_date is the day the file was
+        # FETCHED, which is one day ahead of the session it describes.
+        _sess = r.get("session_date") or r.get("feed_date")
+        rows += (f"<tr><td>{html.escape(str(_sess))}</td>"
                  f"<td>{fmt(r['spot'])}</td><td>{fmt(r['flip'])}</td>"
                  f"<td>{fmt(float(r['net_gex_full'])/1e9)}</td>"
                  f"<td>{html.escape(str(r['regime']))}</td></tr>")
@@ -404,7 +407,7 @@ def card(row, hist, has_chart, bars=""):
     {spark}
   </div>
   <details><summary>Recent history</summary>
-    <table><thead><tr><th>Feed date</th><th>Spot</th><th>Flip</th>
+    <table><thead><tr><th>Session</th><th>Spot</th><th>Flip</th>
       <th>Net GEX $Bn</th><th>Regime</th></tr></thead>
       <tbody>{rows}</tbody></table>
   </details>
@@ -471,13 +474,13 @@ function gbToggle(btn){{
   </header>
   {body}
   <footer>
-    <b>Feed date is not the session date.</b> A morning file dated the 5th
-    carries the 4th session's settled open interest.<br>
+    <b>Dates are session dates.</b> A file fetched on the 5th carries the
+    4th session's settled open interest, and is shown as the 4th.<br>
     <b>Open interest settles overnight</b>, so this is prior-close
     positioning, not live. The Cboe feed is ~15 minutes delayed.<br>
     <b>Dealers assumed long calls, short puts</b> &mdash; the standard public
     convention, not a measurement of real positioning.<br>
-    <b>Walls ignore strikes within 1% of spot.</b> Gamma peaks at the money,
+    <b>Walls ignore strikes within 0.4% of spot.</b> Gamma peaks at the money,
     so without that exclusion the "wall" is just the ATM strike.<br>
     <b>Chart panels use different gamma sources</b> &mdash; bars from Cboe's
     reported gamma, the profile from Black-Scholes with IV held fixed. The
