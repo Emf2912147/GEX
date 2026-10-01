@@ -6248,3 +6248,20 @@ egress, this endpoint has to be reachable for the script to work.
 2026-10-01T13:17:49+00:00  RV IWM (via RUT): HV20 11.48%  down/up 1.04x  through 2026-09-30  (1,466 closes)
 2026-10-01T13:17:49+00:00  appended 3 realized-vol row(s) -> realized_vol.csv
 2026-10-01T13:17:49+00:00  --- intraday done  ok=4  skipped=0  failed=0  vix=written  rv=3
+2026-10-01T13:46:10+00:00  --- intraday capture  symbols=SPX SPY QQQ IWM
+2026-10-01T13:46:11+00:00  SPX: SPX: chain carries no usable Greeks (gamma fill 0.0%, IV fill 0.0% over 10,800 contracts) -- refusing to write
+2026-10-01T13:46:11+00:00  SPX: waiting 30.0s and refetching (attempt 1 of 1) -- Greeks are usually late, not missing
+2026-10-01T13:46:42+00:00  REFUSED -- SPX: chain carries no usable Greeks (gamma fill 0.0%, IV fill 0.0% over 10,800 contracts) -- refusing to write
+2026-10-01T13:46:42+00:00  SPY: SPY: chain carries no usable Greeks (gamma fill 0.0%, IV fill 0.0% over 4,466 contracts) -- refusing to write
+2026-10-01T13:46:42+00:00  SPY: waiting 30.0s and refetching (attempt 1 of 1) -- Greeks are usually late, not missing
+2026-10-01T13:47:13+00:00  REFUSED -- SPY: chain carries no usable Greeks (gamma fill 0.0%, IV fill 0.0% over 4,466 contracts) -- refusing to write
+2026-10-01T13:47:13+00:00  QQQ: QQQ: chain carries no usable Greeks (gamma fill 0.0%, IV fill 0.0% over 4,648 contracts) -- refusing to write
+2026-10-01T13:47:13+00:00  QQQ: waiting 30.0s and refetching (attempt 1 of 1) -- Greeks are usually late, not missing
+2026-10-01T13:47:43+00:00  REFUSED -- QQQ: chain carries no usable Greeks (gamma fill 0.0%, IV fill 0.0% over 4,648 contracts) -- refusing to write
+2026-10-01T13:47:44+00:00  IWM: IWM: chain carries no usable Greeks (gamma fill 0.0%, IV fill 0.0% over 2,652 contracts) -- refusing to write
+2026-10-01T13:47:44+00:00  IWM: waiting 30.0s and refetching (attempt 1 of 1) -- Greeks are usually late, not missing
+2026-10-01T13:48:14+00:00  REFUSED -- IWM: chain carries no usable Greeks (gamma fill 0.0%, IV fill 0.0% over 2,652 contracts) -- refusing to write
+2026-10-01T13:48:15+00:00  VIX: 16.70 (+2.2% 1d, +16.6% 20d)  VIX9D: 14.74  term contango(short-cheap) -> vix_state.csv
+2026-10-01T13:48:15+00:00  RV QQQ: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
+2026-10-01T13:48:15+00:00  ALL 4 symbols refused -- this is not the usual post-open rollover, the feed is unusable this cycle
+2026-10-01T13:48:15+00:00  --- intraday done  ok=0  skipped=0  failed=0  REFUSED=4  (ALL SYMBOLS)  vix=written
