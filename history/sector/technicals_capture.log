@@ -47,3 +47,10 @@
 2026-09-30T01:05:25.906465+00:00Z  XASZ6: Stooq fetch failed -- 404 Client Error: Not Found for url: https://stooq.com/q/d/l/?s=xasz6.us&i=d
 2026-09-30T01:05:25.906936+00:00Z  XASZ6: no usable data from either source -- skipped entirely
 2026-09-30T01:05:25.907162+00:00Z  === technicals capture done: 0/1 names captured ===
+2026-10-01T01:06:25.616655+00:00Z  universe: 1 names from fundamentals capture_ts=2026-09-30T01:24:03.115889+00:00
+2026-10-01T01:06:25.616776+00:00Z  === technicals capture start (1 names) ===
+2026-10-01T01:06:26.669123+00:00Z  XLC: Stooq fetch failed -- 404 Client Error: Not Found for url: https://stooq.com/q/d/l/?s=xlc.us&i=d
+2026-10-01T01:06:27.334321+00:00Z  XASZ6: Cboe fetch failed -- 403 Client Error: Forbidden for url: https://cdn-api.cboe.com/api/global/delayed_quotes/options/XASZ6.json
+2026-10-01T01:06:28.316020+00:00Z  XASZ6: Stooq fetch failed -- 404 Client Error: Not Found for url: https://stooq.com/q/d/l/?s=xasz6.us&i=d
+2026-10-01T01:06:28.316903+00:00Z  XASZ6: no usable data from either source -- skipped entirely
+2026-10-01T01:06:28.317088+00:00Z  === technicals capture done: 0/1 names captured ===
