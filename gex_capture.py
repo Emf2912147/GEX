@@ -45,12 +45,13 @@ import gamma_exposure as gx
 
 # Bumped whenever the derived-metric definitions change, so historical rows
 # stay interpretable. Raw chains are unaffected by this.
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 
 DEFAULT_SYMBOLS = ["SPX", "SPY", "QQQ", "IWM"]
 
 METRIC_COLUMNS = [
     "feed_ts", "feed_date", "session_date", "capture_ts", "symbol", "spot",
+    "feed_spot", "spot_source",
     "contracts_total", "contracts_dte", "contracts_window",
     "net_gex_full", "net_gex_window", "flip", "flip_pct_vs_spot",
     "call_wall", "put_wall", "wall_fallback", "regime",
@@ -104,6 +105,45 @@ def session_already_captured(metrics_path, symbol, session_date):
     return len(hit) > 0
 
 
+def session_close(outdir, symbol, session_date):
+    """The symbol's last traded spot during `session_date`, from intraday_state.
+
+    WHY THIS EXISTS
+        The daily file carries the prior session's SETTLED open interest, but
+        Cboe's `spot` field is whatever the quote feed says at the moment the
+        file is served -- which for a 11:30 UTC run is a PRE-MARKET quote from
+        the following morning. Session 2026-09-24, captured 2026-09-25 11:39Z:
+
+            SPX  7704.1299  vs true close 7704.1299   0.00%
+            SPY    770.66   vs true close   765.94   +0.62%
+            QQQ    746.74   vs true close   739.28   +1.01%
+            IWM    283.12   vs true close   281.08   +0.73%
+
+        SPX matches to the cent because index settlement is fixed overnight.
+        The ETFs do not, so every spot-dependent metric -- flip, both walls,
+        net GEX (which scales with spot squared) -- was anchored up to 1% away
+        from the book it was measuring. The error scales with the overnight
+        gap, so it is largest exactly when the reading matters most.
+
+        The intraday capture already records the real close. Use it.
+    """
+    path = os.path.join(outdir, "intraday_state.csv")
+    if not os.path.exists(path):
+        return None
+    try:
+        st = pd.read_csv(path, usecols=["capture_ts", "symbol", "spot"])
+    except Exception:
+        return None
+    st = st[st["symbol"] == symbol]
+    if st.empty:
+        return None
+    day = pd.to_datetime(st["capture_ts"], utc=True).dt.date.astype(str)
+    st = st[day == str(session_date)]
+    if st.empty:
+        return None
+    return float(st.sort_values("capture_ts")["spot"].iloc[-1])
+
+
 def capture_symbol(symbol, args, logpath):
     """Fetch, store raw, compute metrics. Returns a metrics dict or None."""
     payload = gx.fetch_chain(symbol)
@@ -132,6 +172,21 @@ def capture_symbol(symbol, args, logpath):
     # because the calendar gate in main() only lets this run when that day
     # was a session. Everything downstream should key on session_date.
     session_date = str(session_date)
+
+    # Anchor on the session's real close where we have it -- see session_close().
+    feed_spot = spot
+    close = session_close(args.outdir, symbol, session_date)
+    if close is not None and close > 0:
+        spot_source = "session_close"
+        if abs(close / feed_spot - 1) > 0.0005:
+            log(logpath, f"{symbol}: spot {feed_spot:.4f} from the feed is "
+                         f"{(feed_spot / close - 1) * 100:+.2f}% off the "
+                         f"{session_date} close {close:.4f} -- using the close")
+        spot = close
+    else:
+        spot_source = "feed"
+        log(logpath, f"{symbol}: no intraday close for {session_date}, "
+                     f"anchoring on the feed spot {feed_spot:.4f}")
 
     raw = df.copy()
     raw.insert(0, "symbol", symbol)
@@ -173,6 +228,8 @@ def capture_symbol(symbol, args, logpath):
         "capture_ts": capture_ts,
         "symbol": symbol,
         "spot": round(spot, 4),
+        "feed_spot": round(feed_spot, 4),
+        "spot_source": spot_source,
         "contracts_total": len(df),
         "contracts_dte": len(chain),
         "contracts_window": len(windowed),

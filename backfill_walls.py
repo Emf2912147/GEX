@@ -26,6 +26,7 @@ a wall by more than one strike increment.
 """
 
 import argparse
+import inspect
 import glob
 import os
 import shutil
@@ -80,7 +81,12 @@ def main():
     p.add_argument("--dry-run", action="store_true")
     p.add_argument("--max-dte", type=float, default=30)
     p.add_argument("--plot-window", type=float, default=0.10)
-    p.add_argument("--wall-exclude", type=float, default=0.01)
+    # Must track find_walls' own default. It was 0.01 when this script was
+    # written and is now 0.004; a hardcoded value here silently restates
+    # history under a band the live code no longer uses.
+    p.add_argument("--wall-exclude", type=float,
+                   default=inspect.signature(gx.find_walls)
+                           .parameters["exclude"].default)
     a = p.parse_args()
 
     path = os.path.join(HIST, "intraday_state.csv")
