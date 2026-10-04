@@ -308,3 +308,4 @@
 2026-10-03T14:47:03+00:00  IWM: spot 281.52  netGEX -2.29Bn  flip 289.7848  walls 285.0/275.0  negative
 2026-10-03T14:47:03+00:00  appended 4 metric row(s)
 2026-10-03T14:47:03+00:00  === capture done  ok=4  failed=0
+2026-10-04T18:02:59+00:00  === capture skipped  2026-10-04 Sun: 2026-10-03 was not a trading session
