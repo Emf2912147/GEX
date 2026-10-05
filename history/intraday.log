@@ -6970,3 +6970,23 @@ egress, this endpoint has to be reachable for the script to work.
 2026-10-05T13:18:36+00:00  RV IWM (via RUT): HV20 11.07%  down/up 1.07x  through 2026-10-02  (1,468 closes)
 2026-10-05T13:18:36+00:00  appended 3 realized-vol row(s) -> realized_vol.csv
 2026-10-05T13:18:36+00:00  --- intraday done  ok=4  skipped=0  failed=0  vix=written  rv=3
+2026-10-05T13:48:02+00:00  --- intraday capture  symbols=SPX SPY QQQ IWM
+2026-10-05T13:48:04+00:00  SPX: greek fill gamma 70.3% / iv 84.1%
+2026-10-05T13:48:04+00:00  SPX: 9,866 contracts -> SPX__134609.parquet
+2026-10-05T13:48:04+00:00  SPX: spot 7,732.57  netGEX(win) 22.84Bn  flip 7714.2572  walls 7800.0/7700.0  positive  RR25 -0.0361 (STEEP)  P/C 0.9692
+2026-10-05T13:48:04+00:00  SPY: SPY: chain carries no usable Greeks (gamma fill 0.0%, IV fill 0.0% over 4,348 contracts) -- refusing to write
+2026-10-05T13:48:04+00:00  SPY: waiting 30.0s and refetching (attempt 1 of 1) -- Greeks are usually late, not missing
+2026-10-05T13:48:35+00:00  SPY: RECOVERED on attempt 1 -- gamma 77.9% / iv 84.1%, feed_ts 2026-10-05 13:46:26
+2026-10-05T13:48:35+00:00  SPY: greek fill gamma 77.9% / iv 84.1%
+2026-10-05T13:48:35+00:00  SPY: 3,848 contracts -> SPY__134626.parquet
+2026-10-05T13:48:35+00:00  SPY: spot 770.51  netGEX(win) 1.17Bn  flip 770.2837  walls 785.0/767.0  positive  RR25 -0.0381 (STEEP)  P/C 0.8519
+2026-10-05T13:48:35+00:00  QQQ: greek fill gamma 80.6% / iv 83.5%
+2026-10-05T13:48:35+00:00  QQQ: 3,722 contracts -> QQQ__134624.parquet
+2026-10-05T13:48:35+00:00  QQQ: spot 750.24  netGEX(win) 2.30Bn  flip 747.4095  walls 760.0/725.0  positive  RR25 -0.0454 (STEEP)  P/C 0.8895
+2026-10-05T13:48:36+00:00  IWM: greek fill gamma 80.0% / iv 78.2%
+2026-10-05T13:48:36+00:00  IWM: 2,136 contracts -> IWM__134619.parquet
+2026-10-05T13:48:36+00:00  IWM: spot 281.58  netGEX(win) -2.41Bn  flip 289.1374  walls 285.0/275.0  negative  RR25 -0.0379 (STEEP)  P/C 0.9095
+2026-10-05T13:48:36+00:00  appended 4 state row(s)
+2026-10-05T13:48:36+00:00  VIX: 15.90 (+3.9% 1d, +3.9% 20d)  VIX9D: 13.69  term contango(short-cheap) -> vix_state.csv
+2026-10-05T13:48:36+00:00  RV QQQ: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
+2026-10-05T13:48:36+00:00  --- intraday done  ok=4  skipped=0  failed=0  vix=written
