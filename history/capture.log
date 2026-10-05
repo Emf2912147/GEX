@@ -309,3 +309,4 @@
 2026-10-03T14:47:03+00:00  appended 4 metric row(s)
 2026-10-03T14:47:03+00:00  === capture done  ok=4  failed=0
 2026-10-04T18:02:59+00:00  === capture skipped  2026-10-04 Sun: 2026-10-03 was not a trading session
+2026-10-05T11:43:57+00:00  === capture skipped  2026-10-05 Mon: 2026-10-04 was not a trading session
