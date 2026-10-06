@@ -36,6 +36,7 @@ UNIVERSE
 """
 import argparse
 import io
+import re
 import os
 import sys
 import time
@@ -77,10 +78,30 @@ def load_universe(fund_csv, logpath):
     df = pd.read_csv(fund_csv)
     if df.empty:
         return []
-    latest_ts = df["capture_ts"].max()
-    latest = df[df["capture_ts"] == latest_ts]
-    pairs = list(latest[["ticker", "sector_etf"]].drop_duplicates().itertuples(index=False, name=None))
-    log(logpath, f"universe: {len(pairs)} names from fundamentals capture_ts={latest_ts}")
+    # Select by capture DAY, not by an exact capture_ts. Rows written before
+    # the run-timestamp fix carry a distinct timestamp each, so an equality
+    # match on max() returns a single row -- which is exactly what happened
+    # on every run from 2026-09-12 onward. Going by day is correct for both
+    # the old per-row stamps and the new single run stamp, so this works
+    # against the existing file without needing a migration.
+    day = pd.to_datetime(df["capture_ts"], format="mixed", utc=True).dt.date
+    latest_day = day.max()
+    latest = df[day == latest_day]
+    pairs = list(latest[["ticker", "sector_etf"]].drop_duplicates()
+                 .itertuples(index=False, name=None))
+    # Rows captured before the holdings filter existed still carry index-option
+    # roots and placeholders. Filter on the read side too, so the existing file
+    # works without a migration.
+    keep = [p for p in pairs
+            if re.fullmatch(r"[A-Z]{1,5}([.\-][A-Z]{1,2})?", str(p[0]))]
+    if len(keep) < len(pairs):
+        dropped = [p[0] for p in pairs if p not in keep]
+        log(logpath, f"dropped {len(dropped)} non-equity names -- {dropped[:6]}")
+    pairs = keep
+    log(logpath, f"universe: {len(pairs)} names from fundamentals {latest_day}")
+    if len(pairs) < 50:
+        log(logpath, f"WARNING universe is only {len(pairs)} names -- expected "
+                     f"~500. Check sector_fundamentals.csv.")
     return pairs
 
 
@@ -148,6 +169,59 @@ def parse_stooq_csv(text):
     return df["Close"].astype(float).tolist()
 
 
+def yahoo_symbol(t):
+    """Yahoo writes share classes with a dash: BRK.B -> BRK-B, BF.B -> BF-B."""
+    return str(t).replace(".", "-")
+
+
+def fetch_history_yf(symbols, logpath, chunk=100, period="1y"):
+    """Daily closes for many symbols at once. Returns {symbol: [closes]}.
+
+    REPLACES STOOQ. On 2026-10-06 Stooq returned 404 for every symbol in the
+    universe -- xom.us, jpm.us, xle.us, all of them, which are valid paths --
+    and then began refusing connections outright. That is blocking or rate
+    limiting, not a symbol problem. Stooq was always the single point of
+    failure here and the module docstring flagged it as provisional; it never
+    ran clean for even one capture.
+
+    yfinance is already a dependency of this workflow and is already proven
+    against the runner's IP: sector_fundamentals.py has pulled Yahoo financials
+    successfully on every capture since 2026-09-12.
+
+    Batched, not per-symbol. The old path slept 2s between 504 sequential
+    requests -- 17 minutes of wall clock before any failure was even visible.
+    """
+    import yfinance as yf
+
+    out = {}
+    syms = list(dict.fromkeys(symbols))
+    for i in range(0, len(syms), chunk):
+        batch = syms[i:i + chunk]
+        mapped = {yahoo_symbol(s): s for s in batch}
+        try:
+            df = yf.download(list(mapped), period=period, interval="1d",
+                             auto_adjust=False, progress=False,
+                             group_by="ticker", threads=True)
+        except Exception as e:
+            log(logpath, f"yfinance batch {i // chunk + 1} failed -- {e}")
+            continue
+        for ysym, orig in mapped.items():
+            try:
+                col = df[ysym]["Close"] if len(mapped) > 1 else df["Close"]
+                closes = [float(x) for x in col.dropna().tolist()]
+            except Exception:
+                closes = []
+            if len(closes) >= 61:
+                out[orig] = closes
+        log(logpath, f"yfinance batch {i // chunk + 1}: "
+                     f"{sum(1 for s in batch if s in out)}/{len(batch)} with history")
+
+    missing = [s for s in syms if s not in out]
+    if missing:
+        log(logpath, f"no usable history for {len(missing)} names -- {missing[:8]}")
+    return out
+
+
 def fetch_stooq_history(symbol, logpath):
     time.sleep(STOOQ_MIN_INTERVAL_S)
     try:
@@ -170,9 +244,10 @@ def momentum(closes, n):
     return closes[-1] / closes[-(n + 1)] - 1
 
 
-def capture_one(ticker, sector_etf, sector_mom, logpath):
+def capture_one(ticker, sector_etf, sector_mom, logpath, closes=None):
     spot, atm_oi, atm_spread_pct, n_contracts = fetch_cboe_tradability(ticker, logpath)
-    closes = fetch_stooq_history(ticker, logpath)
+    if closes is None:
+        closes = fetch_stooq_history(ticker, logpath)
     mom20 = momentum(closes, 20)
     mom60 = momentum(closes, 60)
     smom20, smom60 = sector_mom
@@ -205,6 +280,9 @@ def append_rows(out_path, rows):
 def main():
     p = argparse.ArgumentParser(description="Sector agent -- technicals capture (Cboe + Stooq).")
     p.add_argument("--outdir", default="history/sector")
+    p.add_argument("--source", choices=["yfinance", "stooq"], default="yfinance",
+                   help="price history source; stooq is the old path, kept "
+                        "only as a manual fallback (it was 404ing as of 2026-10-06)")
     p.add_argument("--dry-run", action="store_true")
     args = p.parse_args()
 
@@ -220,13 +298,28 @@ def main():
 
     log(logpath, f"=== technicals capture start ({len(pairs)} names) ===")
 
+    etfs = sorted({e for _, e in pairs})
+    if args.source == "yfinance":
+        hist = fetch_history_yf([t for t, _ in pairs] + etfs, logpath)
+    else:
+        hist = {}
+
     sector_moms = {}
+    for e in etfs:
+        ec = hist.get(e) if hist else fetch_stooq_history(e, logpath)
+        sector_moms[e] = (momentum(ec, 20), momentum(ec, 60))
+        if ec is None:
+            log(logpath, f"{e}: no sector history -- relative momentum will be null")
+
     rows = []
     for ticker, sector_etf in pairs:
-        if sector_etf not in sector_moms:
-            etf_closes = fetch_stooq_history(sector_etf, logpath)
-            sector_moms[sector_etf] = (momentum(etf_closes, 20), momentum(etf_closes, 60))
-        row = capture_one(ticker, sector_etf, sector_moms[sector_etf], logpath)
+        # [] not None when yfinance is the source: None means "go fetch it
+        # yourself", which would send every name Yahoo missed straight back
+        # to the dead Stooq path. [] means "no history", and momentum()
+        # returns None for it, which is the honest answer.
+        row = capture_one(ticker, sector_etf, sector_moms[sector_etf], logpath,
+                          closes=hist.get(ticker, []) if args.source == "yfinance"
+                          else None)
         if row:
             rows.append(row)
 

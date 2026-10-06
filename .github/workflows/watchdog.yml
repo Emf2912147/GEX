@@ -1,0 +1,37 @@
+name: Pipeline watchdog
+
+# Fails loudly when capture stops. A failing scheduled workflow emails the
+# repo owner, which is the only channel that reaches you without going to
+# look -- and not going to look is exactly how 2026-09-23 cost a whole
+# session and 2026-10-05 cost the last 85 minutes of one.
+#
+# Deliberately separate from capture.yml and intraday.yml: it shares no
+# process, no step and no failure mode with what it watches.
+#
+# It cannot detect its own absence. The same scheduler that drops intraday
+# runs can drop this one. What it buys is that TWO independent schedules must
+# fail silently before an outage goes unnoticed, rather than one.
+
+on:
+  schedule:
+    # Hourly through the session and once after the close, Mon-Fri. Offset to
+    # :20 so it never lands on an intraday run and read a half-written file.
+    - cron: '20 14-21 * * 1-5'
+    # Daily-capture check, Tue-Sat, after the 11:30 UTC run has had time.
+    - cron: '0 13 * * 2-6'
+  workflow_dispatch:
+
+permissions:
+  contents: read      # read-only: a watchdog must never write to what it watches
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install pandas
+      - name: Check the pipeline is alive
+        run: python watchdog.py

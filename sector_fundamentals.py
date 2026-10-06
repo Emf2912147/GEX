@@ -59,6 +59,7 @@ WHAT IT COMPUTES
 """
 import argparse
 import os
+import re
 import sys
 import time
 from datetime import datetime, timezone
@@ -150,7 +151,18 @@ def fetch_sector_holdings(sym, logpath):
                       f"among {list(df.columns)}")
         return []
     tickers = df[ticker_col].dropna().astype(str).str.strip().str.upper().tolist()
-    tickers = [t for t in tickers if t and t.isascii() and t not in ("CASH", "CASH_USD", "NET CASH", "USD")]
+    tickers = [t for t in tickers if t and t.isascii()
+               and t not in ("CASH", "CASH_USD", "NET CASH", "USD")]
+    # SSGA holdings files carry index-option roots and internal placeholder
+    # rows alongside the real constituents -- XASZ6, IXPU6, XARU6, 2682320D
+    # and similar, 24 of 532 names. They are not equities, fail every price
+    # fetch, and one of them (XASZ6) is the junk row that happened to land
+    # last and become the entire technicals universe. A US equity ticker is
+    # 1-5 letters, optionally with a class suffix after a dot or dash.
+    bad = [t for t in tickers if not re.fullmatch(r"[A-Z]{1,5}([.\-][A-Z]{1,2})?", t)]
+    if bad:
+        log(logpath, f"{sym}: dropped {len(bad)} non-equity rows -- {bad[:6]}")
+    tickers = [t for t in tickers if t not in set(bad)]
     log(logpath, f"{sym}: {len(tickers)} constituents")
     return tickers
 
@@ -235,7 +247,13 @@ def build_row(ticker, sector_etf, info, financials, balance_sheet, cashflow, nex
     revenue_growth = (revenue / revenue_prior - 1) if revenue is not None and revenue_prior else info.get("revenueGrowth")
 
     return {
-        "capture_ts": datetime.now(timezone.utc).isoformat(),
+        # One timestamp for the WHOLE run, passed in -- not datetime.now()
+        # per row. Stamping each row separately gave all 517 rows distinct
+        # timestamps ~1.5s apart, so sector_technicals.load_universe(), which
+        # selected capture_ts == max(), matched exactly ONE row. That is why
+        # every technicals run since 2026-09-12 logged "universe: 1 names"
+        # and why candidates has never had anything to score.
+        "capture_ts": run_ts,
         "sector_etf": sector_etf, "ticker": ticker,
         "revenue": revenue, "revenue_prior": revenue_prior, "revenue_growth_yoy": revenue_growth,
         "gross_margin": gross_margin, "gross_margin_prior": gross_margin_prior,
@@ -248,7 +266,7 @@ def build_row(ticker, sector_etf, info, financials, balance_sheet, cashflow, nex
     }
 
 
-def capture_one(ticker, sector_etf, logpath):
+def capture_one(ticker, sector_etf, logpath, run_ts):
     if yf is None:
         log(logpath, f"{ticker}: yfinance not installed -- skipped")
         return None
@@ -287,6 +305,7 @@ def main():
 
     log(logpath, f"=== fundamentals capture start ({len(args.sectors)} sectors) ===")
 
+    run_ts = datetime.now(timezone.utc).isoformat()
     all_rows = []
     seen = set()
     for sym in args.sectors:
@@ -295,7 +314,7 @@ def main():
             if t in seen:
                 continue  # a name can sit in more than one sector fund -- capture it once
             seen.add(t)
-            row = capture_one(t, sym, logpath)
+            row = capture_one(t, sym, logpath, run_ts)
             if row:
                 all_rows.append(row)
 
