@@ -310,3 +310,17 @@
 2026-10-03T14:47:03+00:00  === capture done  ok=4  failed=0
 2026-10-04T18:02:59+00:00  === capture skipped  2026-10-04 Sun: 2026-10-03 was not a trading session
 2026-10-05T11:43:57+00:00  === capture skipped  2026-10-05 Mon: 2026-10-04 was not a trading session
+2026-10-06T11:41:22+00:00  === capture start  symbols=SPX SPY QQQ IWM
+2026-10-06T11:41:24+00:00  SPX: 29,478 contracts -> SPX.parquet
+2026-10-06T11:41:24+00:00  SPX: spot 7,777.04  netGEX 96.86Bn  flip 7735.0995  walls 7850.0/7700.0  positive
+2026-10-06T11:41:25+00:00  SPY: spot 777.9800 from the feed is +0.41% off the 2026-10-05 close 774.8000 -- using the close
+2026-10-06T11:41:25+00:00  SPY: 13,182 contracts -> SPY.parquet
+2026-10-06T11:41:25+00:00  SPY: spot 774.80  netGEX 3.72Bn  flip 773.4419  walls 785.0/767.0  positive
+2026-10-06T11:41:25+00:00  QQQ: spot 760.8400 from the feed is +0.75% off the 2026-10-05 close 755.1801 -- using the close
+2026-10-06T11:41:25+00:00  QQQ: 11,422 contracts -> QQQ.parquet
+2026-10-06T11:41:25+00:00  QQQ: spot 755.18  netGEX 1.45Bn  flip 754.2731  walls 760.0/749.0  positive
+2026-10-06T11:41:26+00:00  IWM: spot 284.1400 from the feed is +0.32% off the 2026-10-05 close 283.2300 -- using the close
+2026-10-06T11:41:26+00:00  IWM: 5,664 contracts -> IWM.parquet
+2026-10-06T11:41:26+00:00  IWM: spot 283.23  netGEX -2.03Bn  flip 288.3215  walls 285.0/275.0  negative
+2026-10-06T11:41:26+00:00  appended 4 metric row(s)
+2026-10-06T11:41:26+00:00  === capture done  ok=4  failed=0
