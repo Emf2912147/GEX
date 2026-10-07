@@ -1300,12 +1300,26 @@ def main():
     # 20:58, and those are legitimate end-of-session observations that must
     # not be dropped. 21:15 clears the latest observed good capture by 17
     # minutes while still catching the 22:57 case by nearly two hours.
+    # BOTH ends. The first version of this gate had only the upper bound,
+    # which let an overnight run straight through: a 00:21 UTC run on
+    # 2026-10-07 captured SPY at 779.09 -- Tuesday EVENING after-hours quotes
+    # -- because 00:21 is "before" 21:15 of the same calendar day. A deferred
+    # run is equally wrong whichever side of the session it lands on.
+    #
+    # Lower bound 13:00: the first cron is 13:07 and the open is 13:30, so the
+    # earliest legitimate capture is a pre-open one at ~13:07-13:18. Those are
+    # deliberate and present across every healthy session on file.
+    session_start = now.replace(hour=13, minute=0, second=0, microsecond=0)
     session_end = now.replace(hour=21, minute=15, second=0, microsecond=0)
-    if now > session_end and not args.ignore_calendar:
-        late = (now - session_end).total_seconds() / 60
-        log(logpath, f"--- intraday skipped  {now:%H:%M} UTC is {late:.0f} min "
-                     f"past the session window -- a deferred run, not a "
-                     f"session observation")
+    if not args.ignore_calendar and not (session_start <= now <= session_end):
+        if now < session_start:
+            off = (session_start - now).total_seconds() / 60
+            where = f"{off:.0f} min before the session window"
+        else:
+            off = (now - session_end).total_seconds() / 60
+            where = f"{off:.0f} min past the session window"
+        log(logpath, f"--- intraday skipped  {now:%H:%M} UTC is {where} -- "
+                     f"a deferred run, not a session observation")
         return 0
 
     log(logpath, f"--- intraday capture  symbols={' '.join(args.symbols)}"
