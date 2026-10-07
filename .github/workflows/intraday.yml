@@ -1,103 +1,113 @@
 name: GEX intraday capture
- 
+
 # Flow capture. Runs alongside the daily positioning capture in capture.yml,
-# which is unchanged and still owns settled open interest.
+# which still owns settled open interest.
 #
-# Cadence note: GitHub Actions schedules are best-effort. Under load, runs
-# drift by 5-20 minutes and are sometimes dropped entirely. Do NOT treat the
-# resulting series as evenly spaced 15-minute bars -- gex_intraday.py records
-# elapsed_s per snapshot for exactly this reason, and any flow measure built
-# on it must normalise by elapsed minutes.
- 
+# ONE JOB PER SESSION, NOT ONE PER CAPTURE.
+# This workflow used to be fired 32 times a session by cron, once per
+# capture. GitHub's scheduler is best-effort and stopped delivering: 21
+# cycles on 2026-10-02, then 13, then 2, then 1. Moving the cron off the
+# congested minutes (2026-10-06) changed nothing -- 2026-10-07 got 1 of 32.
+#
+# Now a single start holds a runner and session_runner.py takes every
+# remaining slot itself, on a fixed :07/:22/:37/:52 grid, committing after
+# each one. The scheduler is asked for a start, not for a cadence. See the
+# docstring in session_runner.py for the full reasoning.
+#
+# Cadence note: captures now land within seconds of the grid, so elapsed_s
+# is ~900 on every row a runner was up for. It is still recorded per row and
+# anything built on flow should still normalise by it -- a late start or a
+# missed slot leaves a longer gap, and intraday.log says which.
+
 on:
   schedule:
-    # Every 15 min, 13:30-20:15 UTC, Mon-Fri.
-    # = 09:30-16:15 ET during EDT, 08:30-15:15 ET during EST.
-    # Winter time will need this shifted to '7,22,37,52 14-21 * * 1-5'.
+    # STARTERS, not captures. Any one of these that fires begins the session
+    # or, if a session is already running, waits in the concurrency queue as
+    # a spare and takes over the moment the running job ends.
     #
-    # DELIBERATELY NOT '*/15'. That fires at :00/:15/:30/:45 -- the four
-    # busiest minutes on GitHub's scheduler, when every cron on the platform
-    # queues at once. Scheduled runs are best-effort and the congested minutes
-    # are dropped first. On 2026-10-06 only 3 of 28 runs fired at all: not
-    # cancelled, not failed, never scheduled. 2026-10-05 managed 13 of 28.
-    # Offsetting to odd minutes keeps the cadence while leaving the queue.
-    - cron: '7,22,37,52 13-20 * * 1-5'
+    # Hourly at :53, 12:53-21:53 UTC. That spans both clock regimes with no
+    # edit: session_runner.py works in Eastern time and exits in seconds when
+    # a start lands too early, too late or on a closed day.
+    #
+    # DO NOT RELY ON THESE ALONE. On 2026-10-07 GitHub created no scheduled
+    # run for this repo between 01:11 and 17:52 UTC. The start that matters
+    # is the one sent from OUTSIDE GitHub to the dispatch API:
+    #
+    #   POST https://api.github.com/repos/Emf2912147/GEX/actions/workflows/intraday.yml/dispatches
+    #   Authorization: Bearer <fine-grained token, Actions: read and write, this repo only>
+    #   Accept: application/vnd.github+json
+    #   body: {"ref":"main"}
+    #
+    # A dispatched run is created by an API call, not by the scheduler.
+    - cron: '53 12-21 * * 1-5'
   workflow_dispatch:
- 
+
 permissions:
   contents: write
- 
+  # session_runner.py dispatches its own successor before the six-hour job
+  # limit, and dispatches capture.yml if the daily capture is missing.
+  actions: write
+
 concurrency:
-  # Its OWN group. It previously shared 'gex-capture' with capture.yml and
-  # both sector workflows: GitHub allows one run in progress and one pending
-  # per group, and a third arrival cancels the pending one. At 28 runs a day
-  # that is a standing cancellation risk for no benefit -- the push race it
-  # was guarding against is already handled by the pull --rebase retry loop
-  # in the commit step below.
+  # One running, one waiting. This is what makes spare starts safe: a second
+  # start never captures alongside the first, it queues behind it. A third
+  # arrival replaces the one waiting, which then shows as "cancelled" in the
+  # Actions list -- that is a spare being swapped for a newer spare, not a
+  # lost capture.
   group: gex-intraday
   cancel-in-progress: false
- 
+
 jobs:
-  intraday:
+  session:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
- 
+    # The hard limit for a hosted job is 360. session_runner.py hands off at
+    # 330 at the latest; this is the backstop if it hangs.
+    timeout-minutes: 355
+
     steps:
       - uses: actions/checkout@v4
- 
+
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
- 
+
       - name: Cache pip
         uses: actions/cache@v4
         with:
           path: ~/.cache/pip
           key: pip-intraday-${{ runner.os }}-v1
- 
+
       - name: Install dependencies
         # matplotlib is required: gex_intraday.py imports gamma_exposure, which is
-        # the chart builder and pulls it in. Without it the job dies on import in
-        # ~17s. Keep this list in sync with capture.yml.
+        # the chart builder and pulls it in. Keep this list in sync with capture.yml.
         run: pip install requests pandas numpy matplotlib pyarrow
- 
-      - name: Capture intraday snapshot
-        id: capture
-        continue-on-error: true
-        run: python gex_intraday.py
- 
-      - name: Commit results
-        if: always()
+
+      - name: Run the session
+        id: session
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           git config user.name  "gex-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          if git diff --staged --quiet; then
-            echo "nothing new (feed timestamp unchanged, phantom bar avoided)"
-          else
-            git commit -m "intraday $(date -u +'%Y-%m-%d %H:%M UTC')"
-            # Retry the push: 27 runs a day against a shared branch will
-            # occasionally collide with the daily capture job.
-            for i in 1 2 3; do
-              git pull --rebase --autostash && git push && break
-              echo "push attempt $i failed, retrying"
-              sleep 5
-            done
-          fi
- 
-      - name: Surface capture failures
-        if: always() && steps.capture.outcome == 'failure'
-        run: |
-          # Distinguish "the script never started" from "a symbol failed". An
-          # import error writes no log at all, and reporting it as a symbol
-          # failure sends you looking in the wrong place.
-          if [ -f history/intraday.log ]; then
-            echo "::error::Capture step failed after starting. Last 40 log lines:"
-            tail -40 history/intraday.log
-          else
-            echo "::error::Capture step failed BEFORE writing any log --"
-            echo "::error::almost certainly an import or dependency error."
-            echo "::error::Check the 'Capture intraday snapshot' step output above."
-          fi
-          exit 1
- 
+          python session_runner.py
+
+      # The only way this workflow loses data it captured is a runner that
+      # ends with commits it could not push. If that happens the session's
+      # files are kept here for 14 days so they can be committed by hand.
+      - name: Note the session day
+        if: always() && steps.session.outcome == 'failure'
+        run: echo "DAY=$(date -u +%F)" >> "$GITHUB_ENV"
+
+      - name: Keep the session's data if the run failed
+        if: always() && steps.session.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: intraday-rescue-${{ github.run_id }}
+          retention-days: 14
+          if-no-files-found: ignore
+          path: |
+            history/intraday_state.csv
+            history/intraday.log
+            history/vix_state.csv
+            history/realized_vol.csv
+            history/intraday/${{ env.DAY }}/
