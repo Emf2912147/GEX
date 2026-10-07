@@ -7253,3 +7253,4 @@ egress, this endpoint has to be reachable for the script to work.
 2026-10-07T19:18:36+00:00  RV IWM (via RUT): HV20 11.28%  down/up 1.07x  through 2026-10-06  (1,470 closes)
 2026-10-07T19:18:36+00:00  appended 3 realized-vol row(s) -> realized_vol.csv
 2026-10-07T19:18:36+00:00  --- intraday done  ok=4  skipped=0  failed=0  vix=written  rv=3
+2026-10-07T23:37:26+00:00  --- intraday skipped  23:37 UTC is 142 min past the session window -- a deferred run, not a session observation
