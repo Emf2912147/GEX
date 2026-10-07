@@ -95,6 +95,15 @@ def main():
     thin = [str(x) for x, n in s.groupby("day").capture_ts.nunique().items() if n < 5]
     check("no session with fewer than 5 cycles", not thin, str(thin))
 
+    # A run that fires hours after the close writes real quotes under a
+    # session date. Nothing is wrong with the chain; it is simply not a
+    # session observation, and anything grouping by day will read the latest
+    # such row as that day's close.
+    late = s[pd.to_datetime(s.capture_ts, utc=True).dt.time > dt.time(21, 0)]
+    check("no captures after 21:00 UTC", len(late) == 0,
+          f"{len(late)} rows on {sorted({str(x) for x in late['day'].unique()})}"
+          if len(late) else "")
+
     missing = [str(x) for x in pd.date_range(days[0], days[-1]).date
                if is_trading_day(x) and x not in set(days)]
     new_gaps = [x for x in missing if x not in KNOWN_GAPS]
@@ -103,9 +112,16 @@ def main():
         print(f"         known gaps, not counted: "
               f"{sorted(set(missing) & KNOWN_GAPS)}")
 
+    # The daily capture for session D runs on D+1, so the most recent
+    # intraday session legitimately has no daily row yet. Excluding it is not
+    # a loosened standard -- flagging it was simply wrong, and a check that
+    # fails every single day teaches you to ignore the checker.
     daily_sessions = set(d.session_date.astype(str))
-    gaps = [str(x) for x in days if str(x) not in daily_sessions]
-    check("every intraday session has a daily row", not gaps, str(gaps))
+    settled = days[:-1] if days else []
+    gaps = [str(x) for x in settled if str(x) not in daily_sessions]
+    check("every settled intraday session has a daily row", not gaps,
+          str(gaps) + f" (newest session {days[-1]} excluded -- its daily "
+                      f"capture runs tomorrow)" if days else "")
 
     # Freshness: is the pipeline still alive?
     age = (dt.date.today() - days[-1]).days

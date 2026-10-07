@@ -1283,6 +1283,31 @@ def main():
                      f"not an NYSE session")
         return 0
 
+    # Session-hours gate. The calendar gate above answers "is today a trading
+    # day"; this answers "is it still the trading day".
+    #
+    # GitHub runs scheduled workflows best-effort and under load defers them
+    # by hours, not minutes. On 2026-10-06 a run cronned for the session fired
+    # at 22:57 UTC -- almost three hours after the 20:00 close -- and wrote
+    # four rows of post-market quotes stamped with that session's date. The
+    # chain was fresh, so the staleness guard passed it; the quotes were real,
+    # so nothing looked wrong. But a row at 22:57 is not a session
+    # observation, and anything grouping by day reads it as that day's close.
+    #
+    # Window runs to 21:15, not 20:00. The last scheduled cron is 20:52 and
+    # ordinary scheduler delay pushes its execution to 20:53-20:58 -- across
+    # every healthy session on file the final capture lands between 20:46 and
+    # 20:58, and those are legitimate end-of-session observations that must
+    # not be dropped. 21:15 clears the latest observed good capture by 17
+    # minutes while still catching the 22:57 case by nearly two hours.
+    session_end = now.replace(hour=21, minute=15, second=0, microsecond=0)
+    if now > session_end and not args.ignore_calendar:
+        late = (now - session_end).total_seconds() / 60
+        log(logpath, f"--- intraday skipped  {now:%H:%M} UTC is {late:.0f} min "
+                     f"past the session window -- a deferred run, not a "
+                     f"session observation")
+        return 0
+
     log(logpath, f"--- intraday capture  symbols={' '.join(args.symbols)}"
                  f"{'  (dry run)' if args.dry_run else ''}")
 
