@@ -13,16 +13,28 @@ on:
   schedule:
     # Every 15 min, 13:30-20:15 UTC, Mon-Fri.
     # = 09:30-16:15 ET during EDT, 08:30-15:15 ET during EST.
-    # Winter time will need this shifted to '*/15 14-21 * * 1-5'.
-    - cron: '*/15 13-20 * * 1-5'
+    # Winter time will need this shifted to '7,22,37,52 14-21 * * 1-5'.
+    #
+    # DELIBERATELY NOT '*/15'. That fires at :00/:15/:30/:45 -- the four
+    # busiest minutes on GitHub's scheduler, when every cron on the platform
+    # queues at once. Scheduled runs are best-effort and the congested minutes
+    # are dropped first. On 2026-10-06 only 3 of 28 runs fired at all: not
+    # cancelled, not failed, never scheduled. 2026-10-05 managed 13 of 28.
+    # Offsetting to odd minutes keeps the cadence while leaving the queue.
+    - cron: '7,22,37,52 13-20 * * 1-5'
   workflow_dispatch:
  
 permissions:
   contents: write
  
 concurrency:
-  # Shares a group with the daily capture so the two never race on a push.
-  group: gex-capture
+  # Its OWN group. It previously shared 'gex-capture' with capture.yml and
+  # both sector workflows: GitHub allows one run in progress and one pending
+  # per group, and a third arrival cancels the pending one. At 28 runs a day
+  # that is a standing cancellation risk for no benefit -- the push race it
+  # was guarding against is already handled by the pull --rebase retry loop
+  # in the commit step below.
+  group: gex-intraday
   cancel-in-progress: false
  
 jobs:

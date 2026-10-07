@@ -16,9 +16,14 @@ on:
   schedule:
     # Hourly through the session and once after the close, Mon-Fri. Offset to
     # :20 so it never lands on an intraday run and read a half-written file.
-    - cron: '20 14-21 * * 1-5'
+    # Three checks a session, not eight. The watchdog was adding 40 runs a
+    # week to a repo whose scheduled runs were already being dropped -- which
+    # made the problem it diagnoses marginally worse. Mid-morning, mid-
+    # afternoon and just after the close is enough to catch a stall while
+    # some of the session is still salvageable.
+    - cron: '47 15,18,21 * * 1-5'
     # Daily-capture check, Tue-Sat, after the 11:30 UTC run has had time.
-    - cron: '0 13 * * 2-6'
+    - cron: '41 13 * * 2-6'
   workflow_dispatch:
 
 permissions:
