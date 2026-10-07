@@ -281,6 +281,16 @@ h1{font-size:20px;margin:0 0 4px;letter-spacing:-0.01em}
 .spark-dot{fill:var(--line)}
 .spark-zero{stroke:var(--border);stroke-width:1;stroke-dasharray:3 3}
 .spark-empty{color:var(--ink-3);font-size:12px;padding:12px 0}
+.live{margin-top:10px;padding:9px 11px;border-radius:10px;
+  background:var(--surface);border:1px solid var(--border)}
+.live-h{font-size:11px;color:var(--ink-3);letter-spacing:.03em;
+  text-transform:uppercase;margin-bottom:5px}
+.live-ts{text-transform:none;letter-spacing:0}
+.live-row{display:flex;justify-content:space-between;gap:10px;
+  font-size:13px;padding:2px 0}
+.live-row .pos{color:var(--pos)}
+.live-row .neg{color:var(--neg)}
+.note{font-size:11px;opacity:.75;margin-top:2px}
 .gbwrap{margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
 .gbhead{display:flex;align-items:center;justify-content:space-between;
   margin-bottom:2px}
@@ -336,7 +346,63 @@ def fmt(v, nd=2):
     return f"{f:,.{nd}f}"
 
 
-def card(row, hist, has_chart, bars=""):
+def latest_intraday(histdir):
+    """Most recent intraday row per symbol, or {} if the file is absent.
+
+    The settled-OI view this page is built from is ALWAYS one session behind:
+    Monday's open interest does not settle until Tuesday morning, so the
+    11:30 UTC build renders Monday. That is correct and unavoidable, but on
+    Tuesday afternoon a reader sees Monday's spot under today's date and
+    reasonably assumes it is current -- the same category of error the
+    session_date work was meant to end.
+
+    intraday_state.csv already holds live positioning through the session.
+    Showing both, each labelled, is the honest fix.
+    """
+    path = os.path.join(histdir, "intraday_state.csv")
+    if not os.path.exists(path):
+        return {}
+    try:
+        s = pd.read_csv(path)
+    except Exception:
+        return {}
+    if s.empty:
+        return {}
+    s = s.sort_values("capture_ts")
+    return {r["symbol"]: r for _, r in s.groupby("symbol").tail(1).iterrows()}
+
+
+def intraday_block(sym, live, settled_spot):
+    """Second panel on each card: where things stood at the last capture."""
+    r = live.get(sym)
+    if r is None:
+        return ""
+    try:
+        spot = float(r["spot"])
+        net = float(r["net_gex_window"]) / 1e9
+        flip = float(r["flip"])
+        ts = pd.to_datetime(r["capture_ts"], utc=True)
+    except (TypeError, ValueError, KeyError):
+        return ""
+    drift = (spot / settled_spot - 1) if settled_spot else 0.0
+    pos = str(r.get("regime")) == "positive"
+    return (
+        f"<div class='live'>"
+        f"<div class='live-h'>Last intraday capture "
+        f"<span class='live-ts'>{ts:%Y-%m-%d %H:%M} UTC</span></div>"
+        f"<div class='live-row'>"
+        f"<span><b>{fmt(spot)}</b> spot <small>({drift:+.2%} vs settled)</small></span>"
+        f"<span class='{'pos' if pos else 'neg'}'>{'positive' if pos else 'negative'}</span>"
+        f"</div>"
+        f"<div class='live-row'><span>flip {fmt(flip)}</span>"
+        f"<span>net GEX {net:,.2f} $Bn <small>(window)</small></span></div>"
+        f"<div class='live-row'><span>walls {fmt(r.get('call_wall'))} / "
+        f"{fmt(r.get('put_wall'))}</span>"
+        f"<span>IV30 {r.get('atm_iv_30', '')}</span></div>"
+        f"</div>")
+
+
+def card(row, hist, has_chart, bars="", live=None):
     sym = row["symbol"]
     spot = float(row["spot"])
     pos = str(row["regime"]) == "positive"
@@ -376,6 +442,7 @@ def card(row, hist, has_chart, bars=""):
             "boundary, expect chop.</span></div>") if near else ""
 
     bars_html = bars or ""
+    intraday_html = intraday_block(sym, live or {}, spot)
 
     chart = ""
     if has_chart:
@@ -401,6 +468,7 @@ def card(row, hist, has_chart, bars=""):
       <div class="v">{fmt(row.get('put_wall'))}</div></div>
   </div>
   {coil}
+  {intraday_html}
   {bars_html}
   <div class="sparkwrap">
     <div class="k">Flip distance from spot &middot; last {len(h)} obs</div>
@@ -423,10 +491,16 @@ def build(histdir, docsdir, charts=True):
     if metrics.empty:
         body = ("<div class='empty'>No captures yet. The dashboard fills in "
                 "after the first successful run.</div>")
-        feed = "&mdash;"
+        feed = session = "&mdash;"
     else:
         feed = html.escape(str(metrics["feed_ts"].iloc[-1]))
+        # The session the settled book describes -- what a reader actually
+        # needs. feed_ts is the fetch time and is a full session later.
+        session = html.escape(str(metrics["session_date"].iloc[-1])
+                              if "session_date" in metrics.columns
+                              else metrics["feed_date"].iloc[-1])
         body = ""
+        live = latest_intraday(histdir)
         order = [s for s in SYMBOL_ORDER if s in set(metrics["symbol"])]
         order += [s for s in sorted(set(metrics["symbol"])) if s not in SYMBOL_ORDER]
         for sym in order:
@@ -448,7 +522,7 @@ def build(histdir, docsdir, charts=True):
                                           os.path.join(docsdir, "charts", f"{sym}.png"))
                     except Exception as e:
                         print(f"{sym}: chart failed -- {e}")
-            body += card(row, metrics, ok, bars)
+            body += card(row, metrics, ok, bars, live)
 
     page = f"""<!doctype html>
 <html lang="en"><head>
@@ -470,7 +544,8 @@ function gbToggle(btn){{
 <div class="wrap">
   <header>
     <h1>GEX Monitor</h1>
-    <p class="sub">Cboe feed {feed} &middot; built {built}</p>
+    <p class="sub">Session <b>{session}</b> &middot; settled open interest &middot; built {built}</p>
+    <p class="sub note">Settled OI is always one session behind: a session&rsquo;s book settles the next morning. Each card also shows the last intraday capture.</p>
   </header>
   {body}
   <footer>
