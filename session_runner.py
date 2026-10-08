@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Hold one runner for the session and capture on a fixed 15-minute grid.
+"""Keep one runner alive around the clock and capture on a fixed 15-minute grid.
 
 WHY THIS EXISTS
     intraday.yml used to ask GitHub's scheduler for 32 separate runs a
@@ -14,47 +14,51 @@ WHY THIS EXISTS
     Asking more often does not help. The misses are not independent draws --
     on 10/07 the scheduler created nothing for this repo between 01:11 and
     17:52 UTC, so 60 crons in that window would have produced the same zero
-    as the 19 intraday slots in it did. What helps is needing fewer fires.
+    as the 19 intraday slots in it did.
 
-    So this script needs ONE. Whatever starts the workflow -- a cron that
-    happens to fire, a manual click, an outside service calling the dispatch
-    API -- the job then stays up and takes every remaining slot itself,
-    sleeping between them. The scheduler is asked for a start, not for a
-    cadence, and a runner already held cannot be "not acquired".
+    So the pipeline no longer waits to be started. It is a RELAY: a chain of
+    jobs, each of which starts the next one itself through the dispatch API
+    just before its own six-hour limit, and none of which ends without doing
+    so. A dispatch is an API call, not a scheduled event -- nothing in the
+    chain passes through the scheduler, and nothing outside GitHub is
+    involved. The chain runs through the night and the weekend, so at 09:07
+    ET there is already a job awake to take the first slot.
 
-WHAT IT DOES
-    1. Works out today's slots: :07/:22/:37/:52 from 09:07 to 16:52 ET, the
-       same grid the old cron aimed at, in Eastern time so the November clock
-       change needs no edit here.
-    2. Runs gex_intraday.py as a fresh process at each slot, then commits and
-       pushes exactly as the old workflow step did. gex_intraday.py is not
-       modified and keeps every guard it has.
-    3. A GitHub-hosted job dies at six hours and the session grid is 7h45m, so
-       before its time is up the runner dispatches its own successor through
-       the API and exits. The workflow's concurrency group queues the
-       successor behind it, so the two never overlap.
-    4. Backstops the daily capture: if settled OI for the prior session is
-       not on file by 12:30 UTC, it dispatches capture.yml. That capture is
-       the one thing that can never be re-fetched.
+WHAT ONE LINK DOES
+    1. Works out the next capture slot: :07/:22/:37/:52 from 09:07 to 16:52
+       ET on NYSE sessions, in Eastern time so the November clock change
+       needs no edit here.
+    2. If that slot is within its own lifetime, sleeps until it, runs
+       gex_intraday.py as a fresh process, commits and pushes exactly as the
+       old workflow step did, and repeats. gex_intraday.py is not modified
+       and keeps every guard it has.
+    3. If the next slot is beyond its lifetime -- mid-session, overnight, a
+       weekend, a holiday -- it waits until its time is nearly up, dispatches
+       its successor and exits. The workflow's concurrency group queues the
+       successor behind it, so two links never capture at once.
+    4. Owns the daily capture too: if settled OI for the prior session is not
+       on file by 11:45 UTC, it dispatches capture.yml. Saturdays included --
+       that capture is the one thing that can never be re-fetched.
 
-    Every start that finds the session not in progress exits in seconds, so
-    spare starts are harmless. Spare starts DURING the session wait in the
-    concurrency queue and take over the moment the running job ends for any
-    reason -- its time limit, a lost runner, anything.
-
-WHAT IT DOES NOT FIX
-    Something still has to start it once. GitHub's own cron is the weakest
-    possible thing to rely on for that -- see the note in intraday.yml about
-    an outside trigger. With only GitHub crons, 10/07 would have been 7
-    cycles instead of 1: better, and still not a session.
+WHAT CAN STILL BREAK IT
+    The chain breaks if a link dies without dispatching: a runner lost
+    mid-job, or a GitHub incident at the moment of a handoff. The crons in
+    intraday.yml exist ONLY for that -- any one that fires starts a new link,
+    or queues behind a live one as a spare and takes over the instant it
+    ends. They repair the chain; they do not drive it.
 
     The session-hours gate inside gex_intraday.py is hard-coded 13:00-21:15
     UTC. That is correct until US clocks change on 2026-11-01 and one hour
     wrong after. The grid here will follow the clock; the gate will not, and
     it will silently drop the 16:22-16:52 ET slots until it is fixed.
 
+    A link keeps the copy of THIS file it started with. After pushing a
+    change to session_runner.py, the running link picks it up at its next
+    handoff (within 5.5 hours). To apply it at once: cancel the running job
+    in the Actions tab, then click "Run workflow".
+
 Run `python session_runner.py --selftest` after any edit. It replays whole
-sessions against a fake clock, including the three bad days above.
+weeks against a fake clock, including the three bad days above.
 """
 
 import argparse
@@ -79,13 +83,10 @@ FIRST_SLOT_ET = (9, 7)
 LAST_SLOT_ET = (16, 52)
 CADENCE = dt.timedelta(minutes=15)
 
-# A start earlier than this before the first slot exits instead of sleeping:
-# time spent asleep before the open comes off the six-hour limit.
-EARLY_START = dt.timedelta(minutes=30)
 # A slot reached this late (the previous cycle overran) still runs. Later
 # than this it is logged as missed and the loop moves on to the next one.
 SLOT_GRACE = dt.timedelta(minutes=7)
-# On a start that joins a session already under way: capture straight away
+# On a link that starts while a session is under way: capture straight away
 # if nothing has been captured for this long AND the next slot is more than
 # half a cadence off. A handoff fails the first test; a start five minutes
 # before a slot fails the second.
@@ -100,14 +101,24 @@ FINAL_CATCHUP = dt.timedelta(minutes=8)
 # last cycle to finish and push.
 MAX_RUNTIME_MIN = 330
 CYCLE_BUDGET = dt.timedelta(minutes=6)
+# A successor is dispatched at least this long before the slot it must take.
+# A link boots in under a minute; ten gives it room on a slow day.
+HANDOFF_LEAD = dt.timedelta(minutes=10)
 CAPTURE_TIMEOUT_S = 480
 
 INTRADAY_WORKFLOW = "intraday.yml"
 CAPTURE_WORKFLOW = "capture.yml"
-DAILY_DUE_UTC = dt.time(12, 30)      # same threshold watchdog.py uses
+# capture.yml's own cron is 11:30 UTC. Give it fifteen minutes, then stop
+# waiting for the scheduler and dispatch it.
+DAILY_DUE_UTC = dt.time(11, 45)
 DAILY_RETRY = dt.timedelta(minutes=60)
 DAILY_MAX_DISPATCHES = 2
 DAILY_SYMBOLS = 4
+DAILY_CHECK_EVERY = dt.timedelta(minutes=10)
+
+# Local mode only (no relay): a start earlier than this before the first slot
+# exits instead of waiting.
+EARLY_START = dt.timedelta(minutes=30)
 
 
 # --------------------------------------------------------------------------
@@ -134,8 +145,7 @@ def et_offset(day):
 
 def et_date(now_utc):
     """The Eastern calendar date at `now_utc`."""
-    guess = now_utc.date()
-    return (now_utc + et_offset(guess)).date()
+    return (now_utc + et_offset(now_utc.date())).date()
 
 
 def slots_utc(day):
@@ -150,6 +160,23 @@ def slots_utc(day):
     return out
 
 
+def next_slot(after):
+    """The first slot strictly later than `after`, and its session's full grid.
+
+    Walks forward over weekends and holidays, so the answer on a Friday
+    evening is Monday's (or Tuesday's) first slot.
+    """
+    day = et_date(after)
+    for _ in range(12):
+        if cal.is_trading_day(day):
+            grid = slots_utc(day)
+            for s in grid:
+                if s > after:
+                    return s, grid
+        day += dt.timedelta(days=1)
+    raise RuntimeError(f"no NYSE session found in the 12 days after {after}")
+
+
 # --------------------------------------------------------------------------
 # side effects
 
@@ -157,8 +184,8 @@ def slots_utc(day):
 class RealIO:
     """Everything the loop does to the outside world.
 
-    Kept in one object so the self-test can replace all of it and run a whole
-    session in milliseconds against a fake clock.
+    Kept in one object so the self-test can replace all of it and run whole
+    weeks in milliseconds against a fake clock.
     """
 
     def now(self):
@@ -174,8 +201,10 @@ class RealIO:
         """Print AND write to intraday.log, in gex_intraday.py's own format.
 
         The log is committed, so these lines are what let you reconstruct
-        from git alone when a runner started, what it missed and whether it
-        handed off -- without the Actions tab.
+        from git alone when a link took up a session, what it missed and
+        whether it handed off -- without the Actions tab. Only ever called
+        around a capture: a link that waits out a night writes nothing, so
+        the repo does not collect a commit every six hours.
         """
         line = f"{self.now().isoformat(timespec='seconds')}  {msg}"
         print(line, flush=True)
@@ -196,11 +225,27 @@ class RealIO:
     def _git(self, *args):
         return subprocess.run(["git", *args], cwd=HERE, capture_output=True, text=True)
 
+    def refresh(self):
+        """Bring the checkout up to date with origin. True on success.
+
+        A link can be hours old by the time it captures. Without this it
+        would run the gex_intraday.py it was checked out with, not the one on
+        main, and would not see daily rows another workflow pushed.
+        """
+        pull = self._git("pull", "--rebase", "--autostash")
+        if pull.returncode != 0:
+            # Never leave the checkout mid-rebase: every later cycle would
+            # fail on it and the rest of the session would be lost.
+            self._git("rebase", "--abort")
+            self.say(f"pull failed: {pull.stderr.strip()[-300:]}")
+            return False
+        return True
+
     def publish(self, what="intraday"):
         """Commit whatever the cycle wrote and push it. True if origin has it.
 
         A failed push is not fatal: the commit stays local and the next
-        cycle's push carries both. Only a runner that dies with unpushed
+        cycle's push carries both. Only a link that dies with unpushed
         commits loses data, and run() goes red if it exits that way.
 
         `what` is the commit-message prefix. Captures keep the old workflow's
@@ -221,17 +266,11 @@ class RealIO:
             return True
 
         for attempt in (1, 2, 3):
-            pull = self._git("pull", "--rebase", "--autostash")
-            if pull.returncode == 0:
+            if self.refresh():
                 push = self._git("push")
                 if push.returncode == 0:
                     return True
                 self.say(f"push attempt {attempt} failed: {push.stderr.strip()[-300:]}")
-            else:
-                # Never leave the checkout mid-rebase: every later cycle
-                # would fail on it and the rest of the session would be lost.
-                self._git("rebase", "--abort")
-                self.say(f"pull attempt {attempt} failed: {pull.stderr.strip()[-300:]}")
             self.sleep(5 * attempt)
         return False
 
@@ -260,7 +299,7 @@ class RealIO:
     def can_dispatch(self):
         return bool(os.environ.get("GITHUB_REPOSITORY") and os.environ.get("GITHUB_TOKEN"))
 
-    def dispatch(self, workflow):
+    def dispatch(self, workflow, inputs=None):
         """Start `workflow` through the REST API. True on success.
 
         A dispatched run is created by an API call, not by the scheduler, so
@@ -273,10 +312,12 @@ class RealIO:
             self.say(f"cannot dispatch {workflow}: not running inside Actions")
             return False
         api = os.environ.get("GITHUB_API_URL", "https://api.github.com")
-        ref = os.environ.get("GITHUB_REF_NAME", "main")
+        body = {"ref": os.environ.get("GITHUB_REF_NAME", "main")}
+        if inputs:
+            body["inputs"] = inputs
         req = urllib.request.Request(
             f"{api}/repos/{repo}/actions/workflows/{workflow}/dispatches",
-            data=json.dumps({"ref": ref}).encode(),
+            data=json.dumps(body).encode(),
             method="POST",
             headers={
                 "Accept": "application/vnd.github+json",
@@ -286,7 +327,9 @@ class RealIO:
                 "User-Agent": "gex-session-runner",
             },
         )
-        for attempt in (1, 2, 3):
+        # Six tries over about five minutes. This call is the chain: if it
+        # does not land, nothing follows this link until a cron repairs it.
+        for attempt in range(1, 7):
             try:
                 with urllib.request.urlopen(req, timeout=20) as resp:
                     if 200 <= resp.status < 300:
@@ -297,7 +340,7 @@ class RealIO:
                          f"{e.read()[:200]!r}")
             except Exception as e:           # network, DNS, timeout
                 self.say(f"dispatch {workflow} attempt {attempt}: {e}")
-            self.sleep(10 * attempt)
+            self.sleep(20 * attempt)
         return False
 
 
@@ -305,44 +348,65 @@ class RealIO:
 # the loop
 
 
-def run(io, max_runtime_min=MAX_RUNTIME_MIN):
-    """Capture every remaining slot of today's session. Returns an exit code.
+def run(io, max_runtime_min=MAX_RUNTIME_MIN, relay=True, test_links=0):
+    """One link of the relay. Returns an exit code.
 
-    max_runtime_min=None means no time limit (a run outside Actions): the
-    loop then covers the whole session and never hands off.
+    relay=True (inside Actions): never ends without dispatching a successor.
+    relay=False (a machine of your own): covers today's session and returns;
+    max_runtime_min=None then means no time limit at all.
+
+    test_links=N: hand off immediately, N times in a row, then carry on as a
+    normal link. Proves the chain in a few minutes instead of overnight.
     """
     start = io.now()
-    day = et_date(start)
 
-    if not cal.is_trading_day(day):
-        io.say(f"{day:%Y-%m-%d %a} is not an NYSE session -- nothing to do")
-        return 0
-
-    slots = slots_utc(day)
-    first, last = slots[0], slots[-1]
-    if start < first - EARLY_START:
-        io.say(f"{(first - start).total_seconds() / 60:.0f} min before the first "
-               f"slot ({first:%H:%M} UTC) -- too early, a later start will take it")
-        return 0
-    if start > last + FINAL_CATCHUP:
-        io.say(f"session over (last slot {last:%H:%M} UTC) -- nothing to do")
-        return 0
+    if test_links > 0:
+        left = test_links - 1
+        ok = io.dispatch(INTRADAY_WORKFLOW, {"test_links": str(left)} if left else None)
+        io.say(f"TEST LINK: successor {'dispatched' if ok else 'DISPATCH FAILED'}, "
+               f"{left} test link(s) to go" + ("" if left else " -- the next one is a normal link"))
+        return 0 if ok else 1
 
     deadline = (start + dt.timedelta(minutes=max_runtime_min)
                 if max_runtime_min else None)
-    todo = [s for s in slots if s > start]
-    gone = [s for s in slots if s <= start]
+    day = et_date(start)
+    today = slots_utc(day) if cal.is_trading_day(day) else None
 
-    io.note(f"--- runner start  run={os.environ.get('GITHUB_RUN_ID', 'local')} "
-            f"event={os.environ.get('GITHUB_EVENT_NAME', 'local')}  "
-            f"{len(todo)} of {len(slots)} slots ahead"
-            + (f"  must hand off by {deadline:%H:%M} UTC" if deadline else ""))
+    if not relay:
+        if not today:
+            io.say(f"{day:%Y-%m-%d %a} is not an NYSE session -- nothing to do")
+            return 0
+        if start < today[0] - EARLY_START:
+            io.say(f"{(today[0] - start).total_seconds() / 60:.0f} min before the "
+                   f"first slot ({today[0]:%H:%M} UTC) -- too early")
+            return 0
+        if start > today[-1] + FINAL_CATCHUP:
+            io.say(f"session over (last slot {today[-1]:%H:%M} UTC) -- nothing to do")
+            return 0
+
+    io.say(f"link start  run={os.environ.get('GITHUB_RUN_ID', 'local')} "
+           f"event={os.environ.get('GITHUB_EVENT_NAME', 'local')}"
+           + (f"  must hand off by {deadline:%Y-%m-%d %H:%M} UTC" if deadline else ""))
 
     done, failed, pushed = 0, [], True
-    daily = {"n": 0, "last": None}
+    announced = None                       # the session this link has logged a start for
+    daily = {"n": 0, "last": None, "done": None, "next_check": start}
+
+    def announce(grid, ahead):
+        """One 'runner start' line per session, written just before this
+        link's first capture of it, so it is committed with that capture."""
+        nonlocal announced
+        if announced == grid[0]:
+            return
+        announced = grid[0]
+        io.note(f"--- runner start  run={os.environ.get('GITHUB_RUN_ID', 'local')} "
+                f"event={os.environ.get('GITHUB_EVENT_NAME', 'local')}  "
+                f"{ahead} of {len(grid)} slots ahead"
+                + (f"  must hand off by {deadline:%H:%M} UTC" if deadline else ""))
 
     def cycle(label):
         nonlocal done, pushed
+        io.refresh()
         rc = io.capture()
         done += 1
         if rc != 0:
@@ -354,62 +418,87 @@ def run(io, max_runtime_min=MAX_RUNTIME_MIN):
 
     def ensure_daily():
         now = io.now()
-        today = now.date()
-        if not cal.should_capture(today) or now.time() < DAILY_DUE_UTC:
+        today_utc = now.date()
+        daily["next_check"] = now + DAILY_CHECK_EVERY
+        if daily["done"] == today_utc or not cal.should_capture(today_utc):
+            return
+        if now.time() < DAILY_DUE_UTC:
             return
         if not io.can_dispatch() or daily["n"] >= DAILY_MAX_DISPATCHES:
             return
         if daily["last"] and now - daily["last"] < DAILY_RETRY:
             return
-        session = str(cal.session_for(today))
+        io.refresh()
+        session = str(cal.session_for(today_utc))
         have = io.daily_rows(session)
         if have >= DAILY_SYMBOLS:
+            daily["done"] = today_utc
             return
         ok = io.dispatch(CAPTURE_WORKFLOW)
         daily["n"] += 1
         daily["last"] = now
-        io.note(f"--- runner: daily capture for {session} has {have}/{DAILY_SYMBOLS} "
-                f"rows -- dispatched {CAPTURE_WORKFLOW}"
-                f"{'' if ok else ' (DISPATCH FAILED)'}")
+        io.say(f"daily capture for {session} has {have}/{DAILY_SYMBOLS} rows -- "
+               f"dispatched {CAPTURE_WORKFLOW}{'' if ok else ' (DISPATCH FAILED)'}")
 
-    ensure_daily()
+    def idle_until(when):
+        """Sleep to `when`, checking on the daily capture along the way."""
+        while (wait := (when - io.now()).total_seconds()) > 0:
+            if wait > 90 and io.now() >= daily["next_check"]:
+                ensure_daily()
+                continue
+            io.sleep(min(wait, 20))
 
-    # Joining a session already under way.
-    if gone:
+    # A link that starts with a session already under way.
+    if today and today[0] <= start <= today[-1] + FINAL_CATCHUP:
+        gone = [s for s in today if s <= start]
+        left = [s for s in today if s > start]
         prev = io.last_capture()
         stale = prev is None or start - prev > CATCHUP_GAP
-        room = not todo or todo[0] - start > CATCHUP_MIN_WAIT
         if stale:
+            announce(today, len(left))
             io.note(f"--- runner: joined late, {len(gone)} slot(s) already past "
                     f"({gone[0]:%H:%M}-{gone[-1]:%H:%M} UTC), last capture on file "
                     f"{prev.isoformat(timespec='seconds') if prev else 'none'}")
-        if stale and room:
-            cycle(f"{start:%H:%M} UTC (catch-up)")
+            if not left or left[0] - start > CATCHUP_MIN_WAIT:
+                cycle(f"{start:%H:%M} UTC (catch-up)")
 
     handoff_failed = False
-    for slot in todo:
+    after = start                          # every slot up to here is dealt with
+    while True:
+        slot, grid = next_slot(after)
+        if not relay and grid[0] != today[0]:
+            break                          # local mode: today's session is finished
+
         if deadline and slot + CYCLE_BUDGET > deadline:
+            # This link cannot take `slot`. Wait as long as it safely can --
+            # overnight that is hours, mid-session it is minutes -- then
+            # start the link that will.
+            idle_until(min(deadline - CYCLE_BUDGET, slot - HANDOFF_LEAD))
             ok = io.dispatch(INTRADAY_WORKFLOW)
             handoff_failed = not ok
-            io.note(f"--- runner handoff before the {slot:%H:%M} UTC slot: successor "
-                    f"{'dispatched' if ok else 'DISPATCH FAILED -- the next start must pick this up'}")
+            msg = (f"--- runner handoff before the {slot:%Y-%m-%d %H:%M} UTC slot: successor "
+                   f"{'dispatched' if ok else 'DISPATCH FAILED -- a cron must repair the chain'}")
+            # Logged to the repo only mid-session, where it explains a gap.
+            (io.note if announced == grid[0] else io.say)(msg)
             break
 
+        idle_until(slot)
+        after = slot
         now = io.now()
         if now > slot + SLOT_GRACE:
+            announce(grid, len([s for s in grid if s > slot]))
             io.note(f"--- runner: slot {slot:%H:%M} UTC missed "
                     f"(reached at {now:%H:%M:%S}, the previous cycle overran)")
             continue
-        while (wait := (slot - io.now()).total_seconds()) > 0:
-            io.sleep(min(wait, 20))
 
+        announce(grid, len([s for s in grid if s >= slot]))
         cycle(f"{slot:%H:%M} UTC")
-        ensure_daily()
-    else:
-        io.note(f"--- runner: session complete, {done} capture(s) this run")
+        if slot == grid[-1]:
+            io.note(f"--- runner: session complete, {done} capture(s) by this link")
+            pushed = io.publish("runner")
 
     # Last chance for anything still local. Unpushed commits die with the job.
-    pushed = io.publish("runner")      # the handoff / completion log lines
+    pushed = io.publish("runner")
     for _ in range(3):
         if pushed:
             break
@@ -423,7 +512,8 @@ def run(io, max_runtime_min=MAX_RUNTIME_MIN):
         problems.append("commits left unpushed -- that data is LOST unless the "
                         "uploaded artifact is recovered")
     if handoff_failed:
-        problems.append("could not dispatch a successor")
+        problems.append("could not dispatch a successor -- THE CHAIN IS BROKEN until "
+                        "a cron fires or someone clicks Run workflow")
     for p in problems:
         io.say(f"PROBLEM: {p}")
     return 1 if problems else 0
@@ -434,7 +524,7 @@ def run(io, max_runtime_min=MAX_RUNTIME_MIN):
 
 
 class FakeIO:
-    """A whole session against a fake clock. Nothing touches disk or network."""
+    """A link against a fake clock. Nothing touches disk or network."""
 
     def __init__(self, start, last_capture=None, capture_s=40, slow=None,
                  daily=4, daily_lands_after=None, push_ok=True, dispatch_ok=True):
@@ -457,6 +547,9 @@ class FakeIO:
     def note(self, msg):
         self.notes.append(msg)
 
+    def refresh(self):
+        return True
+
     def capture(self):
         self.captures.append(self.t)
         self.t += dt.timedelta(seconds=self.slow.get(len(self.captures), self.capture_s))
@@ -477,8 +570,8 @@ class FakeIO:
     def can_dispatch(self):
         return True
 
-    def dispatch(self, workflow):
-        self.dispatched.append((workflow, self.t))
+    def dispatch(self, workflow, inputs=None):
+        self.dispatched.append((workflow, self.t, inputs))
         return self.dispatch_ok
 
 
@@ -486,34 +579,31 @@ def _u(s):
     return dt.datetime.fromisoformat(s).replace(tzinfo=UTC)
 
 
-def _session(first_start, later_starts=(), runner_dies_at=None):
-    """Chain runs the way the workflow's concurrency group does.
-
-    One run at a time. A start that arrives while a run is up waits and takes
-    over when that run ends; a self-dispatched successor does the same.
-    Returns every capture time across all runs.
-    """
-    caps, t, prev = [], _u(first_start), None
-    queue = sorted(_u(x) for x in later_starts)
-    while True:
-        io = FakeIO(t, last_capture=prev)
+def _chain(first_start, until, last_capture=None, **kw):
+    """Follow the relay from one start until `until`, the way the workflow's
+    concurrency group runs it: one link at a time, each successor booting a
+    minute after the link that dispatched it. Returns (captures, links,
+    daily_dispatches, notes_by_link)."""
+    t, end, prev = _u(first_start), _u(until), last_capture
+    caps, links, dailies, notes = [], 0, [], []
+    while t < end:
+        io = FakeIO(t, last_capture=prev, **kw)
         run(io)
+        links += 1
         caps += io.captures
+        notes.append(io.notes)
+        dailies += [x[1] for x in io.dispatched if x[0] == CAPTURE_WORKFLOW]
         prev = caps[-1] if caps else prev
-        end = io.t
-        handed = [w for w, _ in io.dispatched if w == INTRADAY_WORKFLOW]
-        waiting = [q for q in queue if q <= end]
-        queue = [q for q in queue if q > end]
-        if handed or waiting:
-            t = end + dt.timedelta(seconds=60)      # boot time of the next job
-        elif queue:
-            t = queue.pop(0)
-        else:
-            return caps
+        if not [x for x in io.dispatched if x[0] == INTRADAY_WORKFLOW]:
+            break                                   # the chain broke
+        assert io.t <= t + dt.timedelta(minutes=MAX_RUNTIME_MIN), "link outlived its limit"
+        t = io.t + dt.timedelta(seconds=60)
+    return [c for c in caps if c < end], links, dailies, notes
 
 
 def selftest():
     hm = lambda xs: [x.strftime("%H:%M") for x in xs]
+    on = lambda xs, d: [x for x in xs if x.strftime("%Y-%m-%d") == d]
 
     # --- the grid ----------------------------------------------------------
     s = slots_utc(dt.date(2026, 10, 8))
@@ -525,36 +615,47 @@ def selftest():
     assert et_offset(dt.date(2027, 3, 12)) == dt.timedelta(hours=-5)
     assert et_offset(dt.date(2027, 3, 15)) == dt.timedelta(hours=-4)
     assert et_date(_u("2026-10-08T02:30:00")) == dt.date(2026, 10, 7)
+    assert next_slot(_u("2026-10-08T12:00:00"))[0] == _u("2026-10-08T13:07:00")
+    assert next_slot(_u("2026-10-08T13:07:00"))[0] == _u("2026-10-08T13:22:00")
+    assert next_slot(_u("2026-10-09T20:52:00"))[0] == _u("2026-10-12T13:07:00")   # Fri -> Mon
+    assert next_slot(_u("2026-11-25T23:00:00"))[0] == _u("2026-11-27T14:07:00")   # Thanksgiving
 
-    # --- a normal day: one start, two runs, all 32 slots, none twice -------
-    caps = _session("2026-10-08T12:53:00")
-    assert hm(caps) == hm(s), hm(caps)
-    assert all(0 <= (c - x).total_seconds() < 5 for c, x in zip(caps, s)), "off grid"
+    # --- THE POINT: one click on Wednesday evening, then nothing ----------
+    # No cron ever fires in this replay. The chain alone must deliver every
+    # slot of Thursday and Friday, hold the weekend, and deliver Monday.
+    caps, links, dailies, notes = _chain("2026-10-07T23:50:00", "2026-10-12T22:00:00")
+    for d in ("2026-10-08", "2026-10-09", "2026-10-12"):
+        assert hm(on(caps, d)) == hm(s), (d, hm(on(caps, d)))
+    assert len(caps) == 96, len(caps)                 # and nothing on Sat/Sun
+    assert all(c.second < 5 and c.minute % 15 == 7 for c in caps), "off grid"
+    assert 20 <= links <= 26, links                   # ~4.4 a day
+    assert not dailies, "the daily capture was on file throughout this replay"
 
+    # --- a link that waits out the night writes nothing to the repo --------
+    io = FakeIO(_u("2026-10-10T03:00:00"))            # Saturday
+    assert run(io) == 0 and not io.captures and not io.notes
+    assert [x[0] for x in io.dispatched] == [INTRADAY_WORKFLOW]
+    assert io.t - _u("2026-10-10T03:00:00") >= dt.timedelta(minutes=MAX_RUNTIME_MIN - 7)
+
+    # --- the clock change, and a holiday, need no edit ---------------------
+    caps, *_ = _chain("2026-10-30T21:30:00", "2026-11-02T23:00:00")
+    assert hm(caps) == hm(w), hm(caps)                # Mon 11/02 on the winter grid
+    caps, *_ = _chain("2026-11-25T22:30:00", "2026-11-27T23:00:00")
+    assert not on(caps, "2026-11-26") and len(on(caps, "2026-11-27")) == 32
+
+    # --- the handoff inside a session: no slot lost, none taken twice ------
     io = FakeIO(_u("2026-10-08T12:53:00"))
     assert run(io) == 0
-    assert hm(io.captures)[-1] == "18:07", hm(io.captures)[-1]
-    assert [w for w, _ in io.dispatched] == [INTRADAY_WORKFLOW]
-    assert io.t < _u("2026-10-08T12:53:00") + dt.timedelta(minutes=MAX_RUNTIME_MIN)
-
-    # The successor boots a minute after a capture: no catch-up, no double.
-    io2 = FakeIO(_u("2026-10-08T18:09:00"), last_capture=_u("2026-10-08T18:07:01"))
-    assert run(io2) == 0
+    assert hm(io.captures)[0] == "13:07" and hm(io.captures)[-1] == "18:07"
+    assert [x[0] for x in io.dispatched] == [INTRADAY_WORKFLOW]
+    assert io.dispatched[0][1] <= _u("2026-10-08T18:22:00") - HANDOFF_LEAD
+    assert any("runner handoff" in n for n in io.notes)
+    io2 = FakeIO(io.t + dt.timedelta(seconds=60), last_capture=io.captures[-1])
+    run(io2)                                          # boots a minute later
     assert hm(io2.captures)[0] == "18:22" and len(io2.captures) == 11
+    assert any("session complete" in n for n in io2.notes)
 
-    # --- winter needs no edit here -----------------------------------------
-    assert hm(_session("2026-11-02T13:53:00")) == hm(w)
-
-    # --- starts that must do nothing ---------------------------------------
-    for when in ("2026-10-10T14:00:00",       # Saturday
-                 "2026-09-07T14:00:00",       # Labor Day
-                 "2026-10-08T11:40:00",       # too early
-                 "2026-10-08T21:10:00",       # session over
-                 "2026-10-08T02:30:00"):      # deferred overnight
-        io = FakeIO(_u(when))
-        assert run(io) == 0 and not io.captures and not io.notes, when
-
-    # --- joining late ------------------------------------------------------
+    # --- joining a session late -------------------------------------------
     stale = _u("2026-10-07T19:18:31")
     io = FakeIO(_u("2026-10-08T17:53:00"), last_capture=stale)
     run(io)                                   # 14 min to the next slot: catch up
@@ -565,6 +666,9 @@ def selftest():
     io = FakeIO(_u("2026-10-08T20:55:00"), last_capture=stale)
     run(io)                                   # after the last slot: one closing capture
     assert hm(io.captures) == ["20:55"]
+    io = FakeIO(_u("2026-10-08T21:10:00"), last_capture=stale)
+    run(io)                                   # too late for today: wait for tomorrow
+    assert not io.captures and not io.notes
 
     # --- a cycle that overruns costs its neighbour, not the session --------
     io = FakeIO(_u("2026-10-08T13:00:00"), slow={3: 25 * 60})
@@ -573,39 +677,64 @@ def selftest():
     assert any("13:52 UTC missed" in n for n in io.notes)
 
     # --- failures are reported, and do not stop the captures ---------------
-    io = FakeIO(_u("2026-10-08T18:09:00"), last_capture=_u("2026-10-08T18:07:01"),
+    io = FakeIO(_u("2026-10-08T18:13:00"), last_capture=_u("2026-10-08T18:07:01"),
                 push_ok=False)
     assert run(io) == 1 and len(io.captures) == 11
     io = FakeIO(_u("2026-10-08T12:53:00"), dispatch_ok=False)
     assert run(io) == 1 and len(io.captures) == 21
 
-    # --- daily backstop ----------------------------------------------------
-    io = FakeIO(_u("2026-10-08T12:53:00"), daily=0,
-                daily_lands_after=_u("2026-10-08T12:58:00"))
-    run(io)                                   # missing at start, lands 5 min later
-    assert [w for w, _ in io.dispatched].count(CAPTURE_WORKFLOW) == 1
-    io = FakeIO(_u("2026-10-08T12:53:00"), daily=0)
-    run(io)                                   # never lands: capped, an hour apart
-    d = [t for w, t in io.dispatched if w == CAPTURE_WORKFLOW]
-    assert len(d) == DAILY_MAX_DISPATCHES and d[1] - d[0] >= DAILY_RETRY
-    io = FakeIO(_u("2026-10-12T12:53:00"), daily=0)
-    run(io)                                   # Monday: Friday was captured Saturday
-    assert CAPTURE_WORKFLOW not in [w for w, _ in io.dispatched]
-    io = FakeIO(_u("2026-10-08T12:53:00"), daily=4)
+    # --- the chain owns the daily capture ----------------------------------
+    # Missing all week: dispatched Tue-Sat only, never before 11:45 UTC.
+    _, _, d, _ = _chain("2026-10-12T22:00:00", "2026-10-19T22:00:00", daily=0)
+    days = sorted({x.strftime("%a") for x in d})
+    assert days == sorted(["Tue", "Wed", "Thu", "Fri", "Sat"]), days
+    assert all(x.time() >= DAILY_DUE_UTC for x in d)
+    # Lands a few minutes after the first dispatch: asked for exactly once,
+    # within one check interval of coming due.
+    io = FakeIO(_u("2026-10-08T08:00:00"), daily=0,
+                daily_lands_after=_u("2026-10-08T11:58:00"))
     run(io)
-    assert CAPTURE_WORKFLOW not in [w for w, _ in io.dispatched]
+    d = [x[1] for x in io.dispatched if x[0] == CAPTURE_WORKFLOW]
+    assert len(d) == 1, d
+    assert DAILY_DUE_UTC <= d[0].time() <= dt.time(11, 55), d
+    # Never lands: capped per link, an hour apart.
+    io = FakeIO(_u("2026-10-08T11:00:00"), daily=0)
+    run(io)
+    d = [x[1] for x in io.dispatched if x[0] == CAPTURE_WORKFLOW]
+    assert len(d) == DAILY_MAX_DISPATCHES and d[1] - d[0] >= DAILY_RETRY
+    # Already on file: never asked for.
+    io = FakeIO(_u("2026-10-08T11:00:00"), daily=4)
+    run(io)
+    assert CAPTURE_WORKFLOW not in [x[0] for x in io.dispatched]
+
+    # --- the test switch ---------------------------------------------------
+    io = FakeIO(_u("2026-10-08T00:00:00"))
+    assert run(io, test_links=3) == 0 and not io.captures
+    assert io.dispatched == [(INTRADAY_WORKFLOW, io.t, {"test_links": "2"})]
+    io = FakeIO(_u("2026-10-08T00:00:00"))
+    run(io, test_links=1)
+    assert io.dispatched[0][2] is None                # the next link is a normal one
+
+    # --- local mode: today's session and out -------------------------------
+    io = FakeIO(_u("2026-10-08T12:53:00"))
+    assert run(io, max_runtime_min=None, relay=False) == 0
+    assert hm(io.captures) == hm(s) and not io.dispatched
+    for when in ("2026-10-10T14:00:00", "2026-10-08T11:40:00", "2026-10-08T21:10:00"):
+        io = FakeIO(_u(when))
+        assert run(io, max_runtime_min=None, relay=False) == 0
+        assert not io.captures and not io.dispatched, when
 
     # --- the three bad days, replayed from the fire times GitHub DID deliver
-    # 10/06: runs were created at 13:15, 18:56 and 22:56 UTC. Actual: 2 cycles.
-    caps = _session("2026-10-06T13:15:00",
-                    ["2026-10-06T18:56:00", "2026-10-06T22:56:00"])
-    assert len(caps) == 31 and hm(caps)[0] == "13:22" and hm(caps)[-1] == "20:52"
+    # These assume NO chain was running, only the one late start.
+    # 10/06: first run created 13:15 UTC. Actual: 2 cycles.
+    caps, *_ = _chain("2026-10-06T13:15:00", "2026-10-06T21:30:00")
+    assert len(caps) == 31 and hm(caps)[0] == "13:22"
     # 10/07: one run, created 19:17 UTC. Actual: 1 cycle.
-    assert len(_session("2026-10-07T19:17:00")) == 7
-    # 10/05: first run created 13:18. Actual: 13 cycles. The first runner alone
-    # holds 13:22-18:37 = 22. The other 9 depend on its successor getting a
-    # runner at ~18:38, half an hour before that day's Actions incident was
-    # declared -- likely, not certain, so only the 22 are asserted.
+    caps, *_ = _chain("2026-10-07T19:17:00", "2026-10-07T21:30:00")
+    assert len(caps) == 7
+    # 10/05: first run created 13:18. Actual: 13 cycles. The first link alone
+    # holds 13:22-18:37 = 22; the rest needs its successor to get a runner at
+    # 18:42, half an hour before that day's incident was declared.
     io = FakeIO(_u("2026-10-05T13:18:00"))
     run(io)
     assert len(io.captures) == 22 and hm(io.captures)[-1] == "18:37"
@@ -616,16 +745,21 @@ def selftest():
 def main():
     p = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     p.add_argument("--selftest", action="store_true",
-                   help="replay sessions against a fake clock and exit")
-    p.add_argument("--no-limit", action="store_true",
-                   help="no six-hour handoff (for a machine that is not a "
-                        "GitHub-hosted runner)")
+                   help="replay whole weeks against a fake clock and exit")
+    p.add_argument("--test-links", type=int, default=0, metavar="N",
+                   help="hand off immediately N times, then run normally "
+                        "(proves the chain in minutes)")
+    p.add_argument("--local", action="store_true",
+                   help="not a GitHub runner: cover today's session and exit, "
+                        "no time limit, no relay")
     a = p.parse_args()
     if a.selftest:
         selftest()
         return 0
-    hosted = os.environ.get("GITHUB_ACTIONS") == "true" and not a.no_limit
-    return run(RealIO(), MAX_RUNTIME_MIN if hosted else None)
+    hosted = os.environ.get("GITHUB_ACTIONS") == "true" and not a.local
+    if hosted:
+        return run(RealIO(), MAX_RUNTIME_MIN, relay=True, test_links=a.test_links)
+    return run(RealIO(), None, relay=False)
 
 
 if __name__ == "__main__":

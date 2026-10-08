@@ -3,44 +3,48 @@ name: GEX intraday capture
 # Flow capture. Runs alongside the daily positioning capture in capture.yml,
 # which still owns settled open interest.
 #
-# ONE JOB PER SESSION, NOT ONE PER CAPTURE.
-# This workflow used to be fired 32 times a session by cron, once per
-# capture. GitHub's scheduler is best-effort and stopped delivering: 21
-# cycles on 2026-10-02, then 13, then 2, then 1. Moving the cron off the
-# congested minutes (2026-10-06) changed nothing -- 2026-10-07 got 1 of 32.
+# THIS WORKFLOW STARTS ITSELF.
+# It used to be fired 32 times a session by cron, once per capture. GitHub's
+# scheduler is best-effort and stopped delivering: 21 cycles on 2026-10-02,
+# then 13, then 2, then 1. Moving the cron off the congested minutes changed
+# nothing.
 #
-# Now a single start holds a runner and session_runner.py takes every
-# remaining slot itself, on a fixed :07/:22/:37/:52 grid, committing after
-# each one. The scheduler is asked for a start, not for a cadence. See the
-# docstring in session_runner.py for the full reasoning.
+# It is now a relay. One job is always alive. session_runner.py sleeps until
+# the next :07/:22/:37/:52 slot, captures, commits, and repeats; just before
+# the six-hour job limit it starts the next job itself through the dispatch
+# API and exits. That holds through the night and the weekend, so a job is
+# already awake at 09:07 ET. Nothing in the chain goes through the scheduler
+# and nothing outside GitHub is involved. See the docstring in
+# session_runner.py for the full reasoning.
+#
+# TO START THE CHAIN (once, or after it has been broken): Actions ->
+# GEX intraday capture -> Run workflow. To prove it in a few minutes, put a
+# number such as 4 in the "test_links" box: that many jobs hand off to each
+# other immediately, then the last one settles in as a normal link.
 #
 # Cadence note: captures now land within seconds of the grid, so elapsed_s
-# is ~900 on every row a runner was up for. It is still recorded per row and
-# anything built on flow should still normalise by it -- a late start or a
+# is ~900 on every row a link was up for. It is still recorded per row and
+# anything built on flow should still normalise by it -- a broken chain or a
 # missed slot leaves a longer gap, and intraday.log says which.
 
 on:
   schedule:
-    # STARTERS, not captures. Any one of these that fires begins the session
-    # or, if a session is already running, waits in the concurrency queue as
-    # a spare and takes over the moment the running job ends.
+    # REPAIR ONLY. The chain does not need these. They exist for the one
+    # failure it cannot fix itself: a link that died without starting its
+    # successor (runner lost mid-job, or a GitHub incident at the moment of
+    # a handoff). Any one that fires starts a new link -- or, if a link is
+    # alive, waits behind it as a spare and takes over the instant it ends.
     #
-    # Hourly at :53, 12:53-21:53 UTC. That spans both clock regimes with no
-    # edit: session_runner.py works in Eastern time and exits in seconds when
-    # a start lands too early, too late or on a closed day.
-    #
-    # DO NOT RELY ON THESE ALONE. On 2026-10-07 GitHub created no scheduled
-    # run for this repo between 01:11 and 17:52 UTC. The start that matters
-    # is the one sent from OUTSIDE GitHub to the dispatch API:
-    #
-    #   POST https://api.github.com/repos/Emf2912147/GEX/actions/workflows/intraday.yml/dispatches
-    #   Authorization: Bearer <fine-grained token, Actions: read and write, this repo only>
-    #   Accept: application/vnd.github+json
-    #   body: {"ref":"main"}
-    #
-    # A dispatched run is created by an API call, not by the scheduler.
+    # Hourly through both clock regimes' session hours, and three times a
+    # day otherwise so a chain broken on a Saturday is mended before Monday.
     - cron: '53 12-21 * * 1-5'
+    - cron: '23 2,6,10 * * *'
   workflow_dispatch:
+    inputs:
+      test_links:
+        description: 'TEST ONLY: number of immediate handoffs to run before settling in (blank = normal)'
+        required: false
+        default: ''
 
 permissions:
   contents: write
@@ -49,11 +53,11 @@ permissions:
   actions: write
 
 concurrency:
-  # One running, one waiting. This is what makes spare starts safe: a second
-  # start never captures alongside the first, it queues behind it. A third
-  # arrival replaces the one waiting, which then shows as "cancelled" in the
-  # Actions list -- that is a spare being swapped for a newer spare, not a
-  # lost capture.
+  # One running, one waiting. This is what makes the handoff and the spares
+  # safe: a second start never captures alongside the first, it queues behind
+  # it. A third arrival replaces the one waiting, which then shows as
+  # "cancelled" in the Actions list -- that is a spare being swapped for a
+  # newer spare, not a lost capture.
   group: gex-intraday
   cancel-in-progress: false
 
@@ -82,16 +86,17 @@ jobs:
         # the chart builder and pulls it in. Keep this list in sync with capture.yml.
         run: pip install requests pandas numpy matplotlib pyarrow
 
-      - name: Run the session
+      - name: Run one link of the relay
         id: session
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          TEST_LINKS: ${{ inputs.test_links || '0' }}
         run: |
           git config user.name  "gex-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          python session_runner.py
+          python session_runner.py --test-links "$TEST_LINKS"
 
-      # The only way this workflow loses data it captured is a runner that
+      # The only way this workflow loses data it captured is a link that
       # ends with commits it could not push. If that happens the session's
       # files are kept here for 14 days so they can be committed by hand.
       - name: Note the session day
