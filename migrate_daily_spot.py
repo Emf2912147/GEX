@@ -45,11 +45,18 @@ from datetime import datetime
 import pandas as pd
 
 import gamma_exposure as gx
+import market_calendar as cal
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 HIST = os.path.join(HERE, "history")
 
 WALL_EXCLUDE = inspect.signature(gx.find_walls).parameters["exclude"].default
+
+# Cash indexes whose feed spot IS the official close when the file was
+# served with the market closed (settlement is fixed overnight). Without an
+# official close on file, these keep the feed value rather than taking an
+# intraday capture -- see gex_capture.INDEX_SYMBOLS.
+INDEX_SYMBOLS = {"SPX"}
 
 
 def raw_index():
@@ -163,8 +170,12 @@ def main():
     rows = []
     for i, r in d.iterrows():
         key = (str(r["symbol"]), str(r["session_date"]))
-        # Official close first; the intraday capture is the fallback.
+        # Official close first. Then, for an index, the feed itself -- it is
+        # the settled close. The last intraday capture only for the ETFs.
         close, src_label = official.get(key), "official_close"
+        if (close is None and key[0] in INDEX_SYMBOLS
+                and not cal.is_market_open(pd.Timestamp(r["feed_ts"]).to_pydatetime())):
+            close, src_label = float(r["feed_spot"]), "index_close"
         if close is None:
             close, src_label = intraday.get(key), "session_close"
         if close is None:

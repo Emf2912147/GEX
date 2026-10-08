@@ -18,7 +18,7 @@ import sys
 
 import pandas as pd
 
-from market_calendar import is_trading_day
+from market_calendar import et_wall_clock, is_trading_day
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 HIST = os.path.join(HERE, "history")
@@ -30,6 +30,14 @@ FEED_LAG_LIMIT_MIN = 15
 # meaning anything. Add a date ONLY after establishing why it is empty.
 KNOWN_GAPS = {
     "2026-09-23",   # runner stopped ~28h; the single stale row was quarantined
+}
+
+# Sessions with SOME data but too few cycles to be a session series, for the
+# same permanent reason. Listed so the thin-session check means something
+# again: before this it failed every day on these two and nothing else.
+KNOWN_THIN = {
+    "2026-10-06",   # GitHub's scheduler fired 2 in-session runs of 28
+    "2026-10-07",   # 1 of 32; the relay (session_runner.py) went live that night
 }
 
 results = []
@@ -93,14 +101,23 @@ def main():
     # A session with no rows is honest. A session with ONE row is usually a
     # stale pre-open serve wearing today's date -- far more dangerous.
     thin = [str(x) for x, n in s.groupby("day").capture_ts.nunique().items() if n < 5]
-    check("no session with fewer than 5 cycles", not thin, str(thin))
+    new_thin = [x for x in thin if x not in KNOWN_THIN]
+    check("no session with fewer than 5 cycles", not new_thin, str(new_thin))
+    if set(thin) & KNOWN_THIN:
+        print(f"         known thin sessions, not counted: "
+              f"{sorted(set(thin) & KNOWN_THIN)}")
 
     # A run that fires hours after the close writes real quotes under a
     # session date. Nothing is wrong with the chain; it is simply not a
     # session observation, and anything grouping by day will read the latest
     # such row as that day's close.
-    late = s[pd.to_datetime(s.capture_ts, utc=True).dt.time > dt.time(21, 0)]
-    check("no captures after 21:00 UTC", len(late) == 0,
+    #
+    # Measured in Eastern time: 17:00 ET is 21:00 UTC in summer and 22:00 UTC
+    # in winter. A fixed UTC limit would flag every legitimate 16:22-16:52 ET
+    # capture from November to March.
+    et = pd.to_datetime(s.capture_ts, utc=True).map(et_wall_clock)
+    late = s[et.dt.time > dt.time(17, 0)]
+    check("no captures after 17:00 ET", len(late) == 0,
           f"{len(late)} rows on {sorted({str(x) for x in late['day'].unique()})}"
           if len(late) else "")
 

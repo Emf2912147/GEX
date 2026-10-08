@@ -1294,32 +1294,40 @@ def main():
     # so nothing looked wrong. But a row at 22:57 is not a session
     # observation, and anything grouping by day reads it as that day's close.
     #
-    # Window runs to 21:15, not 20:00. The last scheduled cron is 20:52 and
-    # ordinary scheduler delay pushes its execution to 20:53-20:58 -- across
-    # every healthy session on file the final capture lands between 20:46 and
-    # 20:58, and those are legitimate end-of-session observations that must
-    # not be dropped. 21:15 clears the latest observed good capture by 17
-    # minutes while still catching the 22:57 case by nearly two hours.
+    # Window runs to 17:15 ET, not 16:00. The last slot is 16:52 ET and
+    # across every healthy session on file the final capture lands between
+    # 16:46 and 16:58 ET -- legitimate end-of-session observations that must
+    # not be dropped (the feed is 15 minutes delayed, so 16:22 is the first
+    # capture that can carry the closing print). 17:15 clears the latest good
+    # capture by 17 minutes while still catching the 22:57 UTC case by nearly
+    # two hours.
     # BOTH ends. The first version of this gate had only the upper bound,
     # which let an overnight run straight through: a 00:21 UTC run on
     # 2026-10-07 captured SPY at 779.09 -- Tuesday EVENING after-hours quotes
     # -- because 00:21 is "before" 21:15 of the same calendar day. A deferred
     # run is equally wrong whichever side of the session it lands on.
     #
-    # Lower bound 13:00: the first cron is 13:07 and the open is 13:30, so the
-    # earliest legitimate capture is a pre-open one at ~13:07-13:18. Those are
+    # Lower bound 09:00 ET: the first slot is 09:07 and the open is 09:30, so
+    # the earliest legitimate capture is a pre-open one at 09:07. Those are
     # deliberate and present across every healthy session on file.
-    session_start = now.replace(hour=13, minute=0, second=0, microsecond=0)
-    session_end = now.replace(hour=21, minute=15, second=0, microsecond=0)
-    if not args.ignore_calendar and not (session_start <= now <= session_end):
-        if now < session_start:
-            off = (session_start - now).total_seconds() / 60
+    #
+    # EASTERN TIME, NOT UTC. This window was first written as 13:00-21:15 UTC,
+    # which is right only while US clocks are on summer time. From 2026-11-01
+    # the session sits an hour later in UTC and that version would have cut
+    # the 16:22-16:52 ET captures -- including the first one carrying the
+    # close -- every day until March.
+    et = cal.et_wall_clock(now)
+    session_start = et.replace(hour=9, minute=0, second=0, microsecond=0)
+    session_end = et.replace(hour=17, minute=15, second=0, microsecond=0)
+    if not args.ignore_calendar and not (session_start <= et <= session_end):
+        if et < session_start:
+            off = (session_start - et).total_seconds() / 60
             where = f"{off:.0f} min before the session window"
         else:
-            off = (now - session_end).total_seconds() / 60
+            off = (et - session_end).total_seconds() / 60
             where = f"{off:.0f} min past the session window"
-        log(logpath, f"--- intraday skipped  {now:%H:%M} UTC is {where} -- "
-                     f"a deferred run, not a session observation")
+        log(logpath, f"--- intraday skipped  {now:%H:%M} UTC ({et:%H:%M} ET) is "
+                     f"{where} -- a deferred run, not a session observation")
         return 0
 
     log(logpath, f"--- intraday capture  symbols={' '.join(args.symbols)}"

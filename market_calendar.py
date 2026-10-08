@@ -21,7 +21,7 @@ WHY THIS EXISTS
     because THURSDAY was a session, and it captures Thursday.
 """
 
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 
 # Ad-hoc, unscheduled NYSE closures. Add to this set as they occur; there is
 # no algorithm for a state funeral or a hurricane.
@@ -111,6 +111,53 @@ def prev_trading_day(d):
     return d
 
 
+def _nth_sunday(year, month, n):
+    d = date(year, month, 1)
+    while d.weekday() != 6:
+        d += timedelta(days=1)
+    return d + timedelta(weeks=n - 1)
+
+
+def et_offset(d):
+    """US Eastern's offset from UTC on calendar day `d`: -4h (EDT) or -5h (EST).
+
+    The NYSE runs on Eastern wall-clock time, so every session boundary in this
+    repo moves by an hour against UTC twice a year. DST runs from the second
+    Sunday of March to the first Sunday of November; both switches happen on
+    a Sunday at 02:00, so for any trading day the date alone decides it.
+    Stdlib only, like the rest of this module -- no tzdata needed on Windows.
+    """
+    in_dst = _nth_sunday(d.year, 3, 2) <= d < _nth_sunday(d.year, 11, 1)
+    return timedelta(hours=-4 if in_dst else -5)
+
+
+def et_wall_clock(utc_dt):
+    """The Eastern wall-clock time at `utc_dt`, as a NAIVE datetime.
+
+    Compare it with naive Eastern times (09:30, 16:00, ...) -- never with an
+    aware datetime. `utc_dt` may be aware (any zone) or naive UTC.
+    """
+    if utc_dt.tzinfo is not None:
+        utc_dt = utc_dt.astimezone(timezone.utc).replace(tzinfo=None)
+    return utc_dt + et_offset(utc_dt.date())
+
+
+def is_market_open(utc_dt):
+    """True if the NYSE regular session is trading at `utc_dt` (09:30-16:00 ET).
+
+    A cash index quoted while the market is CLOSED is the settled close of the
+    last session; quoted while it is open, it is a live print. That is the
+    whole difference between an exact and a wrong daily SPX anchor: across 22
+    sessions the morning feed matched the official close on all 21 served
+    with the market closed, and missed by 18.84 points on the one served
+    mid-session (the 10/06 capture GitHub deferred to 13:53 ET on 10/07).
+    """
+    et = et_wall_clock(utc_dt)
+    return (is_trading_day(et.date()) and
+            datetime(et.year, et.month, et.day, 9, 30) <= et
+            < datetime(et.year, et.month, et.day, 16, 0))
+
+
 def should_capture(capture_date):
     """True if the daily job should run on `capture_date`.
 
@@ -161,5 +208,24 @@ if __name__ == "__main__":
     assert not should_capture(date(2026, 4, 4)), "Sat: Fri was a holiday"
     assert not should_capture(date(2026, 4, 6)), "Mon: Sun"
     assert should_capture(date(2026, 4, 7)), "Tue captures Mon 4/6"
+
+    # Eastern time. 2026: DST ends Sun 11/1, starts again Sun 2027-03-14.
+    assert et_offset(date(2026, 10, 30)) == timedelta(hours=-4), "Fri before: EDT"
+    assert et_offset(date(2026, 11, 2)) == timedelta(hours=-5), "Mon after: EST"
+    assert et_offset(date(2027, 3, 12)) == timedelta(hours=-5)
+    assert et_offset(date(2027, 3, 15)) == timedelta(hours=-4)
+    assert et_wall_clock(datetime(2026, 10, 8, 13, 30, tzinfo=timezone.utc)) \
+        == datetime(2026, 10, 8, 9, 30), "summer open is 13:30 UTC"
+    assert et_wall_clock(datetime(2026, 11, 2, 14, 30, tzinfo=timezone.utc)) \
+        == datetime(2026, 11, 2, 9, 30), "winter open is 14:30 UTC"
+    assert et_wall_clock(datetime(2026, 10, 9, 0, 21)) \
+        == datetime(2026, 10, 8, 20, 21), "naive input is UTC; crosses midnight"
+
+    assert not is_market_open(datetime(2026, 10, 8, 11, 54)), "07:54 ET pre-open"
+    assert is_market_open(datetime(2026, 10, 7, 17, 53)), "13:53 ET mid-session"
+    assert not is_market_open(datetime(2026, 10, 7, 20, 30)), "16:30 ET after close"
+    assert not is_market_open(datetime(2026, 10, 10, 15, 0)), "Saturday"
+    assert is_market_open(datetime(2026, 11, 2, 14, 45)), "09:45 EST = 14:45 UTC"
+    assert not is_market_open(datetime(2026, 11, 2, 14, 15)), "09:15 EST, pre-open"
 
     print("market_calendar: all self-tests passed")

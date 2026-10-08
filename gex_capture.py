@@ -32,6 +32,7 @@ Layout:
 import argparse
 import gzip
 import io
+import json
 import os
 import sys
 import traceback
@@ -48,6 +49,14 @@ import gamma_exposure as gx
 SCHEMA_VERSION = 3
 
 DEFAULT_SYMBOLS = ["SPX", "SPY", "QQQ", "IWM"]
+
+# Cash indexes. Served while the market is closed, Cboe's `spot` for these
+# IS the official close -- index settlement is fixed overnight. SPX matched
+# Robinhood's official close to the cent on all 21 sessions served with the
+# market closed, and missed by 18.84 on the one served mid-session. So the
+# feed is the anchor for these whenever market_calendar.is_market_open() says
+# the market was closed at feed_ts.
+INDEX_SYMBOLS = {"SPX"}
 
 METRIC_COLUMNS = [
     "feed_ts", "feed_date", "session_date", "capture_ts", "symbol", "spot",
@@ -105,6 +114,21 @@ def session_already_captured(metrics_path, symbol, session_date):
     return len(hit) > 0
 
 
+def official_close(outdir, symbol, session_date):
+    """The official close from history/official_closes.json, or None.
+
+    Usually None at capture time -- the file is refreshed by hand -- but when
+    it is present it is exact and beats everything else.
+    """
+    path = os.path.join(outdir, "official_closes.json")
+    try:
+        with open(path, encoding="utf-8") as fh:
+            v = json.load(fh).get("closes", {}).get(symbol, {}).get(str(session_date))
+        return float(v) if v else None
+    except (OSError, ValueError):
+        return None
+
+
 def session_close(outdir, symbol, session_date):
     """The symbol's last traded spot during `session_date`, from intraday_state.
 
@@ -144,6 +168,22 @@ def session_close(outdir, symbol, session_date):
     return float(st.sort_values("capture_ts")["spot"].iloc[-1])
 
 
+def _served_while_open(feed_ts):
+    """True if Cboe stamped this file while the regular session was trading.
+
+    feed_ts is naive UTC, as everywhere else in this repo. An unparseable
+    stamp counts as open -- the safe answer, since it only costs the index
+    its feed anchor, never gives it a wrong one.
+    """
+    try:
+        ts = pd.Timestamp(feed_ts)
+    except (TypeError, ValueError):
+        return True
+    if ts.tzinfo is not None:
+        ts = ts.tz_convert("UTC").tz_localize(None)
+    return cal.is_market_open(ts.to_pydatetime())
+
+
 def capture_symbol(symbol, args, logpath):
     """Fetch, store raw, compute metrics. Returns a metrics dict or None."""
     payload = gx.fetch_chain(symbol)
@@ -173,19 +213,32 @@ def capture_symbol(symbol, args, logpath):
     # was a session. Everything downstream should key on session_date.
     session_date = str(session_date)
 
-    # Anchor on the session's real close where we have it -- see session_close().
+    # Anchor on the best close available, in this order:
+    #   1. official_closes.json        exact
+    #   2. the feed, for SPX            exact -- if served with the market
+    #                                   closed (index settlement is fixed)
+    #   3. last intraday capture        ETFs only; good to ~0.07% when the
+    #                                   session was fully captured
+    #   4. the feed, for ETFs           a pre-market quote; up to 1.09% off
+    # Step 2 was missing until 2026-10-08: SPX fell through to step 3, so on
+    # 10/05 and 10/07, when the session's last capture was mid-afternoon, an
+    # exact feed spot was overwritten with a stale one (7777.04 for a 7773.95
+    # close, 7804.85 for 7801.77).
     feed_spot = spot
-    close = session_close(args.outdir, symbol, session_date)
+    close, spot_source = official_close(args.outdir, symbol, session_date), "official_close"
+    if close is None and symbol in INDEX_SYMBOLS and not _served_while_open(feed_ts):
+        close, spot_source = feed_spot, "index_close"
+    if close is None:
+        close, spot_source = session_close(args.outdir, symbol, session_date), "session_close"
     if close is not None and close > 0:
-        spot_source = "session_close"
         if abs(close / feed_spot - 1) > 0.0005:
             log(logpath, f"{symbol}: spot {feed_spot:.4f} from the feed is "
                          f"{(feed_spot / close - 1) * 100:+.2f}% off the "
-                         f"{session_date} close {close:.4f} -- using the close")
+                         f"{session_date} close {close:.4f} ({spot_source}) -- using the close")
         spot = close
     else:
         spot_source = "feed"
-        log(logpath, f"{symbol}: no intraday close for {session_date}, "
+        log(logpath, f"{symbol}: no close on file for {session_date}, "
                      f"anchoring on the feed spot {feed_spot:.4f}")
 
     raw = df.copy()

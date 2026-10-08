@@ -47,10 +47,9 @@ WHAT CAN STILL BREAK IT
     or queues behind a live one as a spare and takes over the instant it
     ends. They repair the chain; they do not drive it.
 
-    The session-hours gate inside gex_intraday.py is hard-coded 13:00-21:15
-    UTC. That is correct until US clocks change on 2026-11-01 and one hour
-    wrong after. The grid here will follow the clock; the gate will not, and
-    it will silently drop the 16:22-16:52 ET slots until it is fixed.
+    The session-hours gate inside gex_intraday.py must agree with the grid
+    here. Both are in Eastern time (the gate was UTC until 2026-10-08), so
+    the November and March clock changes need no edit in either.
 
     A link keeps the copy of THIS file it started with. After pushing a
     change to session_runner.py, the running link picks it up at its next

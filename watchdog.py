@@ -41,13 +41,15 @@ import sys
 
 import pandas as pd
 
-from market_calendar import is_trading_day, should_capture
+from market_calendar import et_wall_clock, is_trading_day, should_capture
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 HIST = os.path.join(HERE, "history")
 
-OPEN_UTC = dt.time(13, 30)
-CLOSE_UTC = dt.time(20, 0)
+# Eastern wall-clock time. These were UTC (13:30 / 20:00) until 2026-10-08,
+# which is an hour early for the whole of winter.
+OPEN_ET = dt.time(9, 30)
+CLOSE_ET = dt.time(16, 0)
 CADENCE_MIN = 15
 # Actions drops and delays runs routinely, so demand well under the nominal
 # rate. Observed good sessions land 20-27 cycles against a nominal 27; 60%
@@ -78,6 +80,7 @@ def main():
     if now.tzinfo is None:
         now = now.replace(tzinfo=dt.timezone.utc)
     today = now.date()
+    et_now = et_wall_clock(now)
     print(f"watchdog {now:%Y-%m-%d %H:%M} UTC ({today:%a})\n")
 
     s = pd.read_csv(os.path.join(HIST, "intraday_state.csv"))
@@ -86,15 +89,15 @@ def main():
     # ---- intraday ----------------------------------------------------------
     if not is_trading_day(today):
         ok(f"{today} is not an NYSE session -- intraday not expected")
-    elif now.time() < OPEN_UTC:
+    elif et_now.time() < OPEN_ET:
         ok("before the open -- intraday not expected yet")
     else:
         today_rows = s[s["ts"].dt.date == today]
         cycles = today_rows["capture_ts"].nunique()
 
-        elapsed = (min(now.time(), CLOSE_UTC).hour * 60
-                   + min(now.time(), CLOSE_UTC).minute
-                   - OPEN_UTC.hour * 60 - OPEN_UTC.minute)
+        elapsed = (min(et_now.time(), CLOSE_ET).hour * 60
+                   + min(et_now.time(), CLOSE_ET).minute
+                   - OPEN_ET.hour * 60 - OPEN_ET.minute)
         expected = max(int(elapsed / CADENCE_MIN), 1)
         floor = max(int(expected * MIN_FRACTION), 1)
 
@@ -108,13 +111,13 @@ def main():
         # banked, then silence. The count check alone would pass that.
         if len(today_rows):
             silence = (now - today_rows["ts"].max()).total_seconds() / 60
-            if now.time() <= CLOSE_UTC and silence > MAX_SILENCE_MIN:
+            if et_now.time() <= CLOSE_ET and silence > MAX_SILENCE_MIN:
                 fail(f"no capture for {silence:.0f} min "
                      f"(last {today_rows['ts'].max():%H:%M} UTC) -- "
                      f"the scheduler has stalled mid-session")
             else:
                 ok(f"last capture {silence:.0f} min ago")
-        elif now.time() > dt.time(14, 30):
+        elif et_now.time() > dt.time(10, 30):
             fail("no intraday rows at all today")
 
     # ---- daily -------------------------------------------------------------
