@@ -7497,3 +7497,4 @@ egress, this endpoint has to be reachable for the script to work.
 2026-10-08T16:22:05+00:00  VIX: 15.49 (+2.7% 1d, -13.2% 20d)  VIX9D: 12.23  term contango(short-cheap) -> vix_state.csv
 2026-10-08T16:22:05+00:00  RV QQQ: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
 2026-10-08T16:22:05+00:00  --- intraday done  ok=4  skipped=0  failed=0  vix=written
+2026-10-08T16:27:01+00:00  --- runner handoff before the 2026-10-08 16:37 UTC slot: successor dispatched
