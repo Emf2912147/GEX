@@ -55,6 +55,9 @@ CADENCE_MIN = 15
 # rate. Observed good sessions land 20-27 cycles against a nominal 27; 60%
 # of nominal flags a real outage without crying wolf over ordinary drift.
 MIN_FRACTION = 0.60
+# Rows a complete daily capture writes: one per symbol in
+# gex_capture.DEFAULT_SYMBOLS (GLD and TLT added 2026-10-08).
+DAILY_SYMBOLS = 6
 # Longest acceptable silence mid-session. Four consecutive missed cycles.
 MAX_SILENCE_MIN = 60
 
@@ -127,8 +130,8 @@ def main():
         got = len(d[d["session_date"].astype(str) == session])
         if now.time() < dt.time(12, 30):
             ok(f"daily for session {session} not due yet")
-        elif got < 4:
-            fail(f"daily capture for session {session}: {got}/4 symbols")
+        elif got < DAILY_SYMBOLS:
+            fail(f"daily capture for session {session}: {got}/{DAILY_SYMBOLS} symbols")
         else:
             ok(f"daily capture for session {session} complete")
     else:

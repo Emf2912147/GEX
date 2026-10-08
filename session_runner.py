@@ -112,7 +112,9 @@ CAPTURE_WORKFLOW = "capture.yml"
 DAILY_DUE_UTC = dt.time(11, 45)
 DAILY_RETRY = dt.timedelta(minutes=60)
 DAILY_MAX_DISPATCHES = 2
-DAILY_SYMBOLS = 4
+# One row per symbol in gex_capture.DEFAULT_SYMBOLS (GLD and TLT added
+# 2026-10-08). Keep in step with it, and with watchdog.py.
+DAILY_SYMBOLS = 6
 DAILY_CHECK_EVERY = dt.timedelta(minutes=10)
 
 # Local mode only (no relay): a start earlier than this before the first slot
@@ -526,7 +528,7 @@ class FakeIO:
     """A link against a fake clock. Nothing touches disk or network."""
 
     def __init__(self, start, last_capture=None, capture_s=40, slow=None,
-                 daily=4, daily_lands_after=None, push_ok=True, dispatch_ok=True):
+                 daily=DAILY_SYMBOLS, daily_lands_after=None, push_ok=True, dispatch_ok=True):
         self.t = start
         self._last = last_capture
         self.capture_s, self.slow = capture_s, slow or {}
@@ -563,7 +565,7 @@ class FakeIO:
 
     def daily_rows(self, session):
         if self.daily_lands_after and self.t >= self.daily_lands_after:
-            return 4
+            return DAILY_SYMBOLS
         return self.daily
 
     def can_dispatch(self):
@@ -702,7 +704,7 @@ def selftest():
     d = [x[1] for x in io.dispatched if x[0] == CAPTURE_WORKFLOW]
     assert len(d) == DAILY_MAX_DISPATCHES and d[1] - d[0] >= DAILY_RETRY
     # Already on file: never asked for.
-    io = FakeIO(_u("2026-10-08T11:00:00"), daily=4)
+    io = FakeIO(_u("2026-10-08T11:00:00"), daily=DAILY_SYMBOLS)
     run(io)
     assert CAPTURE_WORKFLOW not in [x[0] for x in io.dispatched]
 

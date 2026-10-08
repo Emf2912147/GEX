@@ -26,13 +26,17 @@ import pandas as pd
 
 import gamma_exposure as gx
 
-SYMBOL_ORDER = ["SPX", "SPY", "QQQ", "IWM"]
+SYMBOL_ORDER = ["SPX", "SPY", "QQQ", "IWM", "GLD", "TLT"]
 TRAIL = 90          # sparkline lookback, observations
 
 # Strike binning per symbol. SPX lists 5/10/25 increments in one chain; the
 # ETFs list 1-point strikes, so a 25 bin would collapse the plot window into
 # three buckets.
-BIN_SIZE = {"SPX": 25, "SPY": 5, "QQQ": 5, "IWM": 2.5}
+# GLD lists $1 strikes near the money (~376 on 2026-10-07), so 2.5 gives the
+# same ~30 bars across the plot window as IWM. TLT lists $1 monthlies and $0.50
+# weeklies (~77); a 0.5 bin would alternate weekly-only and weekly+monthly
+# bars, so it is binned at 1.
+BIN_SIZE = {"SPX": 25, "SPY": 5, "QQQ": 5, "IWM": 2.5, "GLD": 2.5, "TLT": 1}
 DEFAULT_BIN = 5
 
 
