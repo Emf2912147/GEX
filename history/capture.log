@@ -359,3 +359,23 @@
 2026-10-08T17:56:35+00:00  QQQ: session 2026-10-07 already captured, skipping
 2026-10-08T17:56:36+00:00  IWM: session 2026-10-07 already captured, skipping
 2026-10-08T17:56:36+00:00  === capture done  ok=0  failed=0
+2026-10-09T11:52:10+00:00  === capture start  symbols=SPX SPY QQQ IWM GLD TLT
+2026-10-09T11:52:12+00:00  SPX: 29,904 contracts -> SPX.parquet
+2026-10-09T11:52:12+00:00  SPX: spot 7,765.36  netGEX 61.43Bn  flip 7754.7903  walls 7800.0/7700.0  positive
+2026-10-09T11:52:13+00:00  SPY: spot 777.2900 from the feed is +0.41% off the 2026-10-08 close 774.1200 (session_close) -- using the close
+2026-10-09T11:52:13+00:00  SPY: 13,260 contracts -> SPY.parquet
+2026-10-09T11:52:13+00:00  SPY: spot 774.12  netGEX -0.34Bn  flip 774.7236  walls 780.0/767.0  negative
+2026-10-09T11:52:14+00:00  QQQ: spot 753.9650 from the feed is +0.75% off the 2026-10-08 close 748.3700 (session_close) -- using the close
+2026-10-09T11:52:14+00:00  QQQ: 11,518 contracts -> QQQ.parquet
+2026-10-09T11:52:14+00:00  QQQ: spot 748.37  netGEX -1.85Bn  flip 749.9449  walls 760.0/740.0  negative
+2026-10-09T11:52:14+00:00  IWM: spot 278.7400 from the feed is +0.34% off the 2026-10-08 close 277.7900 (session_close) -- using the close
+2026-10-09T11:52:14+00:00  IWM: 5,948 contracts -> IWM.parquet
+2026-10-09T11:52:14+00:00  IWM: spot 277.79  netGEX -3.03Bn  flip 283.8617  walls 284.0/275.0  negative
+2026-10-09T11:52:15+00:00  GLD: no close on file for 2026-10-08, anchoring on the feed spot 383.5783
+2026-10-09T11:52:15+00:00  GLD: 8,118 contracts -> GLD.parquet
+2026-10-09T11:52:15+00:00  GLD: spot 383.58  netGEX -0.01Bn  flip 378.9644  walls 390.0/370.0  negative
+2026-10-09T11:52:15+00:00  TLT: no close on file for 2026-10-08, anchoring on the feed spot 77.7400
+2026-10-09T11:52:15+00:00  TLT: 3,060 contracts -> TLT.parquet
+2026-10-09T11:52:15+00:00  TLT: spot 77.74  netGEX 0.43Bn  flip 76.9004  walls 78.5/75.0  positive
+2026-10-09T11:52:15+00:00  appended 6 metric row(s)
+2026-10-09T11:52:15+00:00  === capture done  ok=6  failed=0
