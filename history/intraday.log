@@ -8437,3 +8437,4 @@ egress, this endpoint has to be reachable for the script to work.
 2026-10-09T19:07:05+00:00  RV GLD: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
 2026-10-09T19:07:05+00:00  RV TLT: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
 2026-10-09T19:07:05+00:00  --- intraday done  ok=6  skipped=0  failed=0  vix=written
+2026-10-09T19:12:01+00:00  --- runner handoff before the 2026-10-09 19:22 UTC slot: successor dispatched
