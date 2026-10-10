@@ -6,3 +6,11 @@
 2026-10-10T10:29:33.495867+00:00Z  XLK: dropped 3 non-equity rows -- ['-', 'IXTZ6', '-']
 2026-10-10T10:29:33.495966+00:00Z  XLK: top 30 of 75 constituents by weight
 2026-10-10T10:30:21.355098+00:00Z  === fundamentals capture done: 90/90 names captured ===
+2026-10-10T10:49:48.452212+00:00Z  === fundamentals capture start (3 sectors) ===
+2026-10-10T10:49:48.907337+00:00Z  XLF: dropped 4 non-equity rows -- ['-', '-', '-', 'IXAZ6']
+2026-10-10T10:49:48.907425+00:00Z  XLF: top 30 of 76 constituents by weight
+2026-10-10T10:50:47.193502+00:00Z  XLV: dropped 4 non-equity rows -- ['-', '-', 'IXCZ6', '2602335D']
+2026-10-10T10:50:47.193629+00:00Z  XLV: top 30 of 60 constituents by weight
+2026-10-10T10:51:43.934109+00:00Z  XLK: dropped 3 non-equity rows -- ['-', 'IXTZ6', '-']
+2026-10-10T10:51:43.934233+00:00Z  XLK: top 30 of 75 constituents by weight
+2026-10-10T10:52:41.798170+00:00Z  === fundamentals capture done: 90/90 names captured ===
