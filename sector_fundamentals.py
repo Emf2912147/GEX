@@ -280,7 +280,9 @@ def valuation(info, fcf):
             fcf_yield = None
     return {
         "market_cap": mcap,
-        "price_to_book": _pos(info.get("priceToBook")),
+        # < 0.2x is a Yahoo units error (BRK.B reads ~0.0007x), not a value
+        "price_to_book": (lambda v: v if v is None or v >= 0.2 else None)(
+            _pos(info.get("priceToBook"))),
         "ev_to_ebitda": _pos(info.get("enterpriseToEbitda")),
         "forward_pe": _pos(info.get("forwardPE")),
         "fcf_yield": fcf_yield,

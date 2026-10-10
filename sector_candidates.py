@@ -125,6 +125,10 @@ RANKED_COLUMNS = [
 RANKED_SCHEMA_VERSION = 3
 WATCHLIST = {"CPB"}
 SHORT_MIN_PB = 1.0
+# A P/B below this is a data error, not a valuation. Yahoo reports BRK.B at
+# ~0.0007x (book per share is in class-A units), which put Berkshire on the
+# below-book list on 2026-10-10. Such readings are treated as missing.
+MIN_VALID_PB = 0.2
 VALUE_WEIGHT = 0.25
 VALUE_Z_CLIP = 2.0
 BOOK_VALUE_SECTORS = {"XLF"}
@@ -680,6 +684,13 @@ def main():
         log(logpath, "no overlap between fundamentals and technicals universes -- nothing to score")
         return 1
 
+    pb_all = pd.to_numeric(merged.get("price_to_book"), errors="coerce")
+    bad_pb = merged[(pb_all > 0) & (pb_all < MIN_VALID_PB)]
+    if not bad_pb.empty:
+        log(logpath, "P/B ignored as a data error (< %.1fx): %s" % (
+            MIN_VALID_PB, ", ".join(f"{t} {v:.4f}x" for t, v in
+                                    zip(bad_pb["ticker"], pb_all[bad_pb.index]))))
+        merged.loc[bad_pb.index, "price_to_book"] = float("nan")
     merged = add_value_z(merged)
     pbs = pd.to_numeric(merged["price_to_book"], errors="coerce")
     below_book = merged[(pbs > 0) & (pbs < SHORT_MIN_PB)]
