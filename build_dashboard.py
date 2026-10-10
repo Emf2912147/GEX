@@ -550,6 +550,7 @@ function gbToggle(btn){{
     <h1>GEX Monitor</h1>
     <p class="sub">Session <b>{session}</b> &middot; settled open interest &middot; built {built}</p>
     <p class="sub note">Settled OI is always one session behind: a session&rsquo;s book settles the next morning. Each card also shows the last intraday capture.</p>
+    <p class="sub"><a href="sector.html" style="color:var(--ink-2)">Sector Trade Monitor &rarr;</a></p>
   </header>
   {body}
   <footer>

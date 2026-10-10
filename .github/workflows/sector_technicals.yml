@@ -9,7 +9,8 @@ name: Sector agent - technicals capture
 #
 # Runs sector_technicals.py, then sector_candidates.py to refresh the ranked
 # long/short pairs against the freshest technicals and the latest fundamentals
-# capture. ISOLATION: only ever stages history/sector/* -- never touches the
+# capture. ISOLATION: only ever stages history/sector/* and docs/sector.html
+# (the Sector Trade Monitor page) -- never touches the
 # Trade Agent / Agent007 pipeline's files (intraday_state.csv, vix_state.csv,
 # daily_metrics.csv, rader_daily.csv), which stay local-machine-committed.
 
@@ -56,11 +57,18 @@ jobs:
         continue-on-error: true
         run: python sector_candidates.py --outdir history/sector
 
-      - name: Commit and push (history/sector only)
+      # Sector Trade Monitor page for GitHub Pages: docs/sector.html, next
+      # to the GEX monitor. One self-contained HTML file, rebuilt each run;
+      # it reads the candidate tables just written and adds no data files.
+      - name: Build Sector Trade Monitor page
+        continue-on-error: true
+        run: python build_sector_monitor.py
+
+      - name: Commit and push (history/sector + docs/sector.html only)
         run: |
           git config user.name "sector-agent-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add history/sector
+          git add history/sector docs/sector.html
           if git diff --cached --quiet; then
             echo "No changes to commit."
             exit 0

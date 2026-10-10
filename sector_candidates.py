@@ -45,6 +45,8 @@ OUTPUT -- two ranked tables plus the original pair file
     sector_candidates_options.csv : names with liquid OPTIONS.
     sector_candidates_stock.csv   : names with illiquid options but a liquid
                                     underlying -- trade the shares.
+    Every row carries a trade quality score (0-100, graded A-D) -- see the
+    "Trade quality score" block above trade_quality() for how it is built.
     Each holds, per sector, up to TOP_K longs (highest composite score among
     names passing every quality gate) and up to TOP_K shorts (lowest score
     among names failing a gate; the lowest overall if none fails), one row
@@ -72,9 +74,13 @@ RANKED_COLUMNS = [
     "capture_ts", "table", "sector_etf", "side", "rank", "ticker", "score",
     "failed_gates", "spot", "atm_spread_pct", "atm_oi", "adv_usd_20d",
     "rel_strength_20d", "rel_strength_60d",
-    "n_names_in_sector", "n_in_table", "n_quality_passed", "schema_version",
+    "n_names_in_sector", "n_in_table", "n_quality_passed",
+    "trade_quality", "grade", "tq_conviction", "tq_momentum", "tq_execution",
+    "tq_event_carry", "dividend_yield", "next_filing_est", "schema_version",
 ]
-RANKED_SCHEMA_VERSION = 1
+# 2: trade quality score and its four components; dividend_yield and
+#    next_filing_est carried through for display.
+RANKED_SCHEMA_VERSION = 2
 TOP_K = 3
 MIN_ADV_USD = 50_000_000   # median daily dollar volume, last 20 sessions
 
@@ -212,11 +218,113 @@ def _num(v, nd=4):
     return "" if pd.isna(v) else round(float(v), nd)
 
 
+# --------------------------------------------------------------------------
+# Trade quality score (TQS), 0-100
+#
+# The composite score decides WHICH names are candidates and in what order.
+# TQS grades how good each one is AS A TRADE, on four parts:
+#   conviction  30  how FAR the composite stands from the sector average, in
+#                   standard deviations over every scorable name in the sector
+#                   (both tables): +2 sd scores full marks for a long, -2 sd
+#                   for a short, the average scores 0. Not a rank -- every
+#                   listed name is near the top or bottom by construction, so
+#                   a rank would grade them all alike.
+#   momentum    25  does price confirm the side? Average 20d/60d return vs the
+#                   sector ETF: +10% scores full marks for a long, -10% for a
+#                   short, 0% scores half
+#   execution   20  how cleanly it can be traded. Options table: ATM spread
+#                   (10% -> 0, 2% -> full) and open interest (100 -> 0,
+#                   5,000 -> full). Shares table: daily dollar volume
+#                   ($50M -> 0, $2B -> full)
+#   event/carry 25  starts full; an estimated filing within 14 days costs
+#                   half (a binary event inside the trade window), and a
+#                   short loses up to half for the dividend it must pay
+#                   (8%+ yield costs the full half)
+# Grades: A >= 75, B >= 60, C >= 45, D below.
+# --------------------------------------------------------------------------
+TQS_WEIGHTS = {"conviction": 30, "momentum": 25, "execution": 20, "event_carry": 25}
+CONVICTION_FULL_Z = 2.0
+GRADES = ((75, "A"), (60, "B"), (45, "C"), (0, "D"))
+EVENT_WINDOW_DAYS = 14
+
+
+def _clamp(x):
+    return max(0.0, min(1.0, x))
+
+
+def days_to_filing(row, now):
+    nf = row.get("next_filing_est")
+    if not isinstance(nf, str) or not nf:
+        return None
+    try:
+        return (datetime.strptime(nf, "%Y-%m-%d").date() - now.date()).days
+    except ValueError:
+        return None
+
+
+def trade_quality(row, side, table, z, now):
+    """z: the name's composite in sector standard deviations from the
+    sector mean. Returns (total 0-100, grade, {component: 0-1})."""
+    import math
+    parts = {}
+    parts["conviction"] = _clamp((z if side == "long" else -z) / CONVICTION_FULL_Z)
+
+    rels = [v for v in (row.get("rel_strength_20d"), row.get("rel_strength_60d"))
+            if pd.notna(v)]
+    if rels:
+        m = sum(rels) / len(rels)
+        parts["momentum"] = _clamp(0.5 + (m if side == "long" else -m) / 0.20)
+    else:
+        parts["momentum"] = 0.5
+
+    if table == "options":
+        spread = pd.to_numeric(row.get("atm_spread_pct"), errors="coerce")
+        oi = pd.to_numeric(row.get("atm_oi"), errors="coerce")
+        s_part = _clamp((MAX_ATM_SPREAD_PCT - spread) / 0.08) if pd.notna(spread) else 0.0
+        o_part = (_clamp(math.log10(oi / MIN_ATM_OI) / math.log10(50))
+                  if pd.notna(oi) and oi > 0 else 0.0)
+        parts["execution"] = 0.6 * s_part + 0.4 * o_part
+    else:
+        adv = pd.to_numeric(row.get("adv_usd_20d"), errors="coerce")
+        parts["execution"] = (_clamp(math.log10(adv / MIN_ADV_USD) / math.log10(40))
+                              if pd.notna(adv) and adv > 0 else 0.0)
+
+    ev = 1.0
+    d = days_to_filing(row, now)
+    if d is not None and 0 <= d <= EVENT_WINDOW_DAYS:
+        ev -= 0.5
+    if side == "short":
+        dy = pd.to_numeric(row.get("dividend_yield"), errors="coerce")
+        if pd.notna(dy) and dy > 0:
+            ev -= 0.5 * _clamp(dy / 0.08)
+    parts["event_carry"] = _clamp(ev)
+
+    total = sum(TQS_WEIGHTS[k] * v for k, v in parts.items())
+    grade = next(g for cut, g in GRADES if total >= cut)
+    return round(total, 1), grade, parts
+
+
+def sector_zscores(grp, now):
+    """{ticker: composite z-score} over every scorable name in the sector,
+    whichever table it lands in."""
+    sc_ = {}
+    for _, r in grp.iterrows():
+        if unscorable(r):
+            continue
+        sc_[r["ticker"]] = composite_score(r, quality_gate_failures(r, now=now))
+    vals = pd.Series(sc_, dtype=float)
+    sd = vals.std(ddof=0) if len(vals) > 1 else 0.0
+    if not sd:
+        return {t: 0.0 for t in sc_}
+    return ((vals - vals.mean()) / sd).to_dict()
+
+
 def build_ranked(merged, now=None, k=TOP_K):
     """Pure function: merged dataframe -> rows for the two ranked tables."""
     now = now or datetime.now(timezone.utc)
     rows = {"options": [], "stock": []}
     for sector_etf, grp in merged.groupby("sector_etf"):
+        zs = sector_zscores(grp, now)
         for table in ("options", "stock"):
             scored = []
             for _, r in grp.iterrows():
@@ -228,6 +336,8 @@ def build_ranked(merged, now=None, k=TOP_K):
             n_pass = sum(1 for s in scored if not s[2])
             for side, picks in (("long", longs), ("short", shorts)):
                 for i, (t, sc_, fl, r) in enumerate(picks, 1):
+                    tq, grade, parts = trade_quality(r, side, table,
+                                                     zs.get(t, 0.0), now)
                     rows[table].append({
                         "capture_ts": now.isoformat(), "table": table,
                         "sector_etf": sector_etf, "side": side, "rank": i,
@@ -241,6 +351,13 @@ def build_ranked(merged, now=None, k=TOP_K):
                         "rel_strength_60d": _num(r.get("rel_strength_60d")),
                         "n_names_in_sector": len(grp), "n_in_table": len(scored),
                         "n_quality_passed": n_pass,
+                        "trade_quality": tq, "grade": grade,
+                        "tq_conviction": round(parts["conviction"], 3),
+                        "tq_momentum": round(parts["momentum"], 3),
+                        "tq_execution": round(parts["execution"], 3),
+                        "tq_event_carry": round(parts["event_carry"], 3),
+                        "dividend_yield": _num(r.get("dividend_yield")),
+                        "next_filing_est": r.get("next_filing_est") or "",
                         "schema_version": RANKED_SCHEMA_VERSION,
                     })
     return rows
@@ -377,8 +494,10 @@ def main():
     for table, rows in ranked.items():
         for sector in sorted({r["sector_etf"] for r in merged.to_dict("records")}):
             sel = [r for r in rows if r["sector_etf"] == sector]
-            lg = ",".join(r["ticker"] for r in sel if r["side"] == "long") or "-"
-            sh = ",".join(r["ticker"] for r in sel if r["side"] == "short") or "-"
+            lg = ",".join(f"{r['ticker']}({r['grade']})" for r in sel
+                          if r["side"] == "long") or "-"
+            sh = ",".join(f"{r['ticker']}({r['grade']})" for r in sel
+                          if r["side"] == "short") or "-"
             n = sel[0]["n_in_table"] if sel else 0
             log(logpath, f"[{table}] {sector}: {n} names  long {lg}  short {sh}")
     log(logpath, f"=== candidates: {len(out_rows)} sector pairs, "
@@ -390,8 +509,9 @@ def main():
         for table, rows in ranked.items():
             print(f"\n[{table}]")
             print(pd.DataFrame(rows, columns=RANKED_COLUMNS)
-                  [["sector_etf", "side", "rank", "ticker", "score", "failed_gates",
-                    "atm_spread_pct", "atm_oi", "adv_usd_20d"]].to_string())
+                  [["sector_etf", "side", "rank", "ticker", "score", "trade_quality",
+                    "grade", "tq_conviction", "tq_momentum", "tq_execution",
+                    "tq_event_carry"]].to_string())
         return 0
 
     out_path = os.path.join(args.outdir, "sector_candidates.csv")

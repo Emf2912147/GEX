@@ -98,14 +98,17 @@ FUND_COLUMNS = [
     "operating_margin", "operating_margin_prior",
     "fcf", "fcf_prior",
     "total_debt", "cash_and_equiv", "net_debt", "ebitda_approx", "net_debt_to_ebitda",
-    "shares_outstanding",
+    "shares_outstanding", "dividend_yield",
     "next_filing_est", "schema_version",
 ]
 # Bumped from 1 -> 2: source changed EDGAR -> Yahoo Finance and the `cik`
 # column was dropped (yfinance needs no CIK lookup). A reader that assumes
 # the old column set should see this change, not silently misalign columns
 # -- the exact failure mode a schema_version bump exists to prevent.
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
+# 3 (2026-10-10): dividend_yield added -- forward annual dividend / price, as
+#   a fraction. Feeds the short-carry part of the trade quality score: a
+#   short pays the dividend.
 
 YF_MIN_INTERVAL_S = 0.5   # spacing between tickers -- twice-weekly volume, no rush
 
@@ -243,6 +246,33 @@ def estimate_next_earnings(ticker_obj, logpath, ticker):
         return None
 
 
+def forward_dividend_yield(info):
+    """Forward annual dividend / price, as a fraction (0.075 = 7.5%).
+
+    Computed from dividendRate ($/share/yr) and price rather than read from
+    Yahoo's dividendYield, whose units changed between yfinance versions
+    (fraction in some, percent in others). Falls back to the trailing
+    yield, which Yahoo reports as a fraction. 0.0 for a non-payer whose
+    price is known; None when nothing usable is there."""
+    info = info or {}
+    price = next((info.get(k) for k in ("currentPrice", "regularMarketPrice",
+                                       "previousClose") if info.get(k)), None)
+    rate = info.get("dividendRate")
+    if rate is not None and price:
+        try:
+            return float(rate) / float(price)
+        except (TypeError, ValueError, ZeroDivisionError):
+            pass
+    trailing = info.get("trailingAnnualDividendYield")
+    if trailing is not None:
+        try:
+            t = float(trailing)
+            return t if t < 1 else None    # a percent slipped through -- refuse
+        except (TypeError, ValueError):
+            pass
+    return 0.0 if price else None
+
+
 def build_row(ticker, sector_etf, info, financials, balance_sheet, cashflow, next_filing,
               run_ts):
     """Pure function: yfinance data -> output row. Separated from the
@@ -286,6 +316,7 @@ def build_row(ticker, sector_etf, info, financials, balance_sheet, cashflow, nex
 
     net_debt = (total_debt - cash) if total_debt is not None and cash is not None else None
     net_debt_to_ebitda = (net_debt / ebitda) if net_debt is not None and ebitda not in (None, 0) else None
+    dividend_yield = forward_dividend_yield(info)
     revenue_growth = (revenue / revenue_prior - 1) if revenue is not None and revenue_prior else info.get("revenueGrowth")
 
     return {
@@ -303,7 +334,7 @@ def build_row(ticker, sector_etf, info, financials, balance_sheet, cashflow, nex
         "fcf": fcf, "fcf_prior": fcf_prior,
         "total_debt": total_debt, "cash_and_equiv": cash, "net_debt": net_debt,
         "ebitda_approx": ebitda, "net_debt_to_ebitda": net_debt_to_ebitda,
-        "shares_outstanding": shares,
+        "shares_outstanding": shares, "dividend_yield": dividend_yield,
         "next_filing_est": next_filing, "schema_version": SCHEMA_VERSION,
     }
 
@@ -334,6 +365,15 @@ def append_rows(out_path, rows):
     if not rows:
         return
     df = pd.DataFrame(rows, columns=FUND_COLUMNS)
+    if os.path.exists(out_path):
+        old = pd.read_csv(out_path, dtype=str, keep_default_na=False)
+        if list(old.columns) != FUND_COLUMNS:
+            # Column added (schema bump): rewrite once with the new header;
+            # older rows keep blanks in the new column.
+            pd.concat([old, df.astype(str).replace({"None": "", "nan": ""})],
+                      ignore_index=True) \
+              .reindex(columns=FUND_COLUMNS).to_csv(out_path, index=False)
+            return
     header = not os.path.exists(out_path)
     df.to_csv(out_path, mode="a", header=header, index=False)
 
