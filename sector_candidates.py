@@ -35,7 +35,25 @@ QUALITY GATES (Eugenio's stated screening criteria, ways-of-working.md)
     valuation/momentum here acts as a tiebreaker within each side, weighted
     accordingly in the composite score, not as an override of the quality read.
 
-OUTPUT
+UNDERLYING LIQUIDITY (2026-10-10)
+    A name whose OPTIONS are illiquid can still be traded in the stock. It
+    goes to the stock-only table if its median daily dollar volume over the
+    last 20 sessions (adv_usd_20d, from sector_technicals.py) is at least
+    MIN_ADV_USD. Below that, or with no volume reading, it is in neither table.
+
+OUTPUT -- two ranked tables plus the original pair file
+    sector_candidates_options.csv : names with liquid OPTIONS.
+    sector_candidates_stock.csv   : names with illiquid options but a liquid
+                                    underlying -- trade the shares.
+    Each holds, per sector, up to TOP_K longs (highest composite score among
+    names passing every quality gate) and up to TOP_K shorts (lowest score
+    among names failing a gate; the lowest overall if none fails), one row
+    per name with its rank, score, failed gates and liquidity readings.
+    The two tables never share a name.
+
+    sector_candidates.csv keeps its one-pair-per-sector format -- it is the
+    #1 long and #1 short of the options table -- so anything already
+    reading it is unaffected. Its detail:
     One row per sector, from the liquid names only: the long pick (highest
     composite score among names that pass every quality gate; blank if none
     does) and the short pick (lowest composite score among names that fail
@@ -49,6 +67,16 @@ import sys
 from datetime import datetime, timezone
 
 import pandas as pd
+
+RANKED_COLUMNS = [
+    "capture_ts", "table", "sector_etf", "side", "rank", "ticker", "score",
+    "failed_gates", "spot", "atm_spread_pct", "atm_oi", "adv_usd_20d",
+    "rel_strength_20d", "rel_strength_60d",
+    "n_names_in_sector", "n_in_table", "n_quality_passed", "schema_version",
+]
+RANKED_SCHEMA_VERSION = 1
+TOP_K = 3
+MIN_ADV_USD = 50_000_000   # median daily dollar volume, last 20 sessions
 
 CAND_COLUMNS = [
     "capture_ts", "sector_etf", "long_ticker", "long_score",
@@ -101,8 +129,9 @@ def unscorable(row):
     """
     if pd.isna(row.get("mom_20d")) and pd.isna(row.get("mom_60d")):
         return "no_price_history"
-    if pd.isna(row.get("atm_oi")) or pd.isna(row.get("atm_spread_pct")):
-        return "no_options_data"
+    # Missing OPTIONS data no longer makes a name unscorable: is_liquid()
+    # treats it as illiquid options, and the name can still qualify for the
+    # stock-only table on its underlying volume.
     return None
 
 
@@ -146,6 +175,75 @@ def is_liquid(row):
     spread, oi = row.get("atm_spread_pct"), row.get("atm_oi")
     return (pd.notna(spread) and pd.notna(oi)
             and spread <= MAX_ATM_SPREAD_PCT and oi >= MIN_ATM_OI)
+
+
+def is_stock_liquid(row):
+    adv = pd.to_numeric(row.get("adv_usd_20d"), errors="coerce")
+    return pd.notna(adv) and adv >= MIN_ADV_USD
+
+
+def table_of(row):
+    """'options', 'stock', or None -- which table a name belongs to."""
+    if unscorable(row):
+        return None
+    if is_liquid(row):
+        return "options"
+    if is_stock_liquid(row):
+        return "stock"
+    return None
+
+
+def rank_sides(scored, k=TOP_K):
+    """scored: list of (ticker, composite, failures, row). Returns
+    (longs, shorts), each a list of up to k entries, best first. Longs must
+    pass every gate. Shorts come from gate failures, weakest first; if none
+    failed, from the weakest names that are not already longs."""
+    clean = sorted((s for s in scored if not s[2]), key=lambda s: -s[1])
+    longs = clean[:k]
+    flagged = sorted((s for s in scored if s[2]), key=lambda s: s[1])
+    if not flagged:
+        taken = {s[0] for s in longs}
+        flagged = sorted((s for s in scored if s[0] not in taken), key=lambda s: s[1])
+    return longs, flagged[:k]
+
+
+def _num(v, nd=4):
+    v = pd.to_numeric(v, errors="coerce")
+    return "" if pd.isna(v) else round(float(v), nd)
+
+
+def build_ranked(merged, now=None, k=TOP_K):
+    """Pure function: merged dataframe -> rows for the two ranked tables."""
+    now = now or datetime.now(timezone.utc)
+    rows = {"options": [], "stock": []}
+    for sector_etf, grp in merged.groupby("sector_etf"):
+        for table in ("options", "stock"):
+            scored = []
+            for _, r in grp.iterrows():
+                if table_of(r) != table:
+                    continue
+                fl = quality_gate_failures(r, now=now)
+                scored.append((r["ticker"], composite_score(r, fl), fl, r))
+            longs, shorts = rank_sides(scored, k)
+            n_pass = sum(1 for s in scored if not s[2])
+            for side, picks in (("long", longs), ("short", shorts)):
+                for i, (t, sc_, fl, r) in enumerate(picks, 1):
+                    rows[table].append({
+                        "capture_ts": now.isoformat(), "table": table,
+                        "sector_etf": sector_etf, "side": side, "rank": i,
+                        "ticker": t, "score": round(sc_, 4),
+                        "failed_gates": ";".join(fl),
+                        "spot": _num(r.get("spot"), 2),
+                        "atm_spread_pct": _num(r.get("atm_spread_pct")),
+                        "atm_oi": _num(r.get("atm_oi"), 0),
+                        "adv_usd_20d": _num(r.get("adv_usd_20d"), 0),
+                        "rel_strength_20d": _num(r.get("rel_strength_20d")),
+                        "rel_strength_60d": _num(r.get("rel_strength_60d")),
+                        "n_names_in_sector": len(grp), "n_in_table": len(scored),
+                        "n_quality_passed": n_pass,
+                        "schema_version": RANKED_SCHEMA_VERSION,
+                    })
+    return rows
 
 
 def score_quality(row, failures):
@@ -232,17 +330,17 @@ def build_candidates(merged, now=None):
     return out_rows
 
 
-def append_rows(out_path, rows):
+def append_rows(out_path, rows, columns=CAND_COLUMNS):
     if not rows:
         return
-    df = pd.DataFrame(rows, columns=CAND_COLUMNS)
+    df = pd.DataFrame(rows, columns=columns)
     if os.path.exists(out_path):
         old = pd.read_csv(out_path, dtype=str, keep_default_na=False)
-        if list(old.columns) != CAND_COLUMNS:
+        if list(old.columns) != columns:
             # Column set changed (a schema bump). Rewrite once with the new
             # header; older rows keep blanks in the new columns.
             pd.concat([old, df.astype(str)], ignore_index=True) \
-              .reindex(columns=CAND_COLUMNS).to_csv(out_path, index=False)
+              .reindex(columns=columns).to_csv(out_path, index=False)
             return
     header = not os.path.exists(out_path)
     df.to_csv(out_path, mode="a", header=header, index=False)
@@ -275,14 +373,32 @@ def main():
                      f"short {r['short_ticker'] or '(none liquid)'}  -- {r['n_illiquid']} illiquid excluded, "
                      f"{r['n_scorable']} liquid and scorable, "
                      f"{r['n_quality_passed']} passed the gates")
-    log(logpath, f"=== candidates: {len(out_rows)} sector pairs written ===")
+    ranked = build_ranked(merged)
+    for table, rows in ranked.items():
+        for sector in sorted({r["sector_etf"] for r in merged.to_dict("records")}):
+            sel = [r for r in rows if r["sector_etf"] == sector]
+            lg = ",".join(r["ticker"] for r in sel if r["side"] == "long") or "-"
+            sh = ",".join(r["ticker"] for r in sel if r["side"] == "short") or "-"
+            n = sel[0]["n_in_table"] if sel else 0
+            log(logpath, f"[{table}] {sector}: {n} names  long {lg}  short {sh}")
+    log(logpath, f"=== candidates: {len(out_rows)} sector pairs, "
+                 f"{len(ranked['options'])} options-table rows, "
+                 f"{len(ranked['stock'])} stock-table rows ===")
 
     if args.dry_run:
         print(pd.DataFrame(out_rows).to_string())
+        for table, rows in ranked.items():
+            print(f"\n[{table}]")
+            print(pd.DataFrame(rows, columns=RANKED_COLUMNS)
+                  [["sector_etf", "side", "rank", "ticker", "score", "failed_gates",
+                    "atm_spread_pct", "atm_oi", "adv_usd_20d"]].to_string())
         return 0
 
     out_path = os.path.join(args.outdir, "sector_candidates.csv")
     append_rows(out_path, out_rows)
+    for table, rows in ranked.items():
+        append_rows(os.path.join(args.outdir, f"sector_candidates_{table}.csv"),
+                    rows, RANKED_COLUMNS)
     return 0
 
 

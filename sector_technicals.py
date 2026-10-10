@@ -55,9 +55,10 @@ TECH_COLUMNS = [
     "capture_ts", "sector_etf", "ticker", "spot",
     "atm_oi", "atm_spread_pct", "chain_contracts",
     "mom_20d", "mom_60d", "sector_mom_20d", "sector_mom_60d",
-    "rel_strength_20d", "rel_strength_60d", "schema_version",
+    "rel_strength_20d", "rel_strength_60d", "adv_usd_20d", "schema_version",
 ]
-SCHEMA_VERSION = 2   # 2: atm_oi/atm_spread_pct measured on one monthly expiry
+SCHEMA_VERSION = 3   # 2: atm_oi/atm_spread_pct measured on one monthly expiry
+                     # 3: adv_usd_20d added (underlying liquidity)
 STOOQ_MIN_INTERVAL_S = 0.5
 # Cboe rate-limits this endpoint. At 0.3s spacing with no retry, 39% of
 # names on 2026-10-07 and 72% on 2026-10-08 came back "429 Too Many
@@ -249,8 +250,12 @@ def yahoo_symbol(t):
     return str(t).replace(".", "-")
 
 
-def fetch_history_yf(symbols, logpath, chunk=100, period="1y"):
+def fetch_history_yf(symbols, logpath, chunk=100, period="1y", adv_out=None):
     """Daily closes for many symbols at once. Returns {symbol: [closes]}.
+
+    If adv_out is a dict it is filled with {symbol: median daily dollar
+    volume over the last 20 sessions} -- the underlying-liquidity reading
+    sector_candidates.py uses for its stock-only table.
 
     REPLACES STOOQ. On 2026-10-06 Stooq returned 404 for every symbol in the
     universe -- xom.us, jpm.us, xle.us, all of them, which are valid paths --
@@ -286,6 +291,14 @@ def fetch_history_yf(symbols, logpath, chunk=100, period="1y"):
                 closes = [float(x) for x in col.dropna().tolist()]
             except Exception:
                 closes = []
+            if adv_out is not None:
+                try:
+                    sub = df[ysym] if len(mapped) > 1 else df
+                    dv = (sub["Close"] * sub["Volume"]).dropna().tail(20)
+                    if len(dv) >= 10:
+                        adv_out[orig] = float(dv.median())
+                except Exception:
+                    pass
             if len(closes) >= 61:
                 out[orig] = closes
         log(logpath, f"yfinance batch {i // chunk + 1}: "
@@ -319,7 +332,8 @@ def momentum(closes, n):
     return closes[-1] / closes[-(n + 1)] - 1
 
 
-def capture_one(ticker, sector_etf, sector_mom, logpath, closes=None, run_ts=None):
+def capture_one(ticker, sector_etf, sector_mom, logpath, closes=None, run_ts=None,
+                adv_usd=None):
     spot, atm_oi, atm_spread_pct, n_contracts = fetch_cboe_tradability(ticker, logpath)
     if closes is None:
         closes = fetch_stooq_history(ticker, logpath)
@@ -342,6 +356,7 @@ def capture_one(ticker, sector_etf, sector_mom, logpath, closes=None, run_ts=Non
         "mom_20d": mom20, "mom_60d": mom60,
         "sector_mom_20d": smom20, "sector_mom_60d": smom60,
         "rel_strength_20d": rel20, "rel_strength_60d": rel60,
+        "adv_usd_20d": adv_usd,
         "schema_version": SCHEMA_VERSION,
     }
 
@@ -350,6 +365,15 @@ def append_rows(out_path, rows):
     if not rows:
         return
     df = pd.DataFrame(rows, columns=TECH_COLUMNS)
+    if os.path.exists(out_path):
+        old = pd.read_csv(out_path, dtype=str, keep_default_na=False)
+        if list(old.columns) != TECH_COLUMNS:
+            # Column added (schema bump): rewrite once with the new header;
+            # older rows keep blanks in the new column.
+            pd.concat([old, df.astype(str).replace({"None": "", "nan": ""})],
+                      ignore_index=True) \
+              .reindex(columns=TECH_COLUMNS).to_csv(out_path, index=False)
+            return
     header = not os.path.exists(out_path)
     df.to_csv(out_path, mode="a", header=header, index=False)
 
@@ -377,9 +401,10 @@ def main():
 
     etfs = sorted({e for _, e in pairs})
     if args.source == "yfinance":
-        hist = fetch_history_yf([t for t, _ in pairs] + etfs, logpath)
+        adv = {}
+        hist = fetch_history_yf([t for t, _ in pairs] + etfs, logpath, adv_out=adv)
     else:
-        hist = {}
+        hist, adv = {}, {}
 
     sector_moms = {}
     for e in etfs:
@@ -397,7 +422,8 @@ def main():
         # returns None for it, which is the honest answer.
         row = capture_one(ticker, sector_etf, sector_moms[sector_etf], logpath,
                           closes=hist.get(ticker, []) if args.source == "yfinance"
-                          else None, run_ts=run_ts)
+                          else None, run_ts=run_ts,
+                          adv_usd=adv.get(ticker) if args.source == "yfinance" else None)
         if row:
             rows.append(row)
 
