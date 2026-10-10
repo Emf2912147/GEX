@@ -107,13 +107,23 @@ FUND_COLUMNS = [
     "total_debt", "cash_and_equiv", "net_debt", "ebitda_approx", "net_debt_to_ebitda",
     "shares_outstanding", "dividend_yield",
     "market_cap", "price_to_book", "ev_to_ebitda", "forward_pe", "fcf_yield",
+    "fund_basis", "period_end",
     "next_filing_est", "schema_version",
 ]
 # Bumped from 1 -> 2: source changed EDGAR -> Yahoo Finance and the `cik`
 # column was dropped (yfinance needs no CIK lookup). A reader that assumes
 # the old column set should see this change, not silently misalign columns
 # -- the exact failure mode a schema_version bump exists to prevent.
-SCHEMA_VERSION = 4
+SCHEMA_VERSION = 5
+# 5 (2026-10-10): QUARTERLY basis. Revenue growth and the margin gates now
+#   come from quarterly statements, not annual ones. Annual figures lagged up
+#   to a year: CPB scored "revenue growing" off fiscal 2025 (+6.4%, the Sovos
+#   year) after fiscal 2026 had reported -5%. fund_basis records which basis
+#   each row used, period_end the latest period it reflects:
+#     ttm    -- 8+ quarters: last 4 quarters vs the 4 before (TTM vs TTM)
+#     q_yoy  -- 5-7 quarters: latest quarter vs the same quarter a year ago
+#     annual -- fewer than 5 usable quarters: the old annual comparison
+#   Debt and cash come from the latest quarterly balance sheet.
 # 4 (2026-10-10): valuation -- market_cap, price_to_book, ev_to_ebitda,
 #   forward_pe, fcf_yield (TTM free cash flow / market cap). Used by
 #   sector_candidates.py for the valuation score and the below-book rule.
@@ -239,6 +249,100 @@ def annual_latest_and_prior(df, concept):
     return None, None
 
 
+def quarterly_series(df, concept):
+    """yfinance quarterly statement -> pd.Series of one line item, newest
+    first, NaNs KEPT so position i is always the i-th most recent quarter.
+    None if no candidate label has data."""
+    if df is None or not hasattr(df, "empty") or df.empty:
+        return None
+    for label in ROW_LABELS[concept]:
+        if label in df.index:
+            row = pd.to_numeric(df.loc[label], errors="coerce")
+            if row.notna().any():
+                try:
+                    row = row.sort_index(ascending=False)
+                except TypeError:
+                    pass
+                return row
+    return None
+
+
+def _qsum(series, start, n=4):
+    """Sum of n consecutive quarters from position start; None unless every
+    one of them is reported."""
+    if series is None or len(series) < start + n:
+        return None
+    chunk = series.iloc[start:start + n]
+    return float(chunk.sum()) if chunk.notna().all() else None
+
+
+def _qval(series, i):
+    if series is None or len(series) <= i:
+        return None
+    v = series.iloc[i]
+    return float(v) if pd.notna(v) else None
+
+
+def _year_apart(series, i, j):
+    """True when quarters i and j are ~one year apart (guards against a
+    missing quarter shifting the comparison)."""
+    try:
+        d = abs((pd.Timestamp(series.index[i]) - pd.Timestamp(series.index[j])).days)
+        return 330 <= d <= 400
+    except Exception:
+        return True
+
+
+def quarterly_fundamentals(q_fin, q_cf, q_bs):
+    """Quarterly-basis revenue, margins, FCF prior, debt and cash.
+    Returns a dict (keys as build_row uses them) or None when there are
+    fewer than 5 usable revenue quarters."""
+    rev = quarterly_series(q_fin, "revenue")
+    if rev is None or rev.notna().sum() < 5:
+        return None
+    gp = quarterly_series(q_fin, "gross_profit")
+    oi = quarterly_series(q_fin, "operating_income")
+    out = {"period_end": str(pd.Timestamp(rev.index[0]).date())
+           if len(rev) else None}
+
+    def ratio(a, b):
+        return (a / b) if a is not None and b else None
+
+    r_now, r_prev = _qsum(rev, 0), _qsum(rev, 4)
+    if r_now is not None and r_prev is not None and _year_apart(rev, 0, 4):
+        out["basis"] = "ttm"
+        out["revenue"], out["revenue_prior"] = r_now, r_prev
+        out["gross_margin"] = ratio(_qsum(gp, 0), r_now)
+        out["gross_margin_prior"] = ratio(_qsum(gp, 4), r_prev)
+        out["operating_margin"] = ratio(_qsum(oi, 0), r_now)
+        out["operating_margin_prior"] = ratio(_qsum(oi, 4), r_prev)
+    else:
+        q0, q4 = _qval(rev, 0), _qval(rev, 4)
+        if q0 is None or q4 is None or not _year_apart(rev, 0, 4):
+            return None
+        out["basis"] = "q_yoy"
+        out["revenue"], out["revenue_prior"] = q0, q4
+        out["gross_margin"] = ratio(_qval(gp, 0), q0)
+        out["gross_margin_prior"] = ratio(_qval(gp, 4), q4)
+        out["operating_margin"] = ratio(_qval(oi, 0), q0)
+        out["operating_margin_prior"] = ratio(_qval(oi, 4), q4)
+
+    ocf = quarterly_series(q_cf, "op_cash_flow")
+    capex = quarterly_series(q_cf, "capex")
+    o_prev, c_prev = _qsum(ocf, 4), _qsum(capex, 4)
+    out["fcf_prior"] = (o_prev + c_prev if c_prev is not None and c_prev < 0
+                        else (o_prev - c_prev if o_prev is not None and c_prev is not None
+                              else None))
+    debt = _qval(quarterly_series(q_bs, "total_debt"), 0)
+    if debt is None:
+        lt = _qval(quarterly_series(q_bs, "long_term_debt"), 0)
+        cur = _qval(quarterly_series(q_bs, "current_debt"), 0)
+        debt = (lt or 0) + (cur or 0) if (lt is not None or cur is not None) else None
+    out["total_debt"] = debt
+    out["cash"] = _qval(quarterly_series(q_bs, "cash"), 0)
+    return out
+
+
 def estimate_next_earnings(ticker_obj, logpath, ticker):
     """Yahoo's own earnings calendar -- a real calendar, not a proxy, but
     still Yahoo's own estimate and one of yfinance's more fragile calls
@@ -316,8 +420,16 @@ def forward_dividend_yield(info):
     return 0.0 if price else None
 
 
+def _fcf(ocf, capex):
+    """Operating cash flow less capital spending. Yahoo reports capex as a
+    NEGATIVE number; the old `ocf - capex` added it back and overstated FCF."""
+    if ocf is None or capex is None:
+        return None
+    return ocf + capex if capex < 0 else ocf - capex
+
+
 def build_row(ticker, sector_etf, info, financials, balance_sheet, cashflow, next_filing,
-              run_ts):
+              run_ts, q_fin=None, q_cf=None, q_bs=None):
     """Pure function: yfinance data -> output row. Separated from the
     network calls so it's unit-testable against fixtures."""
     info = info or {}
@@ -340,9 +452,9 @@ def build_row(ticker, sector_etf, info, financials, balance_sheet, cashflow, nex
     # or where Yahoo's precomputed TTM figure is simply the better number
     # (freeCashflow, ebitda are both TTM in .info, not fiscal-year).
     fcf = info.get("freeCashflow")
-    fcf_prior = (ocf_prior - capex_prior) if ocf_prior is not None and capex_prior is not None else None
-    if fcf is None and ocf is not None and capex is not None:
-        fcf = ocf - capex
+    fcf_prior = _fcf(ocf_prior, capex_prior)
+    if fcf is None:
+        fcf = _fcf(ocf, capex)
 
     cash = cash if cash is not None else info.get("totalCash")
     total_debt = total_debt if total_debt is not None else info.get("totalDebt")
@@ -356,6 +468,32 @@ def build_row(ticker, sector_etf, info, financials, balance_sheet, cashflow, nex
     gross_margin_prior = (gp_prior / revenue_prior) if gp_prior is not None and revenue_prior else None
     operating_margin = (oi / revenue) if oi is not None and revenue else info.get("operatingMargins")
     operating_margin_prior = (oi_prior / revenue_prior) if oi_prior is not None and revenue_prior else None
+
+    # Quarterly basis overrides the annual figures wherever it has data --
+    # see SCHEMA_VERSION 5.
+    basis, period_end = "annual", None
+    try:
+        dates = list(financials.columns) if financials is not None and not financials.empty else []
+        period_end = str(pd.Timestamp(max(dates)).date()) if dates else None
+    except Exception:
+        period_end = None
+    q = quarterly_fundamentals(q_fin, q_cf, q_bs)
+    if q:
+        basis, period_end = q["basis"], q["period_end"]
+        revenue, revenue_prior = q["revenue"], q["revenue_prior"]
+        # Current and prior margins are replaced as a PAIR, so a gate never
+        # compares a quarterly margin against an annual one. A side the
+        # quarters do not report (gross profit is often missing for banks)
+        # becomes None, which trips no gate.
+        gross_margin, gross_margin_prior = q["gross_margin"], q["gross_margin_prior"]
+        operating_margin, operating_margin_prior = (q["operating_margin"],
+                                                    q["operating_margin_prior"])
+        if q.get("fcf_prior") is not None:
+            fcf_prior = q["fcf_prior"]
+        if q.get("total_debt") is not None:
+            total_debt = q["total_debt"]
+        if q.get("cash") is not None:
+            cash = q["cash"]
 
     net_debt = (total_debt - cash) if total_debt is not None and cash is not None else None
     net_debt_to_ebitda = (net_debt / ebitda) if net_debt is not None and ebitda not in (None, 0) else None
@@ -379,7 +517,7 @@ def build_row(ticker, sector_etf, info, financials, balance_sheet, cashflow, nex
         "total_debt": total_debt, "cash_and_equiv": cash, "net_debt": net_debt,
         "ebitda_approx": ebitda, "net_debt_to_ebitda": net_debt_to_ebitda,
         "shares_outstanding": shares, "dividend_yield": dividend_yield,
-        **val,
+        **val, "fund_basis": basis, "period_end": period_end,
         "next_filing_est": next_filing, "schema_version": SCHEMA_VERSION,
     }
 
@@ -398,12 +536,19 @@ def capture_one(ticker, sector_etf, logpath, run_ts):
     except Exception as e:
         log(logpath, f"{ticker}: yfinance fetch failed -- {e}")
         return None
+    try:
+        q_fin = t.quarterly_financials
+        q_cf = t.quarterly_cashflow
+        q_bs = t.quarterly_balance_sheet
+    except Exception as e:
+        log(logpath, f"{ticker}: quarterly statements unavailable, annual basis -- {e}")
+        q_fin = q_cf = q_bs = None
     next_filing = estimate_next_earnings(t, logpath, ticker)
     # run_ts must reach build_row. The 2026-10-06 change passed it as far as
     # here and stopped, so every run since crashed on its first ticker with
     # NameError: name 'run_ts' is not defined.
     return build_row(ticker, sector_etf, info, financials, balance_sheet, cashflow,
-                     next_filing, run_ts)
+                     next_filing, run_ts, q_fin, q_cf, q_bs)
 
 
 def append_rows(out_path, rows):

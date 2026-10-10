@@ -45,7 +45,8 @@ jobs:
           python-version: "3.12"
 
       - name: Install dependencies
-        run: pip install pandas numpy requests openpyxl yfinance
+        # matplotlib: gamma_exposure.py (walls, IV) imports it at module load
+        run: pip install pandas numpy requests openpyxl yfinance matplotlib
 
       - name: Ensure output directory exists
         run: mkdir -p history/sector

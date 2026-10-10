@@ -23,7 +23,9 @@ from datetime import datetime, timezone
 
 import pandas as pd
 
-MAX_PER_SIDE = 3
+# Names shown per side. Shares table trimmed to the single best long and
+# short (Eugenio, 2026-10-10: less clutter); the CSVs keep the top 3.
+MAX_PER_SIDE = {"options": 3, "stock": 1}
 SECTOR_NAMES = {
     "XLF": "Financials", "XLK": "Technology", "XLP": "Consumer Staples",
     "XLV": "Health Care",
@@ -127,6 +129,11 @@ def chips(r, side):
     nf = str(r.get("next_filing_est") or "")
     if nf and nf != "nan" and "filing_estimated_in_window" not in str(r.get("failed_gates")):
         out.append(f"<span class='chip'>earnings ~{esc(nf[5:])}</span>")
+    ent = str(r.get("entry") or "")
+    if ent and ent != "nan":
+        out.insert(0, f"<span class='chip {ENTRY_CLASS.get(ent, '')}'>entry: {esc(ent)}</span>")
+    if str(r.get("fund_basis") or "") == "annual":
+        out.append("<span class='chip chip-warn' title='fewer than 5 quarters reported'>annual data</span>")
     vt = str(r.get("value_turn") or "")
     if vt and vt != "nan":
         out.append(f"<span class='chip chip-pos' title='{esc(vt.replace(';', ', '))}'>"
@@ -135,6 +142,36 @@ def chips(r, side):
     if side == "short" and dy and dy >= 0.03:
         out.append(f"<span class='chip chip-warn'>pays {dy:.1%} div</span>")
     return "".join(out)
+
+
+ENTRY_CLASS = {"at support": "chip-pos", "at resistance": "chip-pos",
+               "near cap": "chip-warn", "near support": "chip-warn",
+               "mid-range": ""}
+
+
+def gamma_line(r, table):
+    """IV, walls and where price sits between them. Options table only --
+    walls built from a thin chain are not worth reading."""
+    if table != "options":
+        return ""
+    bits = []
+    iv = num(r.get("atm_iv_30"))
+    if iv:
+        bits.append(f"IV {iv:.0%}")
+    pw, cw = num(r.get("put_wall")), num(r.get("call_wall"))
+    dp, dc = num(r.get("to_put_wall")), num(r.get("to_call_wall"))
+    if pw:
+        bits.append(f"put wall {pw:,.2f}" + (f" ({dp:+.1%})" if dp is not None else ""))
+    if cw:
+        bits.append(f"call wall {cw:,.2f}" + (f" ({dc:+.1%})" if dc is not None else ""))
+    reg = str(r.get("gamma_regime") or "")
+    if reg in ("positive", "negative"):
+        bits.append("+&gamma; range" if reg == "positive" else "&minus;&gamma; trend")
+    if not bits:
+        return ""
+    if num(r.get("wall_fallback")) == 1:
+        bits.append("weak wall")
+    return f"<div class='meta gx'>{' · '.join(bits)}</div>"
 
 
 def valuation_line(r):
@@ -172,12 +209,13 @@ def row_html(r, side, table):
   <div class="meta">vs sector {pct(rel20, sign=True)} 20d · {pct(rel60, sign=True)} 60d
     <span class="dot">·</span> {exe} <span class="dot">·</span> score {num(r.get('score')) or 0:+.2f}</div>
   <div class="meta">{valuation_line(r)}</div>
+  {gamma_line(r, table)}
   <div class="chips">{chips(r, side)}</div>
 </li>"""
 
 
 def side_html(df, side, table):
-    sel = df[df["side"] == side].sort_values("rank").head(MAX_PER_SIDE)
+    sel = df[df["side"] == side].sort_values("rank").head(MAX_PER_SIDE.get(table, 3))
     head = "Long" if side == "long" else "Short"
     if sel.empty:
         why = ("no name passes every quality gate" if side == "long"
@@ -190,7 +228,8 @@ def side_html(df, side, table):
             f"{body}</div>")
 
 
-def sector_card(sym, opt, stk):
+def sector_card(sym, opt, stk, wch=None):
+    wch = wch if wch is not None else pd.DataFrame(columns=BASE_COLS)
     n_total = None
     blocks = []
     for key, label, note in TABLES:
@@ -205,7 +244,11 @@ def sector_card(sym, opt, stk):
       <span class="tbl-note">{n_in} names · {note}</span></div>
     <div class="sides">{side_html(df, 'long', key)}{side_html(df, 'short', key)}</div>
   </div>""")
-    sub = f"top {n_total} holdings by weight" if n_total else ""
+    extra = sorted(set(wch["ticker"][wch["sector_etf"] == sym])) if not wch.empty else []
+    if n_total and extra:
+        n_total -= len(extra)   # watchlist names are captured on top of the top N
+    sub = (f"top {n_total} holdings by weight" + (f" + {', '.join(extra)}" if extra else "")
+           if n_total else "")
     return f"""
 <section class="card">
   <div class="card-top"><div><span class="sym">{sym}</span>
@@ -276,8 +319,9 @@ at least one, weakest first.</p>
 <p>Composite = 2 &times; quality + momentum + 0.25 &times; value
 (+ 0.5 deep-value bonus). Quality = revenue growth + operating margin &minus;
 net debt/EBITDA &divide; 10 &minus; 0.5 per failed gate. Momentum = average
-20- and 60-day return relative to the sector ETF. Up to three longs and three
-shorts per table.</p>
+20- and 60-day return relative to the sector ETF. Shown: up to three longs
+and three shorts in the options table, the single best long and short in the
+shares table.</p>
 <h3>Valuation</h3>
 <p><b>Value</b> = how cheap the stock is against its own sector, in standard
 deviations: price-to-book for financials; EV/EBITDA and free-cash-flow yield
@@ -291,6 +335,22 @@ nothing extra.</p>
 <p>CPB is scored every run by exception, even below the liquidity screens or
 outside XLP&rsquo;s top 30. Its rank is among every scorable name in its
 sector. It joins the ranked lists only if it qualifies on its own.</p>
+<h3>Entries from gamma walls (options table)</h3>
+<p>Each liquid name&rsquo;s chain is run through the GEX Monitor&rsquo;s own
+method (&le; 30 days, net dealer gamma by strike). The <b>put wall</b> is the
+strike below price where hedging tends to support it; the <b>call wall</b>,
+above, tends to cap it. <b>Long</b>: &ldquo;at support&rdquo; = within 2% above
+the put wall, the cleaner entry; &ldquo;near cap&rdquo; = within 2% of the call
+wall, little room &mdash; wait for a pullback. <b>Short</b>: &ldquo;at
+resistance&rdquo; = within 2% below the call wall; &ldquo;near support&rdquo; =
+wait for a bounce. +&gamma; (price above the gamma flip) tends to range;
+&minus;&gamma; tends to trend. IV is at-the-money on the ~30-day monthly.
+Entry is shown, not scored.</p>
+<h3>Fundamentals basis</h3>
+<p>Quarterly: trailing four quarters against the four before when eight are
+reported, otherwise the latest quarter against the same quarter a year
+earlier. Names with fewer than five quarters fall back to annual and are
+tagged &ldquo;annual data&rdquo;.</p>
 <h3>Trade quality (0&ndash;100)</h3>
 <p>The bar under each name shows its four parts, left to right:</p>
 <ul>
@@ -406,7 +466,7 @@ def build(histdir, out_path):
     t_ts = last_ts(os.path.join(histdir, "sector_technicals.csv"))
 
     sectors = sorted(set(opt["sector_etf"]) | set(stk["sector_etf"]))
-    cards = "".join(sector_card(s, opt, stk) for s in sectors) or \
+    cards = "".join(sector_card(s, opt, stk, wch) for s in sectors) or \
         "<section class='card'><div class='empty'>No candidates captured yet.</div></section>"
 
     page = f"""<!doctype html>

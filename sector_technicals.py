@@ -55,10 +55,14 @@ TECH_COLUMNS = [
     "capture_ts", "sector_etf", "ticker", "spot",
     "atm_oi", "atm_spread_pct", "chain_contracts",
     "mom_20d", "mom_60d", "sector_mom_20d", "sector_mom_60d",
-    "rel_strength_20d", "rel_strength_60d", "adv_usd_20d", "schema_version",
+    "rel_strength_20d", "rel_strength_60d", "adv_usd_20d",
+    "atm_iv_30", "call_wall", "put_wall", "wall_fallback", "gamma_flip",
+    "net_gex_musd", "schema_version",
 ]
-SCHEMA_VERSION = 3   # 2: atm_oi/atm_spread_pct measured on one monthly expiry
+SCHEMA_VERSION = 4   # 2: atm_oi/atm_spread_pct measured on one monthly expiry
                      # 3: adv_usd_20d added (underlying liquidity)
+                     # 4: gamma/IV from the same chain -- atm_iv_30, call_wall,
+                     #    put_wall, wall_fallback, gamma_flip, net_gex_musd
 STOOQ_MIN_INTERVAL_S = 0.5
 # Cboe rate-limits this endpoint. At 0.3s spacing with no retry, 39% of
 # names on 2026-10-07 and 72% on 2026-10-08 came back "429 Too Many
@@ -197,6 +201,64 @@ def tradability_from_chain(spot, options, n_near=NEAR_CONTRACTS_N, today=None):
     return atm_oi, atm_spread_pct
 
 
+# Gamma and IV, computed from the chain this script already downloads, with
+# gamma_exposure.py -- the GEX Monitor's own code and default parameters
+# (gex_capture.py): contracts <= 30 DTE, walls from net per-strike dollar
+# gamma within +/-10% of spot excluding +/-0.4%, flip searched +/-15%. Same
+# method, so a wall here means what a wall on the GEX Monitor means.
+GEX_MAX_DTE = 30
+GEX_WALL_WINDOW = 0.10
+GEX_WALL_EXCLUDE = 0.004
+GEX_FLIP_WINDOW = 0.15
+
+
+def gex_from_payload(payload, spot, options_today=None):
+    """Cboe payload -> {atm_iv_30, call_wall, put_wall, wall_fallback,
+    gamma_flip, net_gex_musd}. Any failure returns all-None rather than
+    stopping the run: gamma is context, not a requirement for scoring."""
+    empty = {k: None for k in ("atm_iv_30", "call_wall", "put_wall",
+                               "wall_fallback", "gamma_flip", "net_gex_musd")}
+    try:
+        import gamma_exposure as gx
+        df, _, _ = gx.parse_chain(payload)
+        df = gx.normalize_iv(df, quiet=True)
+    except SystemExit:
+        return empty
+    except Exception:
+        return empty
+    out = dict(empty)
+    try:
+        # ATM implied vol on the same monthly expiry the liquidity read uses
+        exp_dates = {e.date() for e in df["expiry"]}
+        today = options_today or datetime.now(timezone.utc).date()
+        target = pick_expiry(exp_dates, today)
+        if target is not None:
+            m = df[(df["expiry"].dt.date == target) & (df["iv"] > 0)]
+            m = m.iloc[(m["strike"] - spot).abs().argsort()[:4]]
+            if len(m):
+                out["atm_iv_30"] = float(m["iv"].median())
+
+        chain = df[df["dte"] <= GEX_MAX_DTE]
+        if chain.empty:
+            return out
+        lo, hi = spot * (1 - GEX_WALL_WINDOW), spot * (1 + GEX_WALL_WINDOW)
+        win = chain[(chain["strike"] >= lo) & (chain["strike"] <= hi)]
+        full_ps, _, _ = gx.gex_by_strike(chain, spot)
+        out["net_gex_musd"] = float(full_ps.sum()) / 1e6
+        if not win.empty:
+            _, calls, puts = gx.gex_by_strike(win, spot)
+            cw, pw, fb = gx.find_walls(calls, puts, spot, GEX_WALL_EXCLUDE)
+            out["call_wall"] = float(cw) if cw is not None else None
+            out["put_wall"] = float(pw) if pw is not None else None
+            out["wall_fallback"] = int(fb)
+        _, _, flip = gx.gamma_profile(chain, spot * (1 - GEX_FLIP_WINDOW),
+                                      spot * (1 + GEX_FLIP_WINDOW), points=121)
+        out["gamma_flip"] = flip
+    except Exception:
+        pass
+    return out
+
+
 def fetch_cboe_tradability(symbol, logpath):
     prefix = "_" if symbol.upper() in CASH_INDEX_SYMBOLS else ""
     url = CBOE_URL.format(sym=f"{prefix}{symbol.upper()}")
@@ -214,21 +276,21 @@ def fetch_cboe_tradability(symbol, logpath):
             break
         except Exception as e:
             log(logpath, f"{symbol}: Cboe fetch failed -- {e}")
-            return None, None, None, 0
+            return None, None, None, 0, {}
     if payload is None:
         log(logpath, f"{symbol}: Cboe still rate-limited after "
                      f"{len(CBOE_RETRY_WAITS_S)} retries -- options data left empty")
-        return None, None, None, 0
+        return None, None, None, 0, {}
 
     data = payload.get("data", {})
     spot = data.get("current_price")
     options = data.get("options", [])
     if not options or spot is None:
         log(logpath, f"{symbol}: Cboe payload empty -- refused")
-        return None, None, None, 0
+        return None, None, None, 0, {}
 
     atm_oi, atm_spread_pct = tradability_from_chain(spot, options)
-    return spot, atm_oi, atm_spread_pct, len(options)
+    return spot, atm_oi, atm_spread_pct, len(options), gex_from_payload(payload, spot)
 
 
 def parse_stooq_csv(text):
@@ -334,7 +396,7 @@ def momentum(closes, n):
 
 def capture_one(ticker, sector_etf, sector_mom, logpath, closes=None, run_ts=None,
                 adv_usd=None):
-    spot, atm_oi, atm_spread_pct, n_contracts = fetch_cboe_tradability(ticker, logpath)
+    spot, atm_oi, atm_spread_pct, n_contracts, gexd = fetch_cboe_tradability(ticker, logpath)
     if closes is None:
         closes = fetch_stooq_history(ticker, logpath)
     mom20 = momentum(closes, 20)
@@ -357,6 +419,9 @@ def capture_one(ticker, sector_etf, sector_mom, logpath, closes=None, run_ts=Non
         "sector_mom_20d": smom20, "sector_mom_60d": smom60,
         "rel_strength_20d": rel20, "rel_strength_60d": rel60,
         "adv_usd_20d": adv_usd,
+        "atm_iv_30": gexd.get("atm_iv_30"), "call_wall": gexd.get("call_wall"),
+        "put_wall": gexd.get("put_wall"), "wall_fallback": gexd.get("wall_fallback"),
+        "gamma_flip": gexd.get("gamma_flip"), "net_gex_musd": gexd.get("net_gex_musd"),
         "schema_version": SCHEMA_VERSION,
     }
 

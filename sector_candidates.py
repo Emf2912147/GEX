@@ -116,13 +116,19 @@ RANKED_COLUMNS = [
     "trade_quality", "grade", "tq_conviction", "tq_momentum", "tq_execution",
     "tq_event_carry", "dividend_yield", "next_filing_est",
     "price_to_book", "ev_to_ebitda", "fcf_yield", "forward_pe", "value_z",
-    "value_turn", "schema_version",
+    "value_turn",
+    "atm_iv_30", "call_wall", "put_wall", "wall_fallback", "gamma_flip",
+    "gamma_regime", "to_put_wall", "to_call_wall", "entry", "fund_basis",
+    "schema_version",
 ]
 # 2: trade quality score and its four components; dividend_yield and
 #    next_filing_est carried through for display.
 # 3: valuation columns; composite includes value_z; below-book names are
 #    never shorts.
-RANKED_SCHEMA_VERSION = 3
+# 4: gamma context and entry read from call/put walls; fund_basis.
+RANKED_SCHEMA_VERSION = 4
+# Within this distance of a wall, price is "at" it.
+WALL_NEAR = 0.02
 WATCHLIST = {"CPB"}
 SHORT_MIN_PB = 1.0
 # A P/B below this is a data error, not a valuation. Yahoo reports BRK.B at
@@ -487,6 +493,7 @@ def build_ranked(merged, now=None, k=TOP_K):
                         "forward_pe": _num(r.get("forward_pe"), 2),
                         "value_z": _num(r.get("value_z"), 3),
                         "value_turn": ";".join(improving_signals(r)) if value_turn(r) else "",
+                        **gamma_fields(r, side),
                         "schema_version": RANKED_SCHEMA_VERSION,
                     })
     return rows
@@ -585,6 +592,66 @@ def build_candidates(merged, now=None):
     return out_rows
 
 
+def entry_read(row, side):
+    """Where price sits between its gamma walls, from the trade's side.
+    Walls come from sector_technicals.py (the GEX Monitor's method). The
+    put wall is where dealer hedging tends to support price, the call wall
+    where it tends to cap it. Returns (to_put_wall, to_call_wall, entry,
+    regime): distances as fractions of spot (put wall below -> negative),
+    entry one of:
+      long  -- 'at support'   within WALL_NEAR above the put wall: entry zone
+               'near cap'     within WALL_NEAR below the call wall: little room,
+                              wait for a pullback
+               'mid-range'    otherwise
+      short -- 'at resistance' within WALL_NEAR below the call wall
+               'near support'  within WALL_NEAR above the put wall: wait for
+                               a bounce
+               'mid-range'
+    '' when the walls are missing (no liquid chain)."""
+    spot = pd.to_numeric(row.get("spot"), errors="coerce")
+    cw = pd.to_numeric(row.get("call_wall"), errors="coerce")
+    pw = pd.to_numeric(row.get("put_wall"), errors="coerce")
+    flip = pd.to_numeric(row.get("gamma_flip"), errors="coerce")
+    regime = ""
+    if pd.notna(spot) and pd.notna(flip):
+        regime = "positive" if spot >= flip else "negative"
+    if pd.isna(spot) or spot <= 0 or (pd.isna(cw) and pd.isna(pw)):
+        return None, None, "", regime
+    dp = (pw / spot - 1) if pd.notna(pw) else None
+    dc = (cw / spot - 1) if pd.notna(cw) else None
+    if side == "long":
+        if dp is not None and -WALL_NEAR <= dp <= 0:
+            e = "at support"
+        elif dc is not None and 0 <= dc <= WALL_NEAR:
+            e = "near cap"
+        else:
+            e = "mid-range"
+    else:
+        if dc is not None and 0 <= dc <= WALL_NEAR:
+            e = "at resistance"
+        elif dp is not None and -WALL_NEAR <= dp <= 0:
+            e = "near support"
+        else:
+            e = "mid-range"
+    return dp, dc, e, regime
+
+
+def gamma_fields(r, side):
+    dp, dc, e, regime = entry_read(r, side)
+    return {
+        "atm_iv_30": _num(r.get("atm_iv_30")),
+        "call_wall": _num(r.get("call_wall"), 2),
+        "put_wall": _num(r.get("put_wall"), 2),
+        "wall_fallback": _num(r.get("wall_fallback"), 0),
+        "gamma_flip": _num(r.get("gamma_flip"), 2),
+        "gamma_regime": regime,
+        "to_put_wall": "" if dp is None else round(dp, 4),
+        "to_call_wall": "" if dc is None else round(dc, 4),
+        "entry": e,
+        "fund_basis": r.get("fund_basis") or "",
+    }
+
+
 def build_watch(merged, now=None):
     """One row per WATCHLIST name present in the data, always -- liquidity
     exempt. side is the side its scores point to: 'long' if it passes every
@@ -642,6 +709,7 @@ def build_watch(merged, now=None):
                 "forward_pe": _num(r.get("forward_pe"), 2),
                 "value_z": _num(r.get("value_z"), 3),
                 "value_turn": ";".join(improving_signals(r)) if value_turn(r) else "",
+                **gamma_fields(r, side if side in ("long", "short") else "long"),
                 "schema_version": RANKED_SCHEMA_VERSION,
             })
     return out
