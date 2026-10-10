@@ -6,3 +6,8 @@
 2026-10-10T10:57:38.462314+00:00Z  XLK: long SNDK  short ORCL  -- 30/30 scorable, 12 passed the gates
 2026-10-10T10:57:38.462351+00:00Z  XLV: long ABBV  short CVS  -- 30/30 scorable, 2 passed the gates
 2026-10-10T10:57:38.462380+00:00Z  === candidates: 3 sector pairs written ===
+2026-10-10T11:33:32.156748+00:00Z  XLF: long (none qualifies)  short C  -- 20 illiquid excluded, 10 liquid and scorable, 0 passed the gates
+2026-10-10T11:33:32.156854+00:00Z  XLK: long SNDK  short ORCL  -- 6 illiquid excluded, 24 liquid and scorable, 12 passed the gates
+2026-10-10T11:33:32.156895+00:00Z  XLP: long MO  short PG  -- 23 illiquid excluded, 6 liquid and scorable, 2 passed the gates
+2026-10-10T11:33:32.156925+00:00Z  XLV: long ABBV  short MRNA  -- 22 illiquid excluded, 8 liquid and scorable, 2 passed the gates
+2026-10-10T11:33:32.156954+00:00Z  === candidates: 4 sector pairs written ===
