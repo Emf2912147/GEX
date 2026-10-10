@@ -387,3 +387,18 @@
 2026-10-09T17:30:16+00:00  GLD: session 2026-10-08 already captured, skipping
 2026-10-09T17:30:16+00:00  TLT: session 2026-10-08 already captured, skipping
 2026-10-09T17:30:16+00:00  === capture done  ok=0  failed=0
+2026-10-10T11:50:59+00:00  === capture start  symbols=SPX SPY QQQ IWM GLD TLT
+2026-10-10T11:51:01+00:00  SPX: 29,288 contracts -> SPX.parquet
+2026-10-10T11:51:01+00:00  SPX: spot 7,811.54  netGEX 59.95Bn  flip 7752.2743  walls 7900.0/7650.0  positive
+2026-10-10T11:51:01+00:00  SPY: 12,894 contracts -> SPY.parquet
+2026-10-10T11:51:02+00:00  SPY: spot 778.61  netGEX 3.53Bn  flip 775.692  walls 785.0/755.0  positive
+2026-10-10T11:51:02+00:00  QQQ: 11,106 contracts -> QQQ.parquet
+2026-10-10T11:51:02+00:00  QQQ: spot 751.26  netGEX 0.20Bn  flip 750.4171  walls 760.0/725.0  positive
+2026-10-10T11:51:03+00:00  IWM: 5,694 contracts -> IWM.parquet
+2026-10-10T11:51:03+00:00  IWM: spot 278.98  netGEX -2.71Bn  flip 285.7201  walls 284.0/275.0  negative
+2026-10-10T11:51:04+00:00  GLD: 7,820 contracts -> GLD.parquet
+2026-10-10T11:51:04+00:00  GLD: spot 384.66  netGEX 0.14Bn  flip 380.7986  walls 387.0/370.0  positive
+2026-10-10T11:51:04+00:00  TLT: 2,954 contracts -> TLT.parquet
+2026-10-10T11:51:04+00:00  TLT: spot 77.94  netGEX 0.17Bn  flip 77.1577  walls 80.0/77.0  positive
+2026-10-10T11:51:04+00:00  appended 6 metric row(s)
+2026-10-10T11:51:04+00:00  === capture done  ok=6  failed=0
