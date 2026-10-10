@@ -11,6 +11,16 @@ SCOPE
     GitHub Actions workflow that runs it stages its commit with
     `git add history/sector` specifically, never `git add -A`.
 
+SCOPE NARROWED 2026-10-10
+    The top 30 holdings by fund weight of three SPDR sector ETFs only --
+    XLF, XLV and XLK, 90 names. Membership is re-read from State Street's
+    holdings file on every run, so a name that moves into or out of a
+    fund's top 30 is picked up automatically. The 11-sector, ~517-name
+    history collected before this date was deleted: the fundamentals run
+    had been crashing since 2026-10-06, technicals had lost most of its
+    options data to Cboe rate limits, and candidates had never produced a
+    single pair.
+
 CADENCE
     Twice weekly (Tue/Fri by default -- see
     .github/workflows/sector_fundamentals.yml). Fundamentals move slowly;
@@ -73,11 +83,10 @@ except ImportError:
     yf = None  # import failure surfaces clearly at first use, not at module load
 
 SECTOR_ETFS = {
-    "XLE": "Energy", "XLF": "Financials", "XLK": "Technology",
-    "XLV": "Health Care", "XLY": "Consumer Discretionary", "XLP": "Consumer Staples",
-    "XLI": "Industrials", "XLB": "Materials", "XLU": "Utilities",
-    "XLRE": "Real Estate", "XLC": "Communication Services",
+    "XLF": "Financials", "XLV": "Health Care", "XLK": "Technology",
 }
+# Constituents kept per fund, largest weight first.
+TOP_N = 30
 
 SSGA_HOLDINGS_URL = "https://www.ssga.com/library-content/products/fund-data/etfs/us/holdings-daily-us-en-{sym}.xlsx"
 
@@ -128,8 +137,36 @@ def log(path, msg):
             fh.write(line + "\n")
 
 
-def fetch_sector_holdings(sym, logpath):
-    """Return the list of constituent tickers for one SPDR sector ETF."""
+def yahoo_symbol(t):
+    """Yahoo writes share classes with a dash: BRK.B -> BRK-B, BF.B -> BF-B.
+    Without this, BRK.B -- XLF's largest holding -- came back empty on every
+    capture. sector_technicals.py has always done the same mapping."""
+    return str(t).replace(".", "-")
+
+
+def top_by_weight(df, ticker_col, n, sym, logpath):
+    """The n largest holdings by fund weight, as an ordered list of tickers.
+
+    State Street's file has a Weight column; when it is present the list is
+    sorted on it explicitly. If a schema change ever drops it, fall back to
+    file order -- the file itself lists holdings largest first -- and say so
+    in the log rather than guessing quietly.
+    """
+    weight_col = next((c for c in df.columns
+                       if str(c).strip().lower().startswith("weight")), None)
+    df = df.copy()
+    df["_t"] = df[ticker_col].astype(str).str.strip().str.upper()
+    if weight_col is not None:
+        df["_w"] = pd.to_numeric(df[weight_col], errors="coerce")
+        df = df.sort_values("_w", ascending=False, kind="stable")
+    else:
+        log(logpath, f"{sym}: no Weight column in holdings -- taking the first "
+                     f"{n} rows in file order")
+    return df["_t"].tolist()
+
+
+def fetch_sector_holdings(sym, logpath, top_n=TOP_N):
+    """Return the top_n constituent tickers, by weight, for one SPDR sector ETF."""
     url = SSGA_HOLDINGS_URL.format(sym=sym.lower())
     try:
         resp = requests.get(url, timeout=30,
@@ -150,7 +187,8 @@ def fetch_sector_holdings(sym, logpath):
         log(logpath, f"{sym}: holdings schema changed -- no ticker column found "
                       f"among {list(df.columns)}")
         return []
-    tickers = df[ticker_col].dropna().astype(str).str.strip().str.upper().tolist()
+    df = df[df[ticker_col].notna()]
+    tickers = top_by_weight(df, ticker_col, top_n, sym, logpath)
     tickers = [t for t in tickers if t and t.isascii()
                and t not in ("CASH", "CASH_USD", "NET CASH", "USD")]
     # SSGA holdings files carry index-option roots and internal placeholder
@@ -163,7 +201,9 @@ def fetch_sector_holdings(sym, logpath):
     if bad:
         log(logpath, f"{sym}: dropped {len(bad)} non-equity rows -- {bad[:6]}")
     tickers = [t for t in tickers if t not in set(bad)]
-    log(logpath, f"{sym}: {len(tickers)} constituents")
+    total = len(tickers)
+    tickers = tickers[:top_n]
+    log(logpath, f"{sym}: top {len(tickers)} of {total} constituents by weight")
     return tickers
 
 
@@ -202,7 +242,8 @@ def estimate_next_earnings(ticker_obj, logpath, ticker):
         return None
 
 
-def build_row(ticker, sector_etf, info, financials, balance_sheet, cashflow, next_filing):
+def build_row(ticker, sector_etf, info, financials, balance_sheet, cashflow, next_filing,
+              run_ts):
     """Pure function: yfinance data -> output row. Separated from the
     network calls so it's unit-testable against fixtures."""
     info = info or {}
@@ -272,7 +313,7 @@ def capture_one(ticker, sector_etf, logpath, run_ts):
         return None
     time.sleep(YF_MIN_INTERVAL_S)
     try:
-        t = yf.Ticker(ticker)
+        t = yf.Ticker(yahoo_symbol(ticker))
         info = t.info
         financials = t.financials
         balance_sheet = t.balance_sheet
@@ -281,7 +322,11 @@ def capture_one(ticker, sector_etf, logpath, run_ts):
         log(logpath, f"{ticker}: yfinance fetch failed -- {e}")
         return None
     next_filing = estimate_next_earnings(t, logpath, ticker)
-    return build_row(ticker, sector_etf, info, financials, balance_sheet, cashflow, next_filing)
+    # run_ts must reach build_row. The 2026-10-06 change passed it as far as
+    # here and stopped, so every run since crashed on its first ticker with
+    # NameError: name 'run_ts' is not defined.
+    return build_row(ticker, sector_etf, info, financials, balance_sheet, cashflow,
+                     next_filing, run_ts)
 
 
 def append_rows(out_path, rows):
@@ -296,6 +341,8 @@ def main():
     p = argparse.ArgumentParser(description="Sector agent -- fundamentals capture (Yahoo Finance + SSGA).")
     p.add_argument("--outdir", default="history/sector")
     p.add_argument("--sectors", nargs="*", default=list(SECTOR_ETFS.keys()))
+    p.add_argument("--top-n", type=int, default=TOP_N,
+                   help=f"holdings kept per fund, by weight (default {TOP_N})")
     p.add_argument("--dry-run", action="store_true")
     args = p.parse_args()
 
@@ -309,7 +356,7 @@ def main():
     all_rows = []
     seen = set()
     for sym in args.sectors:
-        tickers = fetch_sector_holdings(sym, logpath)
+        tickers = fetch_sector_holdings(sym, logpath, args.top_n)
         for t in tickers:
             if t in seen:
                 continue  # a name can sit in more than one sector fund -- capture it once

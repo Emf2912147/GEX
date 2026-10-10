@@ -9,11 +9,12 @@ SCOPE
     Agent007 pipeline's files are never opened by this script.
 
 CADENCE
-    Twice daily on trading days, ~11:00 and ~15:15 ET (see
-    .github/workflows/sector_technicals.yml). NOTE: that workflow's cron is
-    UTC and does not auto-adjust for US DST -- both cron lines need shifting
-    by one hour at the November/March clock changes, or the real capture
-    time drifts an hour against ET. Flagged here so it isn't forgotten.
+    Twice weekly, Tue and Wed evenings ET (see
+    .github/workflows/sector_technicals.yml).
+
+SCOPE (2026-10-10)
+    Whatever the latest fundamentals capture holds: the top 30 holdings of
+    XLF, XLV and XLK, 90 names. See sector_fundamentals.py.
 
 SOURCES (both free, both keyless)
     Options tradability : Cboe's delayed-quotes endpoint, per symbol -- the
@@ -58,7 +59,13 @@ TECH_COLUMNS = [
 ]
 SCHEMA_VERSION = 1
 STOOQ_MIN_INTERVAL_S = 0.5
-CBOE_MIN_INTERVAL_S = 0.3
+# Cboe rate-limits this endpoint. At 0.3s spacing with no retry, 39% of
+# names on 2026-10-07 and 72% on 2026-10-08 came back "429 Too Many
+# Requests" with no options data at all. 90 names at 1.2s is under two
+# minutes, and a 429 is retried after a backoff instead of recorded as empty.
+CBOE_MIN_INTERVAL_S = 1.2
+CBOE_RETRY_WAITS_S = (5, 15, 45)
+EXPECTED_UNIVERSE = 90
 NEAR_STRIKES_N = 20
 
 
@@ -99,9 +106,9 @@ def load_universe(fund_csv, logpath):
         log(logpath, f"dropped {len(dropped)} non-equity names -- {dropped[:6]}")
     pairs = keep
     log(logpath, f"universe: {len(pairs)} names from fundamentals {latest_day}")
-    if len(pairs) < 50:
+    if len(pairs) < EXPECTED_UNIVERSE * 2 // 3:
         log(logpath, f"WARNING universe is only {len(pairs)} names -- expected "
-                     f"~500. Check sector_fundamentals.csv.")
+                     f"~{EXPECTED_UNIVERSE}. Check sector_fundamentals.csv.")
     return pairs
 
 
@@ -135,13 +142,24 @@ def tradability_from_chain(spot, options, n_near=NEAR_STRIKES_N):
 def fetch_cboe_tradability(symbol, logpath):
     prefix = "_" if symbol.upper() in CASH_INDEX_SYMBOLS else ""
     url = CBOE_URL.format(sym=f"{prefix}{symbol.upper()}")
-    time.sleep(CBOE_MIN_INTERVAL_S)
-    try:
-        resp = requests.get(url, timeout=20)
-        resp.raise_for_status()
-        payload = resp.json()
-    except Exception as e:
-        log(logpath, f"{symbol}: Cboe fetch failed -- {e}")
+    payload = None
+    for attempt, wait in enumerate((0,) + CBOE_RETRY_WAITS_S):
+        time.sleep(CBOE_MIN_INTERVAL_S + wait)
+        try:
+            resp = requests.get(url, timeout=20)
+            if resp.status_code == 429 and attempt < len(CBOE_RETRY_WAITS_S):
+                log(logpath, f"{symbol}: Cboe 429, retrying in "
+                             f"{CBOE_RETRY_WAITS_S[attempt]}s")
+                continue
+            resp.raise_for_status()
+            payload = resp.json()
+            break
+        except Exception as e:
+            log(logpath, f"{symbol}: Cboe fetch failed -- {e}")
+            return None, None, None, 0
+    if payload is None:
+        log(logpath, f"{symbol}: Cboe still rate-limited after "
+                     f"{len(CBOE_RETRY_WAITS_S)} retries -- options data left empty")
         return None, None, None, 0
 
     data = payload.get("data", {})
@@ -244,7 +262,7 @@ def momentum(closes, n):
     return closes[-1] / closes[-(n + 1)] - 1
 
 
-def capture_one(ticker, sector_etf, sector_mom, logpath, closes=None):
+def capture_one(ticker, sector_etf, sector_mom, logpath, closes=None, run_ts=None):
     spot, atm_oi, atm_spread_pct, n_contracts = fetch_cboe_tradability(ticker, logpath)
     if closes is None:
         closes = fetch_stooq_history(ticker, logpath)
@@ -259,7 +277,9 @@ def capture_one(ticker, sector_etf, sector_mom, logpath, closes=None):
         return None
 
     return {
-        "capture_ts": datetime.now(timezone.utc).isoformat(),
+        # One timestamp per run, as in sector_fundamentals.py -- per-row
+        # stamps left sector_candidates.py matching a single row.
+        "capture_ts": run_ts or datetime.now(timezone.utc).isoformat(),
         "sector_etf": sector_etf, "ticker": ticker, "spot": spot,
         "atm_oi": atm_oi, "atm_spread_pct": atm_spread_pct, "chain_contracts": n_contracts,
         "mom_20d": mom20, "mom_60d": mom60,
@@ -312,6 +332,7 @@ def main():
             log(logpath, f"{e}: no sector history -- relative momentum will be null")
 
     rows = []
+    run_ts = datetime.now(timezone.utc).isoformat()
     for ticker, sector_etf in pairs:
         # [] not None when yfinance is the source: None means "go fetch it
         # yourself", which would send every name Yahoo missed straight back
@@ -319,7 +340,7 @@ def main():
         # returns None for it, which is the honest answer.
         row = capture_one(ticker, sector_etf, sector_moms[sector_etf], logpath,
                           closes=hist.get(ticker, []) if args.source == "yfinance"
-                          else None)
+                          else None, run_ts=run_ts)
         if row:
             rows.append(row)
 

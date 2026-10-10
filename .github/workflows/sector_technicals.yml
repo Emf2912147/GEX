@@ -1,13 +1,11 @@
 name: Sector agent - technicals capture
 
-# Twice daily on trading days, ~11:00 and ~15:15 ET, per Eugenio's stated
-# cadence. Cron is UTC and does NOT auto-adjust for US DST. The times below
-# assume EDT (UTC-4), in effect now. After the clock change to EST (UTC-5,
-# first Sunday in November) and back to EDT (second Sunday in March), shift
-# both cron lines by one hour -- see sector_technicals.py's module docstring.
-# This fires on weekdays regardless of market holidays; a holiday run just
-# finds Stooq/Cboe data unchanged from the prior session and, for Stooq,
-# possibly stale by one extra day -- harmless, logged, not treated as an error.
+# Twice weekly: Wed and Thu 01:00 UTC, i.e. Tue and Wed evenings ET after
+# the close (an hour earlier in ET from November to March -- still after the
+# close, so no edit is needed at the clock change).
+#
+# Scope since 2026-10-10: the top 30 holdings by weight of XLF, XLV and XLK,
+# 90 names, as captured by sector_fundamentals.py.
 #
 # Runs sector_technicals.py, then sector_candidates.py to refresh the ranked
 # long/short pairs against the freshest technicals and the latest fundamentals

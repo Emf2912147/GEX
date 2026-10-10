@@ -43,10 +43,11 @@ import pandas as pd
 
 CAND_COLUMNS = [
     "capture_ts", "sector_etf", "long_ticker", "long_score",
-    "short_ticker", "short_score", "n_names_in_sector",
+    "short_ticker", "short_score", "n_names_in_sector", "n_scorable",
     "n_quality_passed", "n_quality_failed", "schema_version",
 ]
-SCHEMA_VERSION = 1
+# 2: n_scorable column added; long_ticker may be blank (no qualifying long).
+SCHEMA_VERSION = 2
 QUALITY_GATE_DAYS_TO_FILING = 14
 
 
@@ -59,13 +60,37 @@ def log(path, msg):
 
 
 def latest_rows(csv_path):
+    """Every row of the most recent capture DAY, one per ticker.
+
+    Not an exact match on max(capture_ts). Technicals stamped each row
+    separately until 2026-10-10, so an exact match returned one row, the
+    merge found no overlap, and this script never produced a pair. Going by
+    day works for both stamping styles; if a day holds two runs, the later
+    row per ticker wins.
+    """
     if not os.path.exists(csv_path):
         return None
     df = pd.read_csv(csv_path)
     if df.empty:
         return None
-    latest_ts = df["capture_ts"].max()
-    return df[df["capture_ts"] == latest_ts].copy()
+    day = pd.to_datetime(df["capture_ts"], format="mixed", utc=True).dt.date
+    latest = df[day == day.max()].sort_values("capture_ts")
+    return latest.drop_duplicates("ticker", keep="last").copy()
+
+
+def unscorable(row):
+    """Why a name cannot be ranked at all, or None.
+
+    Missing data must never win a sector. Before this, a name with no price
+    history (VYLR, 2026-10-07 dry run) scored 0 on momentum and an empty
+    options chain tripped no liquidity gate -- both read as clean, and the
+    emptiest name in the sector came out as the long pick.
+    """
+    if pd.isna(row.get("mom_20d")) and pd.isna(row.get("mom_60d")):
+        return "no_price_history"
+    if pd.isna(row.get("atm_oi")) or pd.isna(row.get("atm_spread_pct")):
+        return "no_options_data"
+    return None
 
 
 def quality_gate_failures(row, now=None):
@@ -136,25 +161,34 @@ def composite_score(row, failures):
 
 def pick_pair(scored):
     """scored: list of (ticker, composite, failures). Returns (long, short)
-    tuples of (ticker, score) or (None, None) if scored is empty."""
+    tuples of (ticker, score); either is None when nothing qualifies.
+
+    The long leg must pass every quality gate. If no name in the sector does,
+    there is NO long -- the old fallback to "the least-bad name" put longs on
+    sectors where nothing passed (XLE 0/21, XLF 0/76 on 2026-10-07), two of
+    them with negative scores. The short leg still prefers gate failures and
+    falls back to the weakest name overall.
+    """
     if not scored:
         return None, None
     clean = [s for s in scored if not s[2]]
     flagged = [s for s in scored if s[2]]
 
-    long_pool = clean if clean else scored
-    long_pick = max(long_pool, key=lambda s: s[1])
+    long_pick = max(clean, key=lambda s: s[1]) if clean else None
 
     short_pool = flagged if flagged else scored
     short_pick = min(short_pool, key=lambda s: s[1])
 
-    return (long_pick[0], long_pick[1]), (short_pick[0], short_pick[1])
+    return ((long_pick[0], long_pick[1]) if long_pick else None,
+            (short_pick[0], short_pick[1]))
 
 
 def score_sector(grp, now=None):
     """One sector's merged rows -> list of (ticker, composite, failures)."""
     scored = []
     for _, row in grp.iterrows():
+        if unscorable(row):
+            continue
         failures = quality_gate_failures(row, now=now)
         scored.append((row["ticker"], composite_score(row, failures), failures))
     return scored
@@ -167,14 +201,15 @@ def build_candidates(merged, now=None):
     for sector_etf, grp in merged.groupby("sector_etf"):
         scored = score_sector(grp, now=now)
         long_pick, short_pick = pick_pair(scored)
-        if long_pick is None or short_pick is None:
+        if short_pick is None:
             continue
         n_failed = sum(1 for s in scored if s[2])
         out_rows.append({
             "capture_ts": now.isoformat(), "sector_etf": sector_etf,
-            "long_ticker": long_pick[0], "long_score": round(long_pick[1], 4),
+            "long_ticker": long_pick[0] if long_pick else "",
+            "long_score": round(long_pick[1], 4) if long_pick else "",
             "short_ticker": short_pick[0], "short_score": round(short_pick[1], 4),
-            "n_names_in_sector": len(scored),
+            "n_names_in_sector": len(grp), "n_scorable": len(scored),
             "n_quality_passed": len(scored) - n_failed, "n_quality_failed": n_failed,
             "schema_version": SCHEMA_VERSION,
         })
@@ -211,6 +246,10 @@ def main():
         return 1
 
     out_rows = build_candidates(merged)
+    for r in out_rows:
+        log(logpath, f"{r['sector_etf']}: long {r['long_ticker'] or '(none qualifies)'}  "
+                     f"short {r['short_ticker']}  -- {r['n_scorable']}/{r['n_names_in_sector']} "
+                     f"scorable, {r['n_quality_passed']} passed the gates")
     log(logpath, f"=== candidates: {len(out_rows)} sector pairs written ===")
 
     if args.dry_run:
