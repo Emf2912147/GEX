@@ -14,7 +14,7 @@ CADENCE
 
 SCOPE (2026-10-10)
     Whatever the latest fundamentals capture holds: the top 30 holdings of
-    XLF, XLV and XLK, 90 names. See sector_fundamentals.py.
+    XLF, XLV, XLK and XLP, 120 names. See sector_fundamentals.py.
 
 SOURCES (both free, both keyless)
     Options tradability : Cboe's delayed-quotes endpoint, per symbol -- the
@@ -61,11 +61,11 @@ SCHEMA_VERSION = 2   # 2: atm_oi/atm_spread_pct measured on one monthly expiry
 STOOQ_MIN_INTERVAL_S = 0.5
 # Cboe rate-limits this endpoint. At 0.3s spacing with no retry, 39% of
 # names on 2026-10-07 and 72% on 2026-10-08 came back "429 Too Many
-# Requests" with no options data at all. 90 names at 1.2s is under two
+# Requests" with no options data at all. 120 names at 1.2s is under three
 # minutes, and a 429 is retried after a backoff instead of recorded as empty.
 CBOE_MIN_INTERVAL_S = 1.2
 CBOE_RETRY_WAITS_S = (5, 15, 45)
-EXPECTED_UNIVERSE = 90
+EXPECTED_UNIVERSE = 120
 # Tradability is read off one expiry: the standard monthly nearest
 # TARGET_DTE days out and at least MIN_DTE away, ATM +/- a few strikes.
 TARGET_DTE = 30

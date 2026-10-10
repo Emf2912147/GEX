@@ -2,7 +2,7 @@ name: Sector agent - fundamentals capture
 
 # Twice weekly (Tue/Fri, ~9pm ET post-close) -- fundamentals move slowly,
 # no value refreshing daily. Scope since 2026-10-10: the top 30 holdings by
-# weight of XLF, XLV and XLK (90 names), re-read from State Street each run. Cron is UTC and does NOT auto-adjust for US
+# weight of XLF, XLV, XLK and XLP (120 names), re-read from State Street each run. Cron is UTC and does NOT auto-adjust for US
 # DST. The times below assume EDT (UTC-4), in effect now. After the clock
 # change to EST (UTC-5, first Sunday in November) and back to EDT (second
 # Sunday in March), shift both "0 1" entries by one hour to keep the real

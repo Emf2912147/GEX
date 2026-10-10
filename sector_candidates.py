@@ -11,9 +11,17 @@ SCOPE
     --outdir -- never fetches anything itself, never touches the Trade
     Agent's files. Run this after sector_technicals.py in the same cycle.
 
+OPTIONS LIQUIDITY -- an eligibility screen, not a gate (2026-10-10)
+    A name whose options are illiquid -- atm_spread_pct > 0.10 or
+    atm_oi < 100, measured on the monthly expiry nearest 30 days (see
+    sector_technicals.py) -- is removed before scoring and can be neither
+    the long nor the short. Until 2026-10-10 it was a quality gate, which
+    made illiquid names SHORT candidates: MRSH was the XLF short with 20
+    contracts of open interest and a 16% spread. A name with no liquidity
+    reading at all is removed too.
+
 QUALITY GATES (Eugenio's stated screening criteria, ways-of-working.md)
-    A name trips a gate if ANY of:
-      - illiquid chain       : atm_spread_pct > 0.10, or atm_oi < 100
+    Applied to the liquid names only. A name trips a gate if ANY of:
       - negative free cash flow, OR compressing gross/operating margin
         (current period below its own prior-period value)
       - net debt / EBITDA above 3x
@@ -28,11 +36,12 @@ QUALITY GATES (Eugenio's stated screening criteria, ways-of-working.md)
     accordingly in the composite score, not as an override of the quality read.
 
 OUTPUT
-    One row per sector: the long pick (best clean-quality name, or the least
-    -bad name if nothing in the sector is fully clean) and the short pick
-    (worst-scoring name among quality-gate failures, or the worst overall
-    if nothing failed a gate) -- plus enough context (n_names_in_sector,
-    pass/fail counts) to see how thin or thick the sector's screened set was.
+    One row per sector, from the liquid names only: the long pick (highest
+    composite score among names that pass every quality gate; blank if none
+    does) and the short pick (lowest composite score among names that fail
+    a gate, or the lowest overall if every liquid name passes; blank only if
+    no name in the sector is liquid) -- plus counts (n_names_in_sector,
+    n_illiquid, n_scorable, pass/fail) showing how thin the screened set was.
 """
 import argparse
 import os
@@ -44,10 +53,14 @@ import pandas as pd
 CAND_COLUMNS = [
     "capture_ts", "sector_etf", "long_ticker", "long_score",
     "short_ticker", "short_score", "n_names_in_sector", "n_scorable",
-    "n_quality_passed", "n_quality_failed", "schema_version",
+    "n_quality_passed", "n_quality_failed", "n_illiquid", "schema_version",
 ]
 # 2: n_scorable column added; long_ticker may be blank (no qualifying long).
-SCHEMA_VERSION = 2
+# 3: illiquid options exclude a name from both legs; n_illiquid added.
+#    n_scorable and the pass/fail counts are over the liquid names only.
+SCHEMA_VERSION = 3
+MAX_ATM_SPREAD_PCT = 0.10
+MIN_ATM_OI = 100
 QUALITY_GATE_DAYS_TO_FILING = 14
 
 
@@ -99,13 +112,6 @@ def quality_gate_failures(row, now=None):
     now = now or datetime.now(timezone.utc)
     reasons = []
 
-    spread = row.get("atm_spread_pct")
-    oi = row.get("atm_oi")
-    if pd.notna(spread) and spread > 0.10:
-        reasons.append("wide_chain")
-    if pd.notna(oi) and oi < 100:
-        reasons.append("low_oi")
-
     fcf = row.get("fcf")
     if pd.notna(fcf) and fcf < 0:
         reasons.append("negative_fcf")
@@ -132,6 +138,14 @@ def quality_gate_failures(row, now=None):
             pass
 
     return reasons
+
+
+def is_liquid(row):
+    """True only when both readings exist and pass. Missing data is not
+    liquidity -- a name we could not measure is not one to trade."""
+    spread, oi = row.get("atm_spread_pct"), row.get("atm_oi")
+    return (pd.notna(spread) and pd.notna(oi)
+            and spread <= MAX_ATM_SPREAD_PCT and oi >= MIN_ATM_OI)
 
 
 def score_quality(row, failures):
@@ -187,7 +201,7 @@ def score_sector(grp, now=None):
     """One sector's merged rows -> list of (ticker, composite, failures)."""
     scored = []
     for _, row in grp.iterrows():
-        if unscorable(row):
+        if unscorable(row) or not is_liquid(row):
             continue
         failures = quality_gate_failures(row, now=now)
         scored.append((row["ticker"], composite_score(row, failures), failures))
@@ -201,16 +215,18 @@ def build_candidates(merged, now=None):
     for sector_etf, grp in merged.groupby("sector_etf"):
         scored = score_sector(grp, now=now)
         long_pick, short_pick = pick_pair(scored)
-        if short_pick is None:
-            continue
         n_failed = sum(1 for s in scored if s[2])
+        n_illiquid = sum(1 for _, r in grp.iterrows()
+                         if not unscorable(r) and not is_liquid(r))
         out_rows.append({
             "capture_ts": now.isoformat(), "sector_etf": sector_etf,
             "long_ticker": long_pick[0] if long_pick else "",
             "long_score": round(long_pick[1], 4) if long_pick else "",
-            "short_ticker": short_pick[0], "short_score": round(short_pick[1], 4),
+            "short_ticker": short_pick[0] if short_pick else "",
+            "short_score": round(short_pick[1], 4) if short_pick else "",
             "n_names_in_sector": len(grp), "n_scorable": len(scored),
             "n_quality_passed": len(scored) - n_failed, "n_quality_failed": n_failed,
+            "n_illiquid": n_illiquid,
             "schema_version": SCHEMA_VERSION,
         })
     return out_rows
@@ -220,6 +236,14 @@ def append_rows(out_path, rows):
     if not rows:
         return
     df = pd.DataFrame(rows, columns=CAND_COLUMNS)
+    if os.path.exists(out_path):
+        old = pd.read_csv(out_path, dtype=str, keep_default_na=False)
+        if list(old.columns) != CAND_COLUMNS:
+            # Column set changed (a schema bump). Rewrite once with the new
+            # header; older rows keep blanks in the new columns.
+            pd.concat([old, df.astype(str)], ignore_index=True) \
+              .reindex(columns=CAND_COLUMNS).to_csv(out_path, index=False)
+            return
     header = not os.path.exists(out_path)
     df.to_csv(out_path, mode="a", header=header, index=False)
 
@@ -248,8 +272,9 @@ def main():
     out_rows = build_candidates(merged)
     for r in out_rows:
         log(logpath, f"{r['sector_etf']}: long {r['long_ticker'] or '(none qualifies)'}  "
-                     f"short {r['short_ticker']}  -- {r['n_scorable']}/{r['n_names_in_sector']} "
-                     f"scorable, {r['n_quality_passed']} passed the gates")
+                     f"short {r['short_ticker'] or '(none liquid)'}  -- {r['n_illiquid']} illiquid excluded, "
+                     f"{r['n_scorable']} liquid and scorable, "
+                     f"{r['n_quality_passed']} passed the gates")
     log(logpath, f"=== candidates: {len(out_rows)} sector pairs written ===")
 
     if args.dry_run:

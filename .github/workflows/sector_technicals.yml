@@ -4,8 +4,8 @@ name: Sector agent - technicals capture
 # the close (an hour earlier in ET from November to March -- still after the
 # close, so no edit is needed at the clock change).
 #
-# Scope since 2026-10-10: the top 30 holdings by weight of XLF, XLV and XLK,
-# 90 names, as captured by sector_fundamentals.py.
+# Scope since 2026-10-10: the top 30 holdings by weight of XLF, XLV, XLK and XLP,
+# 120 names, as captured by sector_fundamentals.py.
 #
 # Runs sector_technicals.py, then sector_candidates.py to refresh the ranked
 # long/short pairs against the freshest technicals and the latest fundamentals

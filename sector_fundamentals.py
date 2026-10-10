@@ -12,8 +12,8 @@ SCOPE
     `git add history/sector` specifically, never `git add -A`.
 
 SCOPE NARROWED 2026-10-10
-    The top 30 holdings by fund weight of three SPDR sector ETFs only --
-    XLF, XLV and XLK, 90 names. Membership is re-read from State Street's
+    The top 30 holdings by fund weight of four SPDR sector ETFs only --
+    XLF, XLV, XLK and XLP (XLP added 2026-10-10), 120 names. Membership is re-read from State Street's
     holdings file on every run, so a name that moves into or out of a
     fund's top 30 is picked up automatically. The 11-sector, ~517-name
     history collected before this date was deleted: the fundamentals run
@@ -84,6 +84,7 @@ except ImportError:
 
 SECTOR_ETFS = {
     "XLF": "Financials", "XLV": "Health Care", "XLK": "Technology",
+    "XLP": "Consumer Staples",
 }
 # Constituents kept per fund, largest weight first.
 TOP_N = 30
