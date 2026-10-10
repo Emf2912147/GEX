@@ -41,7 +41,7 @@ import re
 import os
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 
 import numpy as np
 import pandas as pd
@@ -57,7 +57,7 @@ TECH_COLUMNS = [
     "mom_20d", "mom_60d", "sector_mom_20d", "sector_mom_60d",
     "rel_strength_20d", "rel_strength_60d", "schema_version",
 ]
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2   # 2: atm_oi/atm_spread_pct measured on one monthly expiry
 STOOQ_MIN_INTERVAL_S = 0.5
 # Cboe rate-limits this endpoint. At 0.3s spacing with no retry, 39% of
 # names on 2026-10-07 and 72% on 2026-10-08 came back "429 Too Many
@@ -66,7 +66,11 @@ STOOQ_MIN_INTERVAL_S = 0.5
 CBOE_MIN_INTERVAL_S = 1.2
 CBOE_RETRY_WAITS_S = (5, 15, 45)
 EXPECTED_UNIVERSE = 90
-NEAR_STRIKES_N = 20
+# Tradability is read off one expiry: the standard monthly nearest
+# TARGET_DTE days out and at least MIN_DTE away, ATM +/- a few strikes.
+TARGET_DTE = 30
+MIN_DTE = 7
+NEAR_CONTRACTS_N = 10   # five strikes, call and put
 
 
 def log(path, msg):
@@ -112,27 +116,80 @@ def load_universe(fund_csv, logpath):
     return pairs
 
 
-def strike_of(opt):
-    """Cboe option symbols encode the strike in thousandths in the trailing
-    8 digits, e.g. ...C00745000 -> 745.00. Returns None rather than raising
-    on anything unexpected."""
+OPTION_SYMBOL_RE = re.compile(r"^(.+?)(\d{6})([CP])(\d{8})$")
+
+
+def parse_option(opt):
+    """Cboe option symbol -> (expiry date, strike), e.g.
+    JPM261120C00335000 -> (2026-11-20, 335.0). None on anything unexpected."""
     try:
-        return int(opt["option"][-8:]) / 1000.0
+        m = OPTION_SYMBOL_RE.match(opt["option"])
+        if not m:
+            return None
+        ymd = m.group(2)
+        exp = date(2000 + int(ymd[:2]), int(ymd[2:4]), int(ymd[4:6]))
+        return exp, int(m.group(4)) / 1000.0
     except (KeyError, ValueError, TypeError):
         return None
 
 
-def tradability_from_chain(spot, options, n_near=NEAR_STRIKES_N):
+def strike_of(opt):
+    """Strike in dollars, or None. Kept for callers that only need the strike."""
+    parsed = parse_option(opt)
+    return parsed[1] if parsed else None
+
+
+def is_standard_monthly(d):
+    """Third-Friday expiry (the Thursday before when Friday is a holiday).
+    Monthlies carry most of a single name's open interest; weeklies and
+    LEAPS on the same strike are thin and wide."""
+    if d.weekday() == 4:
+        return 15 <= d.day <= 21
+    if d.weekday() == 3:   # holiday-shifted: the Friday after is the third
+        return 15 <= (d + timedelta(days=1)).day <= 21
+    return False
+
+
+def pick_expiry(expiries, today):
+    """The standard monthly expiry nearest TARGET_DTE days out, at least
+    MIN_DTE away. Falls back to any expiry in that window if the chain lists
+    no monthly (rare for these names)."""
+    live = [e for e in expiries if (e - today).days >= MIN_DTE]
+    monthly = [e for e in live if is_standard_monthly(e)]
+    pool = monthly or live
+    if not pool:
+        return None
+    return min(pool, key=lambda e: (abs((e - today).days - TARGET_DTE), e))
+
+
+def tradability_from_chain(spot, options, n_near=NEAR_CONTRACTS_N, today=None):
     """Pure function: (spot, options list) -> (atm_oi, atm_spread_pct).
-    Separated from the network call so it's unit-testable against fixtures."""
+
+    Measured on ONE expiry -- the standard monthly nearest 30 days out --
+    using the n_near contracts (calls and puts) closest to spot. Until
+    2026-10-10 this took the 20 contracts nearest spot across EVERY expiry,
+    which mixed in yesterday's expired options (bid 0, ask 0.01), weeklies
+    and LEAPS. JPM read 9.8% spread; its November monthly is 4.7%. Across
+    the 90 names the old measure failed the liquidity gate on 71, this one
+    on about 40.
+
+    Spread is (ask - bid) / mid over two-sided quotes only; a contract with
+    no bid has no market to measure. Unit-testable against fixtures."""
     if not options or spot is None:
         return None, None
-    near = sorted(options, key=lambda o: abs((strike_of(o) or 1e12) - spot))[:n_near]
+    today = today or datetime.now(timezone.utc).date()
+    parsed = [(o, parse_option(o)) for o in options]
+    parsed = [(o, p) for o, p in parsed if p is not None]
+    expiry = pick_expiry({p[0] for _, p in parsed}, today)
+    if expiry is None:
+        return None, None
+    same = [(o, p[1]) for o, p in parsed if p[0] == expiry]
+    near = [o for o, _ in sorted(same, key=lambda x: abs(x[1] - spot))[:n_near]]
     ois = [o.get("open_interest", 0) or 0 for o in near]
     widths = []
     for o in near:
         b, a = o.get("bid"), o.get("ask")
-        if b is not None and a is not None and (b + a) > 0:
+        if b is not None and a is not None and b > 0 and a > 0:
             widths.append((a - b) / ((a + b) / 2))
     atm_oi = int(np.median(ois)) if ois else None
     atm_spread_pct = float(np.median(widths)) if widths else None

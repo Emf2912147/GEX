@@ -1,4 +1,0 @@
-capture_ts,sector_etf,long_ticker,long_score,short_ticker,short_score,n_names_in_sector,n_scorable,n_quality_passed,n_quality_failed,schema_version
-2026-10-10T10:33:56.557432+00:00,XLF,,,MRSH,-4.7971,30,30,0,30,2
-2026-10-10T10:33:56.557432+00:00,XLK,SNDK,4.7654,TXN,-3.3462,30,30,7,23,2
-2026-10-10T10:33:56.557432+00:00,XLV,,,MRNA,-5.5961,30,30,0,30,2
