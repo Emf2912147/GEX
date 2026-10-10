@@ -11,3 +11,16 @@
 2026-10-10T11:33:32.156895+00:00Z  XLP: long MO  short PG  -- 23 illiquid excluded, 6 liquid and scorable, 2 passed the gates
 2026-10-10T11:33:32.156925+00:00Z  XLV: long ABBV  short MRNA  -- 22 illiquid excluded, 8 liquid and scorable, 2 passed the gates
 2026-10-10T11:33:32.156954+00:00Z  === candidates: 4 sector pairs written ===
+2026-10-10T11:50:22.764856+00:00Z  XLF: long (none qualifies)  short C  -- 20 illiquid excluded, 10 liquid and scorable, 0 passed the gates
+2026-10-10T11:50:22.764923+00:00Z  XLK: long SNDK  short ORCL  -- 6 illiquid excluded, 24 liquid and scorable, 12 passed the gates
+2026-10-10T11:50:22.764960+00:00Z  XLP: long MO  short PG  -- 23 illiquid excluded, 6 liquid and scorable, 2 passed the gates
+2026-10-10T11:50:22.764989+00:00Z  XLV: long ABBV  short MRNA  -- 22 illiquid excluded, 8 liquid and scorable, 2 passed the gates
+2026-10-10T11:50:22.790705+00:00Z  [options] XLF: 10 names  long -  short C,MS,AXP
+2026-10-10T11:50:22.790764+00:00Z  [options] XLK: 24 names  long SNDK,PLTR,MU  short ORCL,IBM,DELL
+2026-10-10T11:50:22.790802+00:00Z  [options] XLP: 6 names  long MO,KO  short PG,TGT,PEP
+2026-10-10T11:50:22.790835+00:00Z  [options] XLV: 8 names  long ABBV,BMY  short MRNA,UNH,DHR
+2026-10-10T11:50:22.793310+00:00Z  [stock] XLF: 20 names  long MA,SPGI,ICE  short MRSH,BLK,KKR
+2026-10-10T11:50:22.793363+00:00Z  [stock] XLK: 6 names  long STX,KLAC,ADI  short TXN,PANW,ACN
+2026-10-10T11:50:22.793400+00:00Z  [stock] XLP: 23 names  long MNST,COST,EL  short BG,GIS,KHC
+2026-10-10T11:50:22.793461+00:00Z  [stock] XLV: 22 names  long LLY,VRTX,GILD  short CVS,ELV,CI
+2026-10-10T11:50:22.793502+00:00Z  === candidates: 4 sector pairs, 19 options-table rows, 24 stock-table rows ===
