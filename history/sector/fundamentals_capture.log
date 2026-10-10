@@ -45,3 +45,14 @@
 2026-10-10T12:40:03.433545+00:00Z  XLP: top 30 of 34 constituents by weight
 2026-10-10T12:40:58.898596+00:00Z  XLP: watchlist name CPB added outside the top 30
 2026-10-10T12:41:00.680824+00:00Z  === fundamentals capture done: 121/121 names captured ===
+2026-10-10T13:15:11.402087+00:00Z  === fundamentals capture start (4 sectors) ===
+2026-10-10T13:15:11.811099+00:00Z  XLF: dropped 4 non-equity rows -- ['-', '-', '-', 'IXAZ6']
+2026-10-10T13:15:11.811188+00:00Z  XLF: top 30 of 76 constituents by weight
+2026-10-10T13:16:19.997941+00:00Z  XLV: dropped 4 non-equity rows -- ['-', '-', 'IXCZ6', '2602335D']
+2026-10-10T13:16:19.998047+00:00Z  XLV: top 30 of 60 constituents by weight
+2026-10-10T13:17:28.898316+00:00Z  XLK: dropped 3 non-equity rows -- ['-', 'IXTZ6', '-']
+2026-10-10T13:17:28.898419+00:00Z  XLK: top 30 of 75 constituents by weight
+2026-10-10T13:18:36.994041+00:00Z  XLP: dropped 4 non-equity rows -- ['-', '-', 'IXRZ6', '-']
+2026-10-10T13:18:36.994152+00:00Z  XLP: top 30 of 34 constituents by weight
+2026-10-10T13:19:44.709322+00:00Z  XLP: watchlist name CPB added outside the top 30
+2026-10-10T13:19:46.761542+00:00Z  === fundamentals capture done: 121/121 names captured ===
