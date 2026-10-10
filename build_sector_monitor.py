@@ -349,8 +349,9 @@ Entry is shown, not scored.</p>
 <h3>Fundamentals basis</h3>
 <p>Quarterly: trailing four quarters against the four before when eight are
 reported, otherwise the latest quarter against the same quarter a year
-earlier. Names with fewer than five quarters fall back to annual and are
-tagged &ldquo;annual data&rdquo;.</p>
+earlier; with only four, the trailing four quarters against the last full
+fiscal year. Fewer than four falls back to annual, tagged &ldquo;annual
+data&rdquo;. Quarterly figures are only as current as Yahoo&rsquo;s feed.</p>
 <h3>Trade quality (0&ndash;100)</h3>
 <p>The bar under each name shows its four parts, left to right:</p>
 <ul>

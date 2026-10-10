@@ -122,7 +122,12 @@ SCHEMA_VERSION = 5
 #   each row used, period_end the latest period it reflects:
 #     ttm    -- 8+ quarters: last 4 quarters vs the 4 before (TTM vs TTM)
 #     q_yoy  -- 5-7 quarters: latest quarter vs the same quarter a year ago
-#     annual -- fewer than 5 usable quarters: the old annual comparison
+#     ttm_fy -- 4 quarters only: the last 4 quarters (TTM) vs the most recent
+#               full fiscal year that ended at least ~3 months before them.
+#               Added after the first quarterly run: Yahoo serves only 4-5
+#               quarters, and yfinance returned 4 for CPB, GIS, MDLZ, BAC and
+#               5 others, which then fell back to a year-old annual figure.
+#     annual -- fewer than 4 usable quarters: the old annual comparison
 #   Debt and cash come from the latest quarterly balance sheet.
 # 4 (2026-10-10): valuation -- market_cap, price_to_book, ev_to_ebitda,
 #   forward_pe, fcf_yield (TTM free cash flow / market cap). Used by
@@ -293,17 +298,62 @@ def _year_apart(series, i, j):
         return True
 
 
-def quarterly_fundamentals(q_fin, q_cf, q_bs):
+def _ttm_vs_fy(rev, gp, oi, a_fin):
+    """Last 4 quarters vs the latest full fiscal year ending >= ~3 months
+    before the newest quarter. None if either side is missing."""
+    r_now = _qsum(rev, 0)
+    if r_now is None or a_fin is None or not hasattr(a_fin, "empty") or a_fin.empty:
+        return None
+    try:
+        q0 = pd.Timestamp(rev.index[0])
+    except Exception:
+        return None
+    a_rev = quarterly_series(a_fin, "revenue")
+    if a_rev is None:
+        return None
+    a_gp = quarterly_series(a_fin, "gross_profit")
+    a_oi = quarterly_series(a_fin, "operating_income")
+    for i, d in enumerate(a_rev.index):
+        try:
+            if (q0 - pd.Timestamp(d)).days >= 80 and pd.notna(a_rev.iloc[i]):
+                break
+        except Exception:
+            continue
+    else:
+        return None
+    r_prev = float(a_rev.iloc[i])
+
+    def at(s, j):
+        return float(s.iloc[j]) if s is not None and len(s) > j and pd.notna(s.iloc[j]) else None
+
+    def ratio(a, b):
+        return (a / b) if a is not None and b else None
+    return {
+        "basis": "ttm_fy", "revenue": r_now, "revenue_prior": r_prev,
+        "gross_margin": ratio(_qsum(gp, 0), r_now),
+        "gross_margin_prior": ratio(at(a_gp, i), r_prev),
+        "operating_margin": ratio(_qsum(oi, 0), r_now),
+        "operating_margin_prior": ratio(at(a_oi, i), r_prev),
+    }
+
+
+def quarterly_fundamentals(q_fin, q_cf, q_bs, a_fin=None):
     """Quarterly-basis revenue, margins, FCF prior, debt and cash.
     Returns a dict (keys as build_row uses them) or None when there are
-    fewer than 5 usable revenue quarters."""
+    fewer than 4 usable revenue quarters."""
     rev = quarterly_series(q_fin, "revenue")
-    if rev is None or rev.notna().sum() < 5:
+    if rev is None:
+        return None
+    rev = rev[rev.notna()]          # Yahoo sometimes leads with an empty column
+    if len(rev) < 4:
         return None
     gp = quarterly_series(q_fin, "gross_profit")
     oi = quarterly_series(q_fin, "operating_income")
-    out = {"period_end": str(pd.Timestamp(rev.index[0]).date())
-           if len(rev) else None}
+    if gp is not None:
+        gp = gp.reindex(rev.index)
+    if oi is not None:
+        oi = oi.reindex(rev.index)
+    out = {"period_end": str(pd.Timestamp(rev.index[0]).date())}
 
     def ratio(a, b):
         return (a / b) if a is not None and b else None
@@ -316,16 +366,19 @@ def quarterly_fundamentals(q_fin, q_cf, q_bs):
         out["gross_margin_prior"] = ratio(_qsum(gp, 4), r_prev)
         out["operating_margin"] = ratio(_qsum(oi, 0), r_now)
         out["operating_margin_prior"] = ratio(_qsum(oi, 4), r_prev)
-    else:
+    elif (len(rev) >= 5 and _qval(rev, 4) is not None and _year_apart(rev, 0, 4)):
         q0, q4 = _qval(rev, 0), _qval(rev, 4)
-        if q0 is None or q4 is None or not _year_apart(rev, 0, 4):
-            return None
         out["basis"] = "q_yoy"
         out["revenue"], out["revenue_prior"] = q0, q4
         out["gross_margin"] = ratio(_qval(gp, 0), q0)
         out["gross_margin_prior"] = ratio(_qval(gp, 4), q4)
         out["operating_margin"] = ratio(_qval(oi, 0), q0)
         out["operating_margin_prior"] = ratio(_qval(oi, 4), q4)
+    else:
+        fy = _ttm_vs_fy(rev, gp, oi, a_fin)
+        if fy is None:
+            return None
+        out.update(fy)
 
     ocf = quarterly_series(q_cf, "op_cash_flow")
     capex = quarterly_series(q_cf, "capex")
@@ -477,7 +530,7 @@ def build_row(ticker, sector_etf, info, financials, balance_sheet, cashflow, nex
         period_end = str(pd.Timestamp(max(dates)).date()) if dates else None
     except Exception:
         period_end = None
-    q = quarterly_fundamentals(q_fin, q_cf, q_bs)
+    q = quarterly_fundamentals(q_fin, q_cf, q_bs, financials)
     if q:
         basis, period_end = q["basis"], q["period_end"]
         revenue, revenue_prior = q["revenue"], q["revenue_prior"]
