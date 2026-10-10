@@ -1,0 +1,711 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sector Trade Monitor</title>
+<style>
+:root{
+  --bg:#fbfbfa; --surface:#fff; --border:#e4e2dd; --ink:#1a1a18;
+  --ink-2:#55534e; --ink-3:#85827b;
+  --pos:#2e9e5b; --neg:#c0392b; --warn:#b7791f; --line:#2c3e50;
+  --pos-bg:#eaf6ef; --neg-bg:#fbeceb; --warn-bg:#fdf3e1; --chip:#f1efea;
+  --ga:#2e9e5b; --gb:#3b7dd8; --gc:#b7791f; --gd:#c0392b;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#16161a; --surface:#1e1e23; --border:#33333b; --ink:#f0efec;
+    --ink-2:#b3b0a8; --ink-3:#807d76;
+    --pos:#4cc07c; --neg:#e15c4c; --warn:#e0a84a; --line:#93a7bd;
+    --pos-bg:#1a2f22; --neg-bg:#33201d; --warn-bg:#33291a; --chip:#2a2a30;
+    --ga:#4cc07c; --gb:#6aa5f0; --gc:#e0a84a; --gd:#e15c4c;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#16161a; --surface:#1e1e23; --border:#33333b; --ink:#f0efec;
+  --ink-2:#b3b0a8; --ink-3:#807d76;
+  --pos:#4cc07c; --neg:#e15c4c; --warn:#e0a84a; --line:#93a7bd;
+  --pos-bg:#1a2f22; --neg-bg:#33201d; --warn-bg:#33291a; --chip:#2a2a30;
+  --ga:#4cc07c; --gb:#6aa5f0; --gc:#e0a84a; --gd:#e15c4c;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  -webkit-text-size-adjust:100%}
+.wrap{max-width:860px;margin:0 auto;padding:16px 14px 48px}
+header{margin:4px 0 18px}
+h1{font-size:20px;margin:0 0 4px;letter-spacing:-0.01em}
+.sub{color:var(--ink-3);font-size:12.5px;margin:0}
+.nav{font-size:12.5px;margin-top:6px}
+.nav a{color:var(--ink-2)}
+.card{background:var(--surface);border:1px solid var(--border);
+  border-radius:12px;padding:14px;margin-bottom:14px}
+.card-top{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.sym{font-size:19px;font-weight:650;letter-spacing:-0.01em}
+.sname{color:var(--ink-2);font-size:14px;margin-left:6px}
+.k{font-size:11px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
+.tbl{margin-top:12px;padding-top:10px;border-top:1px solid var(--border)}
+.tbl-h{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+.tbl-name{font-weight:650;font-size:14px}
+.tbl-note{font-size:11.5px;color:var(--ink-3)}
+.sides{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:620px){.sides{grid-template-columns:1fr}}
+.side-h{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+.side-long .side-h,.side-h-long{color:var(--pos)}
+.side-short .side-h,.side-h-short{color:var(--neg)}
+.picks{list-style:none;margin:0;padding:0}
+.pick{padding:7px 0;border-bottom:1px dashed var(--border)}
+.pick:last-child{border-bottom:0}
+.pick-top{display:flex;align-items:center;gap:8px}
+.rk{font-size:11px;color:var(--ink-3);width:12px}
+.tk{font-weight:650;letter-spacing:.01em}
+.px{color:var(--ink-3);font-size:12px;font-variant-numeric:tabular-nums}
+.gr{margin-left:auto;display:inline-flex;align-items:baseline;gap:5px;font-weight:700;
+  font-size:12px;padding:2px 8px;border-radius:999px;color:#fff;white-space:nowrap}
+.gr b{font-weight:500;font-size:11px;opacity:.9;font-variant-numeric:tabular-nums}
+.legend .gr,.bs .gr{margin-left:0}
+.gr-a{background:var(--ga)} .gr-b{background:var(--gb)}
+.gr-c{background:var(--gc)} .gr-d{background:var(--gd)} .gr-x{background:var(--ink-3)}
+.parts{display:flex;gap:2px;margin:5px 0 3px 20px;height:5px}
+.seg{background:var(--chip);border-radius:2px;overflow:hidden;display:block}
+.seg i{display:block;height:100%;background:var(--line);opacity:.75}
+.meta{font-size:11.5px;color:var(--ink-2);margin-left:20px;font-variant-numeric:tabular-nums}
+.dot{color:var(--ink-3)}
+.chips{margin:3px 0 0 20px;display:flex;flex-wrap:wrap;gap:4px}
+.chip{font-size:10.5px;padding:1px 7px;border-radius:999px;background:var(--chip);color:var(--ink-2)}
+.chip-neg{background:var(--neg-bg);color:var(--neg)}
+.chip-warn{background:var(--warn-bg);color:var(--warn)}
+.empty{font-size:12.5px;color:var(--ink-3);padding:6px 0}
+.bs-wrap{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.bs{list-style:none;margin:0;padding:0}
+.bs li{display:flex;align-items:center;gap:8px;padding:4px 0}
+.bs-meta{font-size:11.5px;color:var(--ink-3)}
+details.legend summary{cursor:pointer;font-size:13.5px;color:var(--ink-2)}
+.legend h3{font-size:13px;margin:12px 0 2px}
+.legend p,.legend li{font-size:12.5px;color:var(--ink-2);margin:2px 0}
+.legend ul{padding-left:18px;margin:4px 0}
+.fine{font-size:11px !important;color:var(--ink-3) !important;margin-top:10px !important}
+</style></head>
+<body><div class="wrap">
+<header>
+  <h1>Sector Trade Monitor</h1>
+  <p class="sub">Prices &amp; options Sat Oct 10, 8:22 AM ET &middot; fundamentals Sat Oct 10, 8:17 AM ET</p>
+  <p class="sub">Updates Tue &amp; Wed evenings after the close.</p>
+  <div class="nav"><a href="index.html">&larr; GEX Monitor</a></div>
+</header>
+<section class='card'><div class='k'>Highest trade quality, all sectors</div><div class='bs-wrap'><div class='bs-col'><div class='side-h side-h-long'>Longs</div><ul class='bs'><li><span class='tk'>MA</span> <span class='gr gr-a' title='Trade quality 97/100'>A<b>97</b></span><span class='bs-meta'>XLF · Shares</span></li><li><span class='tk'>LLY</span> <span class='gr gr-a' title='Trade quality 86/100'>A<b>86</b></span><span class='bs-meta'>XLV · Shares</span></li><li><span class='tk'>PLTR</span> <span class='gr gr-a' title='Trade quality 84/100'>A<b>84</b></span><span class='bs-meta'>XLK · Options</span></li></ul></div><div class='bs-col'><div class='side-h side-h-short'>Shorts</div><ul class='bs'><li><span class='tk'>CVS</span> <span class='gr gr-a' title='Trade quality 90/100'>A<b>90</b></span><span class='bs-meta'>XLV · Shares</span></li><li><span class='tk'>ORCL</span> <span class='gr gr-a' title='Trade quality 87/100'>A<b>87</b></span><span class='bs-meta'>XLK · Options</span></li><li><span class='tk'>BG</span> <span class='gr gr-a' title='Trade quality 82/100'>A<b>82</b></span><span class='bs-meta'>XLP · Shares</span></li></ul></div></div></section>
+
+<section class="card">
+  <div class="card-top"><div><span class="sym">XLF</span>
+    <span class="sname">Financials</span></div>
+    <span class="sub">top 30 holdings by weight</span></div>
+  
+  <div class="tbl">
+    <div class="tbl-h"><span class="tbl-name">Options</span>
+      <span class="tbl-note">10 names · liquid chain: spread ≤ 10%, OI ≥ 100</span></div>
+    <div class="sides"><div class='side side-long'><div class='side-h'>Long</div><div class='empty'>None &mdash; no name passes every quality gate</div></div><div class='side side-short'><div class='side-h'>Short</div><ol class='picks'>
+<li class="pick">
+  <div class="pick-top">
+    <span class="rk">1</span>
+    <span class="tk">C</span>
+    <span class="px">129.68</span>
+    <span class='gr gr-c' title='Trade quality 51/100'>C<b>51</b></span>
+  </div>
+  <div class='parts'><span class='seg' style='flex:30' title='Conviction 51%'><i style='width:51%'></i></span><span class='seg' style='flex:25' title='Momentum 51%'><i style='width:51%'></i></span><span class='seg' style='flex:20' title='Execution 69%'><i style='width:69%'></i></span><span class='seg' style='flex:25' title='Event / carry 37%'><i style='width:37%'></i></span></div>
+  <div class="meta">vs sector -2.2% 20d · +2.0% 60d
+    <span class="dot">·</span> spread 5.3% · OI 2,590 <span class="dot">·</span> score -1.16</div>
+  <div class="chips"><span class='chip chip-neg'>neg FCF</span><span class='chip chip-neg'>earnings ≤14d</span></div>
+</li>
+<li class="pick">
+  <div class="pick-top">
+    <span class="rk">2</span>
+    <span class="tk">MS</span>
+    <span class="px">190.74</span>
+    <span class='gr gr-c' title='Trade quality 55/100'>C<b>55</b></span>
+  </div>
+  <div class='parts'><span class='seg' style='flex:30' title='Conviction 39%'><i style='width:39%'></i></span><span class='seg' style='flex:25' title='Momentum 91%'><i style='width:91%'></i></span><span class='seg' style='flex:20' title='Execution 60%'><i style='width:60%'></i></span><span class='seg' style='flex:25' title='Event / carry 35%'><i style='width:35%'></i></span></div>
+  <div class="meta">vs sector -7.0% 20d · -9.4% 60d
+    <span class="dot">·</span> spread 5.2% · OI 1,049 <span class="dot">·</span> score -0.96</div>
+  <div class="chips"><span class='chip chip-neg'>neg FCF</span><span class='chip chip-neg'>earnings ≤14d</span></div>
+</li>
+<li class="pick">
+  <div class="pick-top">
+    <span class="rk">3</span>
+    <span class="tk">AXP</span>
+    <span class="px">308.32</span>
+    <span class='gr gr-d' title='Trade quality 42/100'>D<b>42</b></span>
+  </div>
+  <div class='parts'><span class='seg' style='flex:30' title='Conviction 8%'><i style='width:8%'></i></span><span class='seg' style='flex:25' title='Momentum 80%'><i style='width:80%'></i></span><span class='seg' style='flex:20' title='Execution 43%'><i style='width:43%'></i></span><span class='seg' style='flex:25' title='Event / carry 42%'><i style='width:42%'></i></span></div>
+  <div class="meta">vs sector -0.7% 20d · -11.2% 60d
+    <span class="dot">·</span> spread 6.8% · OI 630 <span class="dot">·</span> score -0.46</div>
+  <div class="chips"><span class='chip chip-neg'>earnings ≤14d</span></div>
+</li></ol></div></div>
+  </div>
+  <div class="tbl">
+    <div class="tbl-h"><span class="tbl-name">Shares</span>
+      <span class="tbl-note">20 names · options too thin; stock trades ≥ $50M/day</span></div>
+    <div class="sides"><div class='side side-long'><div class='side-h'>Long</div><ol class='picks'>
+<li class="pick">
+  <div class="pick-top">
+    <span class="rk">1</span>
+    <span class="tk">MA</span>
+    <span class="px">589.50</span>
+    <span class='gr gr-a' title='Trade quality 97/100'>A<b>97</b></span>
+  </div>
+  <div class='parts'><span class='seg' style='flex:30' title='Conviction 100%'><i style='width:100%'></i></span><span class='seg' style='flex:25' title='Momentum 96%'><i style='width:96%'></i></span><span class='seg' style='flex:20' title='Execution 91%'><i style='width:91%'></i></span><span class='seg' style='flex:25' title='Event / carry 100%'><i style='width:100%'></i></span></div>
+  <div class="meta">vs sector +7.9% 20d · +10.4% 60d
+    <span class="dot">·</span> $1.4B/day <span class="dot">·</span> score +1.53</div>
+  <div class="chips"><span class='chip'>earnings ~10-29</span></div>
+</li>
+<li class="pick">
+  <div class="pick-top">
+    <span class="rk">2</span>
+    <span class="tk">SPGI</span>
+    <span class="px">407.57</span>
+    <span class='gr gr-b' title='Trade quality 67/100'>B<b>67</b></span>
+  </div>
+  <div class='parts'><span class='seg' style='flex:30' title='Conviction 60%'><i style='width:60%'></i></span><span class='seg' style='flex:25' title='Momentum 41%'><i style='width:41%'></i></span><span class='seg' style='flex:20' title='Execution 69%'><i style='width:69%'></i></span><span class='seg' style='flex:25' title='Event / carry 100%'><i style='width:100%'></i></span></div>
+  <div class="meta">vs sector +3.7% 20d · -7.3% 60d
+    <span class="dot">·</span> $643M/day <span class="dot">·</span> score +0.66</div>
+  <div class="chips"><span class='chip'>earnings ~10-27</span></div>
+</li>
+<li class="pick">
+  <div class="pick-top">
+    <span class="rk">3</span>
+    <span class="tk">ICE</span>
+    <span class="px">156.19</span>
+    <span class='gr gr-b' title='Trade quality 74/100'>B<b>74</b></span>
+  </div>
+  <div class='parts'><span class='seg' style='flex:30' title='Conviction 48%'><i style='width:48%'></i></span><span class='seg' style='flex:25' title='Momentum 93%'><i style='width:93%'></i></span><span class='seg' style='flex:20' title='Execution 57%'><i style='width:57%'></i></span><span class='seg' style='flex:25' title='Event / carry 100%'><i style='width:100%'></i></span></div>
+  <div class="meta">vs sector +3.6% 20d · +13.7% 60d
+    <span class="dot">·</span> $411M/day <span class="dot">·</span> score +0.45</div>
+  <div class="chips"><span class='chip'>earnings ~10-29</span></div>
+</li></ol></div><div class='side side-short'><div class='side-h'>Short</div><ol class='picks'>
+<li class="pick">
+  <div class="pick-top">
+    <span class="rk">1</span>
+    <span class="tk">MRSH</span>
+    <span class="px">175.76</span>
+    <span class='gr gr-b' title='Trade quality 62/100'>B<b>62</b></span>
+  </div>
+  <div class='parts'><span class='seg' style='flex:30' title='Conviction 100%'><i style='width:100%'></i></span><span class='seg' style='flex:25' title='Momentum 40%'><i style='width:40%'></i></span><span class='seg' style='flex:20' title='Execution 62%'><i style='width:62%'></i></span><span class='seg' style='flex:25' title='Event / carry 36%'><i style='width:36%'></i></span></div>
+  <div class="meta">vs sector +3.8% 20d · +0.1% 60d
+    <span class="dot">·</span> $498M/day <span class="dot">·</span> score -2.80</div>
+  <div class="chips"><span class='chip chip-neg'>gross margin ↓</span><span class='chip chip-neg'>op margin ↓</span><span class='chip chip-neg'>earnings ≤14d</span></div>
+</li>
+<li class="pick">
+  <div class="pick-top">
+    <span class="rk">2</span>
+    <span class="tk">BLK</span>
+    <span class="px">1,083.20</span>
+    <span class='gr gr-c' title='Trade quality 60/100'>C<b>60</b></span>
+  </div>
+  <div class='parts'><span class='seg' style='flex:30' title='Conviction 100%'><i style='width:100%'></i></span><span class='seg' style='flex:25' title='Momentum 30%'><i style='width:30%'></i></span><span class='seg' style='flex:20' title='Execution 65%'><i style='width:65%'></i></span><span class='seg' style='flex:25' title='Event / carry 37%'><i style='width:37%'></i></span></div>
+  <div class="meta">vs sector +4.7% 20d · +3.1% 60d
+    <span class="dot">·</span> $556M/day <span class="dot">·</span> score -2.00</div>
+  <div class="chips"><span class='chip chip-neg'>gross margin ↓</span><span class='chip chip-neg'>op margin ↓</span><span class='chip chip-neg'>earnings ≤14d</span></div>
+</li>
+<li class="pick">
+  <div class="pick-top">
+    <span class="rk">3</span>
+    <span class="tk">KKR</span>
+    <span class="px">90.95</span>
+    <span class='gr gr-b' title='Trade quality 73/100'>B<b>73</b></span>
+  </div>
+  <div class='parts'><span class='seg' style='flex:30' title='Conviction 56%'><i style='width:56%'></i></span><span class='seg' style='flex:25' title='Momentum 84%'><i style='width:84%'></i></span><span class='seg' style='flex:20' title='Execution 56%'><i style='width:56%'></i></span><span class='seg' style='flex:25' title='Event / carry 95%'><i style='width:95%'></i></span></div>
+  <div class="meta">vs sector -5.6% 20d · -7.9% 60d
+    <span class="dot">·</span> $398M/day <span class="dot">·</span> score -1.24</div>
+  <div class="chips"><span class='chip chip-neg'>op margin ↓</span><span class='chip'>earnings ~11-09</span></div>
+</li></ol></div></div>
+  </div>
+</section>
+<section class="card">
+  <div class="card-top"><div><span class="sym">XLK</span>
+    <span class="sname">Technology</span></div>
+    <span class="sub">top 30 holdings by weight</span></div>
+  
+  <div class="tbl">
+    <div class="tbl-h"><span class="tbl-name">Options</span>
+      <span class="tbl-note">24 names · liquid chain: spread ≤ 10%, OI ≥ 100</span></div>
+    <div class="sides"><div class='side side-long'><div class='side-h'>Long</div><ol class='picks'>
+<li class="pick">
+  <div class="pick-top">
+    <span class="rk">1</span>
+    <span class="tk">SNDK</span>
+    <span class="px">1,581.00</span>
+    <span class='gr gr-b' title='Trade quality 74/100'>B<b>74</b></span>
+  </div>
+  <div class='parts'><span class='seg' style='flex:30' title='Conviction 100%'><i style='width:100%'></i></span><span class='seg' style='flex:25' title='Momentum 28%'><i style='width:28%'></i></span><span class='seg' style='flex:20' title='Execution 62%'><i style='width:62%'></i></span><span class='seg' style='flex:25' title='Event / carry 100%'><i style='width:100%'></i></span></div>
+  <div class="meta">vs sector -9.1% 20d · +0.1% 60d
+    <span class="dot">·</span> spread 2.2% · OI 136 <span class="dot">·</span> score +4.77</div>
+  <div class="chips"><span class='chip'>earnings ~10-29</span></div>
+</li>
+<li class="pick">
+  <div class="pick-top">
+    <span class="rk">2</span>
+    <span class="tk">PLTR</span>
+    <span class="px">208.73</span>
+    <span class='gr gr-a' title='Trade quality 84/100'>A<b>84</b></span>
+  </div>
+  <div class='parts'><span class='seg' style='flex:30' title='Conviction 45%'><i style='width:45%'></i></span><span class='seg' style='flex:25' title='Momentum 100%'><i style='width:100%'></i></span><span class='seg' style='flex:20' title='Execution 99%'><i style='width:99%'></i></span><span class='seg' style='flex:25' title='Event / carry 100%'><i style='width:100%'></i></span></div>
+  <div class="meta">vs sector +19.1% 20d · +43.5% 60d
+    <span class="dot">·</span> spread 1.8% · OI 4,707 <span class="dot">·</span> score +2.16</div>
+  <div class="chips"><span class='chip'>earnings ~11-02</span></div>
+</li>
+<li class="pick">
+  <div class="pick-top">
+    <span class="rk">3</span>
+    <span class="tk">MU</span>
+    <span class="px">1,028.50</span>
+    <span class='gr gr-b' title='Trade quality 64/100'>B<b>64</b></span>
+  </div>
+  <div class='parts'><span class='seg' style='flex:30' title='Conviction 28%'><i style='width:28%'></i></span><span class='seg' style='flex:25' title='Momentum 70%'><i style='width:70%'></i></span><span class='seg' style='flex:20' title='Execution 64%'><i style='width:64%'></i></span><span class='seg' style='flex:25' title='Event / carry 100%'><i style='width:100%'></i></span></div>
+  <div class="meta">vs sector -0.4% 20d · +8.6% 60d
+    <span class="dot">·</span> spread 4.4% · OI 812 <span class="dot">·</span> score +1.53</div>
+  <div class="chips"><span class='chip'>earnings ~12-23</span></div>
+</li></ol></div><div class='side side-short'><div class='side-h'>Short</div><ol class='picks'>
+<li class="pick">
+  <div class="pick-top">
+    <span class="rk">1</span>
+    <span class="tk">ORCL</span>
+    <span class="px">141.55</span>
+    <span class='gr gr-a' title='Trade quality 87/100'>A<b>87</b></span>
+  </div>
+  <div class='parts'><span class='seg' style='flex:30' title='Conviction 94%'><i style='width:94%'></i></span><span class='seg' style='flex:25' title='Momentum 75%'><i style='width:75%'></i></span><span class='seg' style='flex:20' title='Execution 85%'><i style='width:85%'></i></span><span class='seg' style='flex:25' title='Event / carry 91%'><i style='width:91%'></i></span></div>
+  <div class="meta">vs sector -11.8% 20d · +1.9% 60d
+    <span class="dot">·</span> spread 4.0% · OI 6,618 <span class="dot">·</span> score -2.76</div>
+  <div class="chips"><span class='chip chip-neg'>neg FCF</span><span class='chip chip-neg'>gross margin ↓</span><span class='chip chip-neg'>debt &gt; 3x</span><span class='chip'>earnings ~12-14</span></div>
+</li>
+<li class="pick">
+  <div class="pick-top">
+    <span class="rk">2</span>
+    <span class="tk">IBM</span>
+    <span class="px">226.84</span>
+    <span class='gr gr-b' title='Trade quality 66/100'>B<b>66</b></span>
+  </div>
+  <div class='parts'><span class='seg' style='flex:30' title='Conviction 78%'><i style='width:78%'></i></span><span class='seg' style='flex:25' title='Momentum 100%'><i style='width:100%'></i></span><span class='seg' style='flex:20' title='Execution 49%'><i style='width:49%'></i></span><span class='seg' style='flex:25' title='Event / carry 31%'><i style='width:31%'></i></span></div>
+  <div class="meta">vs sector -12.6% 20d · -8.3% 60d
+    <span class="dot">·</span> spread 6.6% · OI 1,010 <span class="dot">·</span> score -2.20</div>
+  <div class="chips"><span class='chip chip-neg'>debt &gt; 3x</span><span class='chip chip-neg'>earnings ≤14d</span></div>
+</li>
+<li class="pick">
+  <div class="pick-top">
+    <span class="rk">3</span>
+    <span class="tk">DELL</span>
+    <span class="px">586.10</span>
+    <span class='gr gr-d' title='Trade quality 44/100'>D<b>44</b></span>
+  </div>
+  <div class='parts'><span class='seg' style='flex:30' title='Conviction 30%'><i style='width:30%'></i></span><span class='seg' style='flex:25' title='Momentum 0%'><i style='width:0%'></i></span><span class='seg' style='flex:20' title='Execution 52%'><i style='width:52%'></i></span><span class='seg' style='flex:25' title='Event / carry 97%'><i style='width:97%'></i></span></div>
+  <div class="meta">vs sector -2.6% 20d · +37.8% 60d
+    <span class="dot">·</span> spread 4.0% · OI 205 <span class="dot">·</span> score -0.52</div>
+  <div class="chips"><span class='chip chip-neg'>gross margin ↓</span><span class='chip'>earnings ~11-27</span></div>
+</li></ol></div></div>
+  </div>
+  <div class="tbl">
+    <div class="tbl-h"><span class="tbl-name">Shares</span>
+      <span class="tbl-note">6 names · options too thin; stock trades ≥ $50M/day</span></div>
+    <div class="sides"><div class='side side-long'><div class='side-h'>Long</div><ol class='picks'>
+<li class="pick">
+  <div class="pick-top">
+    <span class="rk">1</span>
+    <span class="tk">STX</span>
+    <span class="px">780.50</span>
+    <span class='gr gr-c' title='Trade quality 51/100'>C<b>51</b></span>
+  </div>
+  <div class='parts'><span class='seg' style='flex:30' title='Conviction 18%'><i style='width:18%'></i></span><span class='seg' style='flex:25' title='Momentum 4%'><i style='width:4%'></i></span><span class='seg' style='flex:20' title='Execution 100%'><i style='width:100%'></i></span><span class='seg' style='flex:25' title='Event / carry 100%'><i style='width:100%'></i></span></div>
+  <div class="meta">vs sector -11.6% 20d · -6.9% 60d
+    <span class="dot">·</span> $3.2B/day <span class="dot">·</span> score +1.19</div>
+  <div class="chips"><span class='chip'>earnings ~10-27</span></div>
+</li>
+<li class="pick">
+  <div class="pick-top">
+    <span class="rk">2</span>
+    <span class="tk">KLAC</span>
+    <span class="px">195.86</span>
+    <span class='gr gr-c' title='Trade quality 46/100'>C<b>46</b></span>
+  </div>
+  <div class='parts'><span class='seg' style='flex:30' title='Conviction 7%'><i style='width:7%'></i></span><span class='seg' style='flex:25' title='Momentum 0%'><i style='width:0%'></i></span><span class='seg' style='flex:20' title='Execution 95%'><i style='width:95%'></i></span><span class='seg' style='flex:25' title='Event / carry 100%'><i style='width:100%'></i></span></div>
+  <div class="meta">vs sector +2.4% 20d · -22.8% 60d
+    <span class="dot">·</span> $1.6B/day <span class="dot">·</span> score +0.82</div>
+  <div class="chips"><span class='chip'>earnings ~10-28</span></div>
+</li>
+<li class="pick">
+  <div class="pick-top">
+    <span class="rk">3</span>
+    <span class="tk">ADI</span>
+    <span class="px">408.63</span>
+    <span class='gr gr-c' title='Trade quality 53/100'>C<b>53</b></span>
+  </div>
+  <div class='parts'><span class='seg' style='flex:30' title='Conviction 4%'><i style='width:4%'></i></span><span class='seg' style='flex:25' title='Momentum 40%'><i style='width:40%'></i></span><span class='seg' style='flex:20' title='Execution 83%'><i style='width:83%'></i></span><span class='seg' style='flex:25' title='Event / carry 100%'><i style='width:100%'></i></span></div>
+  <div class="meta">vs sector +1.3% 20d · -5.2% 60d
+    <span class="dot">·</span> $1.1B/day <span class="dot">·</span> score +0.69</div>
+  <div class="chips"><span class='chip'>earnings ~11-24</span></div>
+</li></ol></div><div class='side side-short'><div class='side-h'>Short</div><ol class='picks'>
+<li class="pick">
+  <div class="pick-top">
+    <span class="rk">1</span>
+    <span class="tk">TXN</span>
+    <span class="px">284.30</span>
+    <span class='gr gr-b' title='Trade quality 65/100'>B<b>65</b></span>
+  </div>
+  <div class='parts'><span class='seg' style='flex:30' title='Conviction 54%'><i style='width:54%'></i></span><span class='seg' style='flex:25' title='Momentum 87%'><i style='width:87%'></i></span><span class='seg' style='flex:20' title='Execution 89%'><i style='width:89%'></i></span><span class='seg' style='flex:25' title='Event / carry 37%'><i style='width:37%'></i></span></div>
+  <div class="meta">vs sector -0.3% 20d · -14.5% 60d
+    <span class="dot">·</span> $1.3B/day <span class="dot">·</span> score -1.35</div>
+  <div class="chips"><span class='chip chip-neg'>gross margin ↓</span><span class='chip chip-neg'>earnings ≤14d</span></div>
+</li>
+<li class="pick">
+  <div class="pick-top">
+    <span class="rk">2</span>
+    <span class="tk">PANW</span>
+    <span class="px">418.78</span>
+    <span class='gr gr-b' title='Trade quality 60/100'>B<b>60</b></span>
+  </div>
+  <div class='parts'><span class='seg' style='flex:30' title='Conviction 51%'><i style='width:51%'></i></span><span class='seg' style='flex:25' title='Momentum 0%'><i style='width:0%'></i></span><span class='seg' style='flex:20' title='Execution 100%'><i style='width:100%'></i></span><span class='seg' style='flex:25' title='Event / carry 100%'><i style='width:100%'></i></span></div>
+  <div class="meta">vs sector +20.7% 20d · +6.3% 60d
+    <span class="dot">·</span> $2.1B/day <span class="dot">·</span> score -1.25</div>
+  <div class="chips"><span class='chip chip-neg'>gross margin ↓</span><span class='chip chip-neg'>op margin ↓</span><span class='chip'>earnings ~11-19</span></div>
+</li>
+<li class="pick">
+  <div class="pick-top">
+    <span class="rk">3</span>
+    <span class="tk">ACN</span>
+    <span class="px">208.94</span>
+    <span class='gr gr-d' title='Trade quality 44/100'>D<b>44</b></span>
+  </div>
+  <div class='parts'><span class='seg' style='flex:30' title='Conviction 24%'><i style='width:24%'></i></span><span class='seg' style='flex:25' title='Momentum 0%'><i style='width:0%'></i></span><span class='seg' style='flex:20' title='Execution 83%'><i style='width:83%'></i></span><span class='seg' style='flex:25' title='Event / carry 80%'><i style='width:80%'></i></span></div>
+  <div class="meta">vs sector +7.8% 20d · +32.6% 60d
+    <span class="dot">·</span> $1.1B/day <span class="dot">·</span> score -0.29</div>
+  <div class="chips"><span class='chip chip-neg'>gross margin ↓</span><span class='chip'>earnings ~12-17</span><span class='chip chip-warn'>pays 3.3% div</span></div>
+</li></ol></div></div>
+  </div>
+</section>
+<section class="card">
+  <div class="card-top"><div><span class="sym">XLP</span>
+    <span class="sname">Consumer Staples</span></div>
+    <span class="sub">top 30 holdings by weight</span></div>
+  
+  <div class="tbl">
+    <div class="tbl-h"><span class="tbl-name">Options</span>
+      <span class="tbl-note">6 names · liquid chain: spread ≤ 10%, OI ≥ 100</span></div>
+    <div class="sides"><div class='side side-long'><div class='side-h'>Long</div><ol class='picks'>
+<li class="pick">
+  <div class="pick-top">
+    <span class="rk">1</span>
+    <span class="tk">MO</span>
+    <span class="px">71.49</span>
+    <span class='gr gr-b' title='Trade quality 75/100'>B<b>75</b></span>
+  </div>
+  <div class='parts'><span class='seg' style='flex:30' title='Conviction 88%'><i style='width:88%'></i></span><span class='seg' style='flex:25' title='Momentum 62%'><i style='width:62%'></i></span><span class='seg' style='flex:20' title='Execution 39%'><i style='width:39%'></i></span><span class='seg' style='flex:25' title='Event / carry 100%'><i style='width:100%'></i></span></div>
+  <div class="meta">vs sector +3.9% 20d · +0.9% 60d
+    <span class="dot">·</span> spread 7.3% · OI 585 <span class="dot">·</span> score +0.92</div>
+  <div class="chips"><span class='chip'>earnings ~10-29</span></div>
+</li>
+<li class="pick">
+  <div class="pick-top">
+    <span class="rk">2</span>
+    <span class="tk">KO</span>
+    <span class="px">88.11</span>
+    <span class='gr gr-b' title='Trade quality 71/100'>B<b>71</b></span>
+  </div>
+  <div class='parts'><span class='seg' style='flex:30' title='Conviction 65%'><i style='width:65%'></i></span><span class='seg' style='flex:25' title='Momentum 65%'><i style='width:65%'></i></span><span class='seg' style='flex:20' title='Execution 49%'><i style='width:49%'></i></span><span class='seg' style='flex:25' title='Event / carry 100%'><i style='width:100%'></i></span></div>
+  <div class="meta">vs sector -0.3% 20d · +6.5% 60d
+    <span class="dot">·</span> spread 8.4% · OI 3,625 <span class="dot">·</span> score +0.28</div>
+  <div class="chips"><span class='chip'>earnings ~10-27</span></div>
+</li></ol></div><div class='side side-short'><div class='side-h'>Short</div><ol class='picks'>
+<li class="pick">
+  <div class="pick-top">
+    <span class="rk">1</span>
+    <span class="tk">PG</span>
+    <span class="px">151.23</span>
+    <span class='gr gr-d' title='Trade quality 40/100'>D<b>40</b></span>
+  </div>
+  <div class='parts'><span class='seg' style='flex:30' title='Conviction 38%'><i style='width:38%'></i></span><span class='seg' style='flex:25' title='Momentum 33%'><i style='width:33%'></i></span><span class='seg' style='flex:20' title='Execution 58%'><i style='width:58%'></i></span><span class='seg' style='flex:25' title='Event / carry 32%'><i style='width:32%'></i></span></div>
+  <div class="meta">vs sector +4.0% 20d · +2.6% 60d
+    <span class="dot">·</span> spread 6.0% · OI 1,686 <span class="dot">·</span> score -2.65</div>
+  <div class="chips"><span class='chip chip-neg'>gross margin ↓</span><span class='chip chip-neg'>op margin ↓</span><span class='chip chip-neg'>earnings ≤14d</span></div>
+</li>
+<li class="pick">
+  <div class="pick-top">
+    <span class="rk">2</span>
+    <span class="tk">TGT</span>
+    <span class="px">153.64</span>
+    <span class='gr gr-d' title='Trade quality 40/100'>D<b>40</b></span>
+  </div>
+  <div class='parts'><span class='seg' style='flex:30' title='Conviction 23%'><i style='width:23%'></i></span><span class='seg' style='flex:25' title='Momentum 23%'><i style='width:23%'></i></span><span class='seg' style='flex:20' title='Execution 38%'><i style='width:38%'></i></span><span class='seg' style='flex:25' title='Event / carry 81%'><i style='width:81%'></i></span></div>
+  <div class="meta">vs sector -1.5% 20d · +12.3% 60d
+    <span class="dot">·</span> spread 7.6% · OI 691 <span class="dot">·</span> score -2.23</div>
+  <div class="chips"><span class='chip chip-neg'>gross margin ↓</span><span class='chip chip-neg'>op margin ↓</span><span class='chip'>earnings ~11-18</span><span class='chip chip-warn'>pays 3.0% div</span></div>
+</li>
+<li class="pick">
+  <div class="pick-top">
+    <span class="rk">3</span>
+    <span class="tk">PEP</span>
+    <span class="px">126.15</span>
+    <span class='gr gr-c' title='Trade quality 47/100'>C<b>47</b></span>
+  </div>
+  <div class='parts'><span class='seg' style='flex:30' title='Conviction 0%'><i style='width:0%'></i></span><span class='seg' style='flex:25' title='Momentum 86%'><i style='width:86%'></i></span><span class='seg' style='flex:20' title='Execution 41%'><i style='width:41%'></i></span><span class='seg' style='flex:25' title='Event / carry 71%'><i style='width:71%'></i></span></div>
+  <div class="meta">vs sector -7.6% 20d · -6.9% 60d
+    <span class="dot">·</span> spread 8.5% · OI 1,780 <span class="dot">·</span> score -1.17</div>
+  <div class="chips"><span class='chip chip-neg'>gross margin ↓</span><span class='chip'>earnings ~02-02</span><span class='chip chip-warn'>pays 4.7% div</span></div>
+</li></ol></div></div>
+  </div>
+  <div class="tbl">
+    <div class="tbl-h"><span class="tbl-name">Shares</span>
+      <span class="tbl-note">23 names · options too thin; stock trades ≥ $50M/day</span></div>
+    <div class="sides"><div class='side side-long'><div class='side-h'>Long</div><ol class='picks'>
+<li class="pick">
+  <div class="pick-top">
+    <span class="rk">1</span>
+    <span class="tk">MNST</span>
+    <span class="px">43.64</span>
+    <span class='gr gr-b' title='Trade quality 69/100'>B<b>69</b></span>
+  </div>
+  <div class='parts'><span class='seg' style='flex:30' title='Conviction 86%'><i style='width:86%'></i></span><span class='seg' style='flex:25' title='Momentum 26%'><i style='width:26%'></i></span><span class='seg' style='flex:20' title='Execution 57%'><i style='width:57%'></i></span><span class='seg' style='flex:25' title='Event / carry 100%'><i style='width:100%'></i></span></div>
+  <div class="meta">vs sector +0.5% 20d · -9.9% 60d
+    <span class="dot">·</span> $403M/day <span class="dot">·</span> score +0.87</div>
+  <div class="chips"><span class='chip'>earnings ~11-05</span></div>
+</li>
+<li class="pick">
+  <div class="pick-top">
+    <span class="rk">2</span>
+    <span class="tk">COST</span>
+    <span class="px">945.00</span>
+    <span class='gr gr-a' title='Trade quality 83/100'>A<b>83</b></span>
+  </div>
+  <div class='parts'><span class='seg' style='flex:30' title='Conviction 68%'><i style='width:68%'></i></span><span class='seg' style='flex:25' title='Momentum 69%'><i style='width:69%'></i></span><span class='seg' style='flex:20' title='Execution 100%'><i style='width:100%'></i></span><span class='seg' style='flex:25' title='Event / carry 100%'><i style='width:100%'></i></span></div>
+  <div class="meta">vs sector +4.6% 20d · +2.9% 60d
+    <span class="dot">·</span> $2.0B/day <span class="dot">·</span> score +0.36</div>
+  <div class="chips"><span class='chip'>earnings ~12-10</span></div>
+</li>
+<li class="pick">
+  <div class="pick-top">
+    <span class="rk">3</span>
+    <span class="tk">EL</span>
+    <span class="px">98.05</span>
+    <span class='gr gr-a' title='Trade quality 75/100'>A<b>75</b></span>
+  </div>
+  <div class='parts'><span class='seg' style='flex:30' title='Conviction 54%'><i style='width:54%'></i></span><span class='seg' style='flex:25' title='Momentum 100%'><i style='width:100%'></i></span><span class='seg' style='flex:20' title='Execution 45%'><i style='width:45%'></i></span><span class='seg' style='flex:25' title='Event / carry 100%'><i style='width:100%'></i></span></div>
+  <div class="meta">vs sector +0.9% 20d · +21.1% 60d
+    <span class="dot">·</span> $261M/day <span class="dot">·</span> score -0.03</div>
+  <div class="chips"><span class='chip'>earnings ~11-02</span></div>
+</li></ol></div><div class='side side-short'><div class='side-h'>Short</div><ol class='picks'>
+<li class="pick">
+  <div class="pick-top">
+    <span class="rk">1</span>
+    <span class="tk">BG</span>
+    <span class="px">103.91</span>
+    <span class='gr gr-a' title='Trade quality 82/100'>A<b>82</b></span>
+  </div>
+  <div class='parts'><span class='seg' style='flex:30' title='Conviction 99%'><i style='width:99%'></i></span><span class='seg' style='flex:25' title='Momentum 100%'><i style='width:100%'></i></span><span class='seg' style='flex:20' title='Execution 36%'><i style='width:36%'></i></span><span class='seg' style='flex:25' title='Event / carry 82%'><i style='width:82%'></i></span></div>
+  <div class="meta">vs sector -16.1% 20d · -8.5% 60d
+    <span class="dot">·</span> $190M/day <span class="dot">·</span> score -4.38</div>
+  <div class="chips"><span class='chip chip-neg'>neg FCF</span><span class='chip chip-neg'>gross margin ↓</span><span class='chip chip-neg'>op margin ↓</span><span class='chip chip-neg'>debt &gt; 3x</span><span class='chip'>earnings ~10-29</span></div>
+</li>
+<li class="pick">
+  <div class="pick-top">
+    <span class="rk">2</span>
+    <span class="tk">GIS</span>
+    <span class="px">32.36</span>
+    <span class='gr gr-b' title='Trade quality 72/100'>B<b>72</b></span>
+  </div>
+  <div class='parts'><span class='seg' style='flex:30' title='Conviction 75%'><i style='width:75%'></i></span><span class='seg' style='flex:25' title='Momentum 100%'><i style='width:100%'></i></span><span class='seg' style='flex:20' title='Execution 54%'><i style='width:54%'></i></span><span class='seg' style='flex:25' title='Event / carry 53%'><i style='width:53%'></i></span></div>
+  <div class="meta">vs sector -10.0% 20d · -13.8% 60d
+    <span class="dot">·</span> $369M/day <span class="dot">·</span> score -3.71</div>
+  <div class="chips"><span class='chip chip-neg'>gross margin ↓</span><span class='chip chip-neg'>op margin ↓</span><span class='chip chip-neg'>debt &gt; 3x</span><span class='chip'>earnings ~12-23</span><span class='chip chip-warn'>pays 7.6% div</span></div>
+</li>
+<li class="pick">
+  <div class="pick-top">
+    <span class="rk">3</span>
+    <span class="tk">KHC</span>
+    <span class="px">22.27</span>
+    <span class='gr gr-b' title='Trade quality 69/100'>B<b>69</b></span>
+  </div>
+  <div class='parts'><span class='seg' style='flex:30' title='Conviction 67%'><i style='width:67%'></i></span><span class='seg' style='flex:25' title='Momentum 100%'><i style='width:100%'></i></span><span class='seg' style='flex:20' title='Execution 52%'><i style='width:52%'></i></span><span class='seg' style='flex:25' title='Event / carry 55%'><i style='width:55%'></i></span></div>
+  <div class="meta">vs sector -9.5% 20d · -12.3% 60d
+    <span class="dot">·</span> $343M/day <span class="dot">·</span> score -3.48</div>
+  <div class="chips"><span class='chip chip-neg'>gross margin ↓</span><span class='chip chip-neg'>op margin ↓</span><span class='chip chip-neg'>debt &gt; 3x</span><span class='chip'>earnings ~10-28</span><span class='chip chip-warn'>pays 7.2% div</span></div>
+</li></ol></div></div>
+  </div>
+</section>
+<section class="card">
+  <div class="card-top"><div><span class="sym">XLV</span>
+    <span class="sname">Health Care</span></div>
+    <span class="sub">top 30 holdings by weight</span></div>
+  
+  <div class="tbl">
+    <div class="tbl-h"><span class="tbl-name">Options</span>
+      <span class="tbl-note">8 names · liquid chain: spread ≤ 10%, OI ≥ 100</span></div>
+    <div class="sides"><div class='side side-long'><div class='side-h'>Long</div><ol class='picks'>
+<li class="pick">
+  <div class="pick-top">
+    <span class="rk">1</span>
+    <span class="tk">ABBV</span>
+    <span class="px">276.47</span>
+    <span class='gr gr-b' title='Trade quality 65/100'>B<b>65</b></span>
+  </div>
+  <div class='parts'><span class='seg' style='flex:30' title='Conviction 55%'><i style='width:55%'></i></span><span class='seg' style='flex:25' title='Momentum 68%'><i style='width:68%'></i></span><span class='seg' style='flex:20' title='Execution 30%'><i style='width:30%'></i></span><span class='seg' style='flex:25' title='Event / carry 100%'><i style='width:100%'></i></span></div>
+  <div class="meta">vs sector +4.2% 20d · +3.1% 60d
+    <span class="dot">·</span> spread 9.7% · OI 1,486 <span class="dot">·</span> score +0.46</div>
+  <div class="chips"><span class='chip'>earnings ~10-30</span></div>
+</li>
+<li class="pick">
+  <div class="pick-top">
+    <span class="rk">2</span>
+    <span class="tk">BMY</span>
+    <span class="px">59.12</span>
+    <span class='gr gr-c' title='Trade quality 48/100'>C<b>48</b></span>
+  </div>
+  <div class='parts'><span class='seg' style='flex:30' title='Conviction 41%'><i style='width:41%'></i></span><span class='seg' style='flex:25' title='Momentum 4%'><i style='width:4%'></i></span><span class='seg' style='flex:20' title='Execution 47%'><i style='width:47%'></i></span><span class='seg' style='flex:25' title='Event / carry 100%'><i style='width:100%'></i></span></div>
+  <div class="meta">vs sector -10.4% 20d · -7.9% 60d
+    <span class="dot">·</span> spread 8.5% · OI 3,274 <span class="dot">·</span> score +0.08</div>
+  <div class="chips"><span class='chip'>earnings ~10-29</span></div>
+</li></ol></div><div class='side side-short'><div class='side-h'>Short</div><ol class='picks'>
+<li class="pick">
+  <div class="pick-top">
+    <span class="rk">1</span>
+    <span class="tk">MRNA</span>
+    <span class="px">225.47</span>
+    <span class='gr gr-b' title='Trade quality 62/100'>B<b>62</b></span>
+  </div>
+  <div class='parts'><span class='seg' style='flex:30' title='Conviction 96%'><i style='width:96%'></i></span><span class='seg' style='flex:25' title='Momentum 0%'><i style='width:0%'></i></span><span class='seg' style='flex:20' title='Execution 43%'><i style='width:43%'></i></span><span class='seg' style='flex:25' title='Event / carry 100%'><i style='width:100%'></i></span></div>
+  <div class="meta">vs sector +53.0% 20d · +250.7% 60d
+    <span class="dot">·</span> spread 5.5% · OI 267 <span class="dot">·</span> score -3.60</div>
+  <div class="chips"><span class='chip chip-neg'>op margin ↓</span><span class='chip'>earnings ~11-05</span></div>
+</li>
+<li class="pick">
+  <div class="pick-top">
+    <span class="rk">2</span>
+    <span class="tk">UNH</span>
+    <span class="px">379.98</span>
+    <span class='gr gr-b' title='Trade quality 68/100'>B<b>68</b></span>
+  </div>
+  <div class='parts'><span class='seg' style='flex:30' title='Conviction 80%'><i style='width:80%'></i></span><span class='seg' style='flex:25' title='Momentum 98%'><i style='width:98%'></i></span><span class='seg' style='flex:20' title='Execution 51%'><i style='width:51%'></i></span><span class='seg' style='flex:25' title='Event / carry 35%'><i style='width:35%'></i></span></div>
+  <div class="meta">vs sector -3.2% 20d · -16.0% 60d
+    <span class="dot">·</span> spread 6.7% · OI 1,252 <span class="dot">·</span> score -3.18</div>
+  <div class="chips"><span class='chip chip-neg'>gross margin ↓</span><span class='chip chip-neg'>op margin ↓</span><span class='chip chip-neg'>earnings ≤14d</span></div>
+</li>
+<li class="pick">
+  <div class="pick-top">
+    <span class="rk">3</span>
+    <span class="tk">DHR</span>
+    <span class="px">220.00</span>
+    <span class='gr gr-d' title='Trade quality 42/100'>D<b>42</b></span>
+  </div>
+  <div class='parts'><span class='seg' style='flex:30' title='Conviction 70%'><i style='width:70%'></i></span><span class='seg' style='flex:25' title='Momentum 30%'><i style='width:30%'></i></span><span class='seg' style='flex:20' title='Execution 12%'><i style='width:12%'></i></span><span class='seg' style='flex:25' title='Event / carry 46%'><i style='width:46%'></i></span></div>
+  <div class="meta">vs sector +6.5% 20d · +1.7% 60d
+    <span class="dot">·</span> spread 9.4% · OI 198 <span class="dot">·</span> score -2.89</div>
+  <div class="chips"><span class='chip chip-neg'>gross margin ↓</span><span class='chip chip-neg'>op margin ↓</span><span class='chip chip-neg'>earnings ≤14d</span></div>
+</li></ol></div></div>
+  </div>
+  <div class="tbl">
+    <div class="tbl-h"><span class="tbl-name">Shares</span>
+      <span class="tbl-note">22 names · options too thin; stock trades ≥ $50M/day</span></div>
+    <div class="sides"><div class='side side-long'><div class='side-h'>Long</div><ol class='picks'>
+<li class="pick">
+  <div class="pick-top">
+    <span class="rk">1</span>
+    <span class="tk">LLY</span>
+    <span class="px">1,177.90</span>
+    <span class='gr gr-a' title='Trade quality 86/100'>A<b>86</b></span>
+  </div>
+  <div class='parts'><span class='seg' style='flex:30' title='Conviction 98%'><i style='width:98%'></i></span><span class='seg' style='flex:25' title='Momentum 44%'><i style='width:44%'></i></span><span class='seg' style='flex:20' title='Execution 100%'><i style='width:100%'></i></span><span class='seg' style='flex:25' title='Event / carry 100%'><i style='width:100%'></i></span></div>
+  <div class="meta">vs sector +2.4% 20d · -4.7% 60d
+    <span class="dot">·</span> $2.4B/day <span class="dot">·</span> score +1.62</div>
+  <div class="chips"><span class='chip'>earnings ~10-29</span></div>
+</li>
+<li class="pick">
+  <div class="pick-top">
+    <span class="rk">2</span>
+    <span class="tk">VRTX</span>
+    <span class="px">510.00</span>
+    <span class='gr gr-b' title='Trade quality 69/100'>B<b>69</b></span>
+  </div>
+  <div class='parts'><span class='seg' style='flex:30' title='Conviction 76%'><i style='width:76%'></i></span><span class='seg' style='flex:25' title='Momentum 38%'><i style='width:38%'></i></span><span class='seg' style='flex:20' title='Execution 60%'><i style='width:60%'></i></span><span class='seg' style='flex:25' title='Event / carry 100%'><i style='width:100%'></i></span></div>
+  <div class="meta">vs sector -4.3% 20d · -0.6% 60d
+    <span class="dot">·</span> $464M/day <span class="dot">·</span> score +1.03</div>
+  <div class="chips"><span class='chip'>earnings ~11-02</span></div>
+</li>
+<li class="pick">
+  <div class="pick-top">
+    <span class="rk">3</span>
+    <span class="tk">GILD</span>
+    <span class="px">151.20</span>
+    <span class='gr gr-a' title='Trade quality 75/100'>A<b>75</b></span>
+  </div>
+  <div class='parts'><span class='seg' style='flex:30' title='Conviction 62%'><i style='width:62%'></i></span><span class='seg' style='flex:25' title='Momentum 68%'><i style='width:68%'></i></span><span class='seg' style='flex:20' title='Execution 74%'><i style='width:74%'></i></span><span class='seg' style='flex:25' title='Event / carry 100%'><i style='width:100%'></i></span></div>
+  <div class="meta">vs sector +1.9% 20d · +5.3% 60d
+    <span class="dot">·</span> $774M/day <span class="dot">·</span> score +0.64</div>
+  <div class="chips"><span class='chip'>earnings ~10-29</span></div>
+</li></ol></div><div class='side side-short'><div class='side-h'>Short</div><ol class='picks'>
+<li class="pick">
+  <div class="pick-top">
+    <span class="rk">1</span>
+    <span class="tk">CVS</span>
+    <span class="px">86.16</span>
+    <span class='gr gr-a' title='Trade quality 90/100'>A<b>90</b></span>
+  </div>
+  <div class='parts'><span class='seg' style='flex:30' title='Conviction 100%'><i style='width:100%'></i></span><span class='seg' style='flex:25' title='Momentum 100%'><i style='width:100%'></i></span><span class='seg' style='flex:20' title='Execution 72%'><i style='width:72%'></i></span><span class='seg' style='flex:25' title='Event / carry 81%'><i style='width:81%'></i></span></div>
+  <div class="meta">vs sector -12.3% 20d · -24.7% 60d
+    <span class="dot">·</span> $706M/day <span class="dot">·</span> score -3.83</div>
+  <div class="chips"><span class='chip chip-neg'>gross margin ↓</span><span class='chip chip-neg'>op margin ↓</span><span class='chip chip-neg'>debt &gt; 3x</span><span class='chip'>earnings ~11-04</span><span class='chip chip-warn'>pays 3.1% div</span></div>
+</li>
+<li class="pick">
+  <div class="pick-top">
+    <span class="rk">2</span>
+    <span class="tk">ELV</span>
+    <span class="px">412.70</span>
+    <span class='gr gr-c' title='Trade quality 48/100'>C<b>48</b></span>
+  </div>
+  <div class='parts'><span class='seg' style='flex:30' title='Conviction 44%'><i style='width:44%'></i></span><span class='seg' style='flex:25' title='Momentum 49%'><i style='width:49%'></i></span><span class='seg' style='flex:20' title='Execution 61%'><i style='width:61%'></i></span><span class='seg' style='flex:25' title='Event / carry 40%'><i style='width:40%'></i></span></div>
+  <div class="meta">vs sector -4.7% 20d · +5.1% 60d
+    <span class="dot">·</span> $470M/day <span class="dot">·</span> score -2.21</div>
+  <div class="chips"><span class='chip chip-neg'>op margin ↓</span><span class='chip chip-neg'>earnings ≤14d</span></div>
+</li>
+<li class="pick">
+  <div class="pick-top">
+    <span class="rk">3</span>
+    <span class="tk">CI</span>
+    <span class="px">282.43</span>
+    <span class='gr gr-b' title='Trade quality 64/100'>B<b>64</b></span>
+  </div>
+  <div class='parts'><span class='seg' style='flex:30' title='Conviction 42%'><i style='width:42%'></i></span><span class='seg' style='flex:25' title='Momentum 72%'><i style='width:72%'></i></span><span class='seg' style='flex:20' title='Execution 58%'><i style='width:58%'></i></span><span class='seg' style='flex:25' title='Event / carry 86%'><i style='width:86%'></i></span></div>
+  <div class="meta">vs sector -2.7% 20d · -6.1% 60d
+    <span class="dot">·</span> $432M/day <span class="dot">·</span> score -2.13</div>
+  <div class="chips"><span class='chip chip-neg'>gross margin ↓</span><span class='chip chip-neg'>op margin ↓</span><span class='chip'>earnings ~11-05</span></div>
+</li></ol></div></div>
+  </div>
+</section>
+
+<details class="card legend"><summary>How picks and grades are made</summary>
+<h3>Which table</h3>
+<p><b>Options</b>: the monthly expiry nearest 30 days, ten contracts nearest
+the money, median bid/ask spread &le; 10% and median open interest &ge; 100.
+<b>Shares</b>: options fail that, but the stock's median daily dollar volume
+over 20 sessions is &ge; $50M. Neither: not shown.</p>
+<h3>Quality gates</h3>
+<p>Negative free cash flow; gross or operating margin below the prior fiscal
+year; net debt above 3&times; EBITDA; estimated earnings within 14 days.
+A <b>long</b> must pass all of them. A <b>short</b> comes from names that fail
+at least one, weakest first.</p>
+<h3>Ranking</h3>
+<p>Composite = 2 &times; quality + momentum. Quality = revenue growth +
+operating margin &minus; net debt/EBITDA &divide; 10 &minus; 0.5 per failed gate.
+Momentum = average 20- and 60-day return relative to the sector ETF.
+Up to three longs and three shorts per table.</p>
+<h3>Trade quality (0&ndash;100)</h3>
+<p>The bar under each name shows its four parts, left to right:</p>
+<ul>
+<li><b>Conviction (30)</b> &mdash; how far the composite stands from the sector
+average: 2 standard deviations in the trade's direction is full marks.</li>
+<li><b>Momentum (25)</b> &mdash; price confirms the side: +10% vs the sector over
+20/60 days is full for a long, &minus;10% for a short.</li>
+<li><b>Execution (20)</b> &mdash; options: tighter spread and deeper open
+interest; shares: daily dollar volume ($2B+ is full).</li>
+<li><b>Event / carry (25)</b> &mdash; earnings within 14 days costs half; a
+short also loses up to half for the dividend it pays (8%+ costs the half).</li>
+</ul>
+<p><span class='gr gr-a'>A</span> &ge; 75 &nbsp; <span class='gr gr-b'>B</span> 60&ndash;74
+&nbsp; <span class='gr gr-c'>C</span> 45&ndash;59 &nbsp; <span class='gr gr-d'>D</span> &lt; 45</p>
+<p class="fine">Fundamentals are annual (latest fiscal year vs prior) from
+Yahoo Finance; options from Cboe delayed quotes; earnings dates are estimates.
+Screening output, not a recommendation.</p>
+</details>
+</div></body></html>
