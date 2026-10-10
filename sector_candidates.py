@@ -35,11 +35,49 @@ QUALITY GATES (Eugenio's stated screening criteria, ways-of-working.md)
     valuation/momentum here acts as a tiebreaker within each side, weighted
     accordingly in the composite score, not as an override of the quality read.
 
+VALUATION (2026-10-10)
+    Two uses, both sector-relative except the floor:
+    1. BELOW-BOOK FLOOR -- Eugenio's rule: a stock trading below book value
+       (price_to_book < SHORT_MIN_PB = 1.0) is NOT a short candidate. Deep
+       value tends to range rather than fall further, so the downside left to
+       capture is small. It can still be a long if it passes every gate.
+       Names with no P/B reading (negative book equity, missing data) are
+       not excluded.
+    2. VALUE SCORE -- value_z, how cheap a name is against its own sector,
+       in standard deviations (positive = cheaper), clipped to +/-2:
+         XLF            : price to book (EV/EBITDA does not apply to banks)
+         other sectors  : average of EV/EBITDA (lower = cheaper) and free
+                          cash flow yield (higher = cheaper)
+       It enters the composite at VALUE_WEIGHT (0.25 per sd), below quality
+       (2x) per the "quality wins" rule: a cheap name whose fundamentals are
+       deteriorating still ranks low, and an expensive one is pushed down.
+    3. DEEP VALUE, IMPROVING -- Eugenio's rule: a deep-value stock that is
+       improving should score higher as a long. A name is deep value if it
+       trades below book or value_z >= DEEP_VALUE_Z (1 sd cheaper than its
+       sector), and improving if at least IMPROVING_MIN of these hold:
+       operating margin above the prior year, gross margin above the prior
+       year, revenue growing, price beating the sector ETF (avg 20d/60d).
+       Such a name gets VALUE_TURN_BONUS added to its composite and, like a
+       below-book name, can never be a short. A cheap
+       name that is NOT improving gets nothing extra -- cheapness alone is a
+       value trap risk, not a long signal.
+
 UNDERLYING LIQUIDITY (2026-10-10)
     A name whose OPTIONS are illiquid can still be traded in the stock. It
     goes to the stock-only table if its median daily dollar volume over the
     last 20 sessions (adv_usd_20d, from sector_technicals.py) is at least
     MIN_ADV_USD. Below that, or with no volume reading, it is in neither table.
+
+WATCHLIST (2026-10-10)
+    Names Eugenio always wants scored, whatever their liquidity: CPB (he
+    works for Campbell's). Each is written every run to
+    sector_candidates_watch.csv with its full score, grade, failed gates,
+    valuation and its rank among every scorable name in its sector. The
+    liquidity screens are NOT bypassed for the ranked tables -- a watch name
+    appears there only if it qualifies on its own; the watch file is where
+    it is always visible. Its "table" column reads watch-options,
+    watch-stock or watch-illiquid, so the liquidity status is never hidden.
+    Must also be captured: see EXTRA_TICKERS in sector_fundamentals.py.
 
 OUTPUT -- two ranked tables plus the original pair file
     sector_candidates_options.csv : names with liquid OPTIONS.
@@ -76,11 +114,23 @@ RANKED_COLUMNS = [
     "rel_strength_20d", "rel_strength_60d",
     "n_names_in_sector", "n_in_table", "n_quality_passed",
     "trade_quality", "grade", "tq_conviction", "tq_momentum", "tq_execution",
-    "tq_event_carry", "dividend_yield", "next_filing_est", "schema_version",
+    "tq_event_carry", "dividend_yield", "next_filing_est",
+    "price_to_book", "ev_to_ebitda", "fcf_yield", "forward_pe", "value_z",
+    "value_turn", "schema_version",
 ]
 # 2: trade quality score and its four components; dividend_yield and
 #    next_filing_est carried through for display.
-RANKED_SCHEMA_VERSION = 2
+# 3: valuation columns; composite includes value_z; below-book names are
+#    never shorts.
+RANKED_SCHEMA_VERSION = 3
+WATCHLIST = {"CPB"}
+SHORT_MIN_PB = 1.0
+VALUE_WEIGHT = 0.25
+VALUE_Z_CLIP = 2.0
+BOOK_VALUE_SECTORS = {"XLF"}
+DEEP_VALUE_Z = 1.0
+IMPROVING_MIN = 2
+VALUE_TURN_BONUS = 0.5    # composite points; one failed gate costs 1.0
 TOP_K = 3
 MIN_ADV_USD = 50_000_000   # median daily dollar volume, last 20 sessions
 
@@ -199,6 +249,74 @@ def table_of(row):
     return None
 
 
+def shortable(row):
+    """False for a stock trading below book value, or for a deep-value name
+    that is improving (see VALUATION above) -- both are long-side setups."""
+    pb = pd.to_numeric(row.get("price_to_book"), errors="coerce")
+    if pd.notna(pb) and 0 < pb < SHORT_MIN_PB:
+        return False
+    return not value_turn(row)
+
+
+def _zcol(s):
+    s = pd.to_numeric(s, errors="coerce")
+    sd = s.std(ddof=0)
+    if s.notna().sum() < 3 or not sd:
+        return pd.Series(float("nan"), index=s.index)
+    return (s - s.mean()) / sd
+
+
+def add_value_z(merged):
+    """Adds value_z per sector: positive = cheaper than the sector. Uses
+    log(P/B) and log(EV/EBITDA) so one extreme multiple cannot dominate."""
+    import numpy as np
+    out = merged.copy()
+    out["value_z"] = 0.0
+    for sector, idx in out.groupby("sector_etf").groups.items():
+        g = out.loc[idx]
+        if sector in BOOK_VALUE_SECTORS:
+            pb = pd.to_numeric(g.get("price_to_book"), errors="coerce")
+            parts = [-_zcol(np.log(pb.where(pb > 0)))]
+        else:
+            ev = pd.to_numeric(g.get("ev_to_ebitda"), errors="coerce")
+            parts = [-_zcol(np.log(ev.where(ev > 0))),
+                     _zcol(g.get("fcf_yield"))]
+        z = pd.concat(parts, axis=1).mean(axis=1, skipna=True)
+        out.loc[idx, "value_z"] = z.fillna(0.0).clip(-VALUE_Z_CLIP, VALUE_Z_CLIP)
+    return out
+
+
+def improving_signals(row):
+    """List of the improvement signals a name shows (see VALUATION 3)."""
+    out = []
+    def up(a, b):
+        a = pd.to_numeric(row.get(a), errors="coerce")
+        b = pd.to_numeric(row.get(b), errors="coerce")
+        return pd.notna(a) and pd.notna(b) and a > b
+    if up("operating_margin", "operating_margin_prior"):
+        out.append("op margin up")
+    if up("gross_margin", "gross_margin_prior"):
+        out.append("gross margin up")
+    g = pd.to_numeric(row.get("revenue_growth_yoy"), errors="coerce")
+    if pd.notna(g) and g > 0:
+        out.append("revenue growing")
+    if score_momentum(row) > 0:
+        out.append("beating sector")
+    return out
+
+
+def is_deep_value(row):
+    pb = pd.to_numeric(row.get("price_to_book"), errors="coerce")
+    vz = pd.to_numeric(row.get("value_z"), errors="coerce")
+    return bool((pd.notna(pb) and 0 < pb < SHORT_MIN_PB)
+                or (pd.notna(vz) and vz >= DEEP_VALUE_Z))
+
+
+def value_turn(row):
+    """True for a deep-value name that is improving."""
+    return is_deep_value(row) and len(improving_signals(row)) >= IMPROVING_MIN
+
+
 def rank_sides(scored, k=TOP_K):
     """scored: list of (ticker, composite, failures, row). Returns
     (longs, shorts), each a list of up to k entries, best first. Longs must
@@ -206,10 +324,11 @@ def rank_sides(scored, k=TOP_K):
     failed, from the weakest names that are not already longs."""
     clean = sorted((s for s in scored if not s[2]), key=lambda s: -s[1])
     longs = clean[:k]
-    flagged = sorted((s for s in scored if s[2]), key=lambda s: s[1])
+    can_short = [s for s in scored if shortable(s[3])]
+    flagged = sorted((s for s in can_short if s[2]), key=lambda s: s[1])
     if not flagged:
         taken = {s[0] for s in longs}
-        flagged = sorted((s for s in scored if s[0] not in taken), key=lambda s: s[1])
+        flagged = sorted((s for s in can_short if s[0] not in taken), key=lambda s: s[1])
     return longs, flagged[:k]
 
 
@@ -358,6 +477,12 @@ def build_ranked(merged, now=None, k=TOP_K):
                         "tq_event_carry": round(parts["event_carry"], 3),
                         "dividend_yield": _num(r.get("dividend_yield")),
                         "next_filing_est": r.get("next_filing_est") or "",
+                        "price_to_book": _num(r.get("price_to_book"), 2),
+                        "ev_to_ebitda": _num(r.get("ev_to_ebitda"), 2),
+                        "fcf_yield": _num(r.get("fcf_yield")),
+                        "forward_pe": _num(r.get("forward_pe"), 2),
+                        "value_z": _num(r.get("value_z"), 3),
+                        "value_turn": ";".join(improving_signals(r)) if value_turn(r) else "",
                         "schema_version": RANKED_SCHEMA_VERSION,
                     })
     return rows
@@ -383,12 +508,18 @@ def score_momentum(row):
 
 
 def composite_score(row, failures):
-    """Quality weighted 2x momentum, per Eugenio's stated rule that quality
-    wins when the two disagree and valuation/momentum serves as a check."""
-    return 2.0 * score_quality(row, failures) + score_momentum(row)
+    """Quality weighted 2x, plus momentum, plus valuation at VALUE_WEIGHT per
+    sector sd -- per Eugenio's stated rule that quality wins when they
+    disagree and valuation/momentum serve as a check. value_z is set by
+    add_value_z(); a row without it contributes 0."""
+    vz = pd.to_numeric(row.get("value_z"), errors="coerce")
+    vz = 0.0 if pd.isna(vz) else float(vz)
+    bonus = VALUE_TURN_BONUS if value_turn(row) else 0.0
+    return (2.0 * score_quality(row, failures) + score_momentum(row)
+            + VALUE_WEIGHT * vz + bonus)
 
 
-def pick_pair(scored):
+def pick_pair(scored, no_short=frozenset()):
     """scored: list of (ticker, composite, failures). Returns (long, short)
     tuples of (ticker, score); either is None when nothing qualifies.
 
@@ -405,11 +536,13 @@ def pick_pair(scored):
 
     long_pick = max(clean, key=lambda s: s[1]) if clean else None
 
-    short_pool = flagged if flagged else scored
-    short_pick = min(short_pool, key=lambda s: s[1])
+    can_short = [s for s in scored if s[0] not in no_short]
+    flagged_ok = [s for s in can_short if s[2]]
+    short_pool = flagged_ok if flagged_ok else can_short
+    short_pick = min(short_pool, key=lambda s: s[1]) if short_pool else None
 
     return ((long_pick[0], long_pick[1]) if long_pick else None,
-            (short_pick[0], short_pick[1]))
+            (short_pick[0], short_pick[1]) if short_pick else None)
 
 
 def score_sector(grp, now=None):
@@ -429,7 +562,8 @@ def build_candidates(merged, now=None):
     out_rows = []
     for sector_etf, grp in merged.groupby("sector_etf"):
         scored = score_sector(grp, now=now)
-        long_pick, short_pick = pick_pair(scored)
+        no_short = {r["ticker"] for _, r in grp.iterrows() if not shortable(r)}
+        long_pick, short_pick = pick_pair(scored, no_short)
         n_failed = sum(1 for s in scored if s[2])
         n_illiquid = sum(1 for _, r in grp.iterrows()
                          if not unscorable(r) and not is_liquid(r))
@@ -445,6 +579,68 @@ def build_candidates(merged, now=None):
             "schema_version": SCHEMA_VERSION,
         })
     return out_rows
+
+
+def build_watch(merged, now=None):
+    """One row per WATCHLIST name present in the data, always -- liquidity
+    exempt. side is the side its scores point to: 'long' if it passes every
+    gate, 'short' if it fails one and may be shorted, 'none' if it fails one
+    but is protected from the short side (below book, or deep value and
+    improving). rank = position among every scorable name in its sector."""
+    now = now or datetime.now(timezone.utc)
+    out = []
+    for sector_etf, grp in merged.groupby("sector_etf"):
+        watch = grp[grp["ticker"].isin(WATCHLIST)]
+        if watch.empty:
+            continue
+        zs = sector_zscores(grp, now)
+        comps, fails = {}, {}
+        for _, r in grp.iterrows():
+            if not unscorable(r):
+                fails[r["ticker"]] = quality_gate_failures(r, now=now)
+                comps[r["ticker"]] = composite_score(r, fails[r["ticker"]])
+        order = sorted(comps, key=lambda t: -comps[t])
+        for _, r in watch.iterrows():
+            t = r["ticker"]
+            if t not in comps:
+                continue
+            fl = fails[t]
+            natural = table_of(r) or "illiquid"
+            side = "long" if not fl else ("short" if shortable(r) else "none")
+            tq, grade, parts = trade_quality(
+                r, side if side != "none" else "long",
+                natural if natural != "illiquid" else "stock", zs.get(t, 0.0), now)
+            if side == "none":
+                tq, grade = "", ""
+            out.append({
+                "capture_ts": now.isoformat(), "table": f"watch-{natural}",
+                "sector_etf": sector_etf, "side": side,
+                "rank": order.index(t) + 1, "ticker": t,
+                "score": round(comps[t], 4), "failed_gates": ";".join(fl),
+                "spot": _num(r.get("spot"), 2),
+                "atm_spread_pct": _num(r.get("atm_spread_pct")),
+                "atm_oi": _num(r.get("atm_oi"), 0),
+                "adv_usd_20d": _num(r.get("adv_usd_20d"), 0),
+                "rel_strength_20d": _num(r.get("rel_strength_20d")),
+                "rel_strength_60d": _num(r.get("rel_strength_60d")),
+                "n_names_in_sector": len(grp), "n_in_table": len(order),
+                "n_quality_passed": sum(1 for x in order if not fails[x]),
+                "trade_quality": tq, "grade": grade,
+                "tq_conviction": round(parts["conviction"], 3),
+                "tq_momentum": round(parts["momentum"], 3),
+                "tq_execution": round(parts["execution"], 3),
+                "tq_event_carry": round(parts["event_carry"], 3),
+                "dividend_yield": _num(r.get("dividend_yield")),
+                "next_filing_est": r.get("next_filing_est") or "",
+                "price_to_book": _num(r.get("price_to_book"), 2),
+                "ev_to_ebitda": _num(r.get("ev_to_ebitda"), 2),
+                "fcf_yield": _num(r.get("fcf_yield")),
+                "forward_pe": _num(r.get("forward_pe"), 2),
+                "value_z": _num(r.get("value_z"), 3),
+                "value_turn": ";".join(improving_signals(r)) if value_turn(r) else "",
+                "schema_version": RANKED_SCHEMA_VERSION,
+            })
+    return out
 
 
 def append_rows(out_path, rows, columns=CAND_COLUMNS):
@@ -484,6 +680,17 @@ def main():
         log(logpath, "no overlap between fundamentals and technicals universes -- nothing to score")
         return 1
 
+    merged = add_value_z(merged)
+    pbs = pd.to_numeric(merged["price_to_book"], errors="coerce")
+    below_book = merged[(pbs > 0) & (pbs < SHORT_MIN_PB)]
+    for sector, g in below_book.groupby("sector_etf"):
+        log(logpath, f"{sector}: below book, excluded from shorts -- " +
+            ", ".join(f"{t} {pb:.2f}x" for t, pb in
+                      zip(g["ticker"], pd.to_numeric(g["price_to_book"]))))
+    turns = merged[merged.apply(value_turn, axis=1)]
+    for sector, g in turns.groupby("sector_etf"):
+        log(logpath, f"{sector}: deep value + improving (+{VALUE_TURN_BONUS}, no short) -- "
+            + ", ".join(g["ticker"]))
     out_rows = build_candidates(merged)
     for r in out_rows:
         log(logpath, f"{r['sector_etf']}: long {r['long_ticker'] or '(none qualifies)'}  "
@@ -500,6 +707,15 @@ def main():
                           if r["side"] == "short") or "-"
             n = sel[0]["n_in_table"] if sel else 0
             log(logpath, f"[{table}] {sector}: {n} names  long {lg}  short {sh}")
+    watch_rows = build_watch(merged)
+    for w in watch_rows:
+        log(logpath, f"[watch] {w['ticker']} ({w['sector_etf']}, {w['table'][6:]}): "
+                     f"{w['side']}  grade {w['grade'] or '-'}  score {w['score']:+.2f}  "
+                     f"rank {w['rank']}/{w['n_in_table']}  "
+                     f"gates: {w['failed_gates'] or 'all pass'}")
+    missing = WATCHLIST - {w["ticker"] for w in watch_rows}
+    if missing:
+        log(logpath, f"[watch] not in this capture: {', '.join(sorted(missing))}")
     log(logpath, f"=== candidates: {len(out_rows)} sector pairs, "
                  f"{len(ranked['options'])} options-table rows, "
                  f"{len(ranked['stock'])} stock-table rows ===")
@@ -519,6 +735,8 @@ def main():
     for table, rows in ranked.items():
         append_rows(os.path.join(args.outdir, f"sector_candidates_{table}.csv"),
                     rows, RANKED_COLUMNS)
+    append_rows(os.path.join(args.outdir, "sector_candidates_watch.csv"),
+                watch_rows, RANKED_COLUMNS)
     return 0
 
 

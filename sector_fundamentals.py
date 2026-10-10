@@ -89,6 +89,13 @@ SECTOR_ETFS = {
 # Constituents kept per fund, largest weight first.
 TOP_N = 30
 
+# Names captured every run whatever their fund weight, with the sector they
+# are scored in. CPB: Eugenio's request (2026-10-10) -- he works for
+# Campbell's and wants it scored alongside staples. It sits below XLP's top
+# 30, so without this it is never captured. sector_candidates.py also
+# exempts these names from the liquidity screens (WATCHLIST there).
+EXTRA_TICKERS = {"CPB": "XLP"}
+
 SSGA_HOLDINGS_URL = "https://www.ssga.com/library-content/products/fund-data/etfs/us/holdings-daily-us-en-{sym}.xlsx"
 
 FUND_COLUMNS = [
@@ -99,13 +106,17 @@ FUND_COLUMNS = [
     "fcf", "fcf_prior",
     "total_debt", "cash_and_equiv", "net_debt", "ebitda_approx", "net_debt_to_ebitda",
     "shares_outstanding", "dividend_yield",
+    "market_cap", "price_to_book", "ev_to_ebitda", "forward_pe", "fcf_yield",
     "next_filing_est", "schema_version",
 ]
 # Bumped from 1 -> 2: source changed EDGAR -> Yahoo Finance and the `cik`
 # column was dropped (yfinance needs no CIK lookup). A reader that assumes
 # the old column set should see this change, not silently misalign columns
 # -- the exact failure mode a schema_version bump exists to prevent.
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
+# 4 (2026-10-10): valuation -- market_cap, price_to_book, ev_to_ebitda,
+#   forward_pe, fcf_yield (TTM free cash flow / market cap). Used by
+#   sector_candidates.py for the valuation score and the below-book rule.
 # 3 (2026-10-10): dividend_yield added -- forward annual dividend / price, as
 #   a fraction. Feeds the short-carry part of the trade quality score: a
 #   short pays the dividend.
@@ -246,6 +257,36 @@ def estimate_next_earnings(ticker_obj, logpath, ticker):
         return None
 
 
+def _pos(v):
+    """Float if a usable positive number, else None. A negative P/B (negative
+    book equity) or EV/EBITDA (negative EBITDA) is not a valuation."""
+    try:
+        f = float(v)
+    except (TypeError, ValueError):
+        return None
+    return f if f > 0 and f == f else None
+
+
+def valuation(info, fcf):
+    """Valuation fields from Yahoo's .info. Missing or negative values are
+    left None rather than guessed -- the scorer treats None as 'no view'."""
+    info = info or {}
+    mcap = _pos(info.get("marketCap"))
+    fcf_yield = None
+    if mcap and fcf is not None:
+        try:
+            fcf_yield = float(fcf) / mcap
+        except (TypeError, ValueError):
+            fcf_yield = None
+    return {
+        "market_cap": mcap,
+        "price_to_book": _pos(info.get("priceToBook")),
+        "ev_to_ebitda": _pos(info.get("enterpriseToEbitda")),
+        "forward_pe": _pos(info.get("forwardPE")),
+        "fcf_yield": fcf_yield,
+    }
+
+
 def forward_dividend_yield(info):
     """Forward annual dividend / price, as a fraction (0.075 = 7.5%).
 
@@ -317,6 +358,7 @@ def build_row(ticker, sector_etf, info, financials, balance_sheet, cashflow, nex
     net_debt = (total_debt - cash) if total_debt is not None and cash is not None else None
     net_debt_to_ebitda = (net_debt / ebitda) if net_debt is not None and ebitda not in (None, 0) else None
     dividend_yield = forward_dividend_yield(info)
+    val = valuation(info, fcf)
     revenue_growth = (revenue / revenue_prior - 1) if revenue is not None and revenue_prior else info.get("revenueGrowth")
 
     return {
@@ -335,6 +377,7 @@ def build_row(ticker, sector_etf, info, financials, balance_sheet, cashflow, nex
         "total_debt": total_debt, "cash_and_equiv": cash, "net_debt": net_debt,
         "ebitda_approx": ebitda, "net_debt_to_ebitda": net_debt_to_ebitda,
         "shares_outstanding": shares, "dividend_yield": dividend_yield,
+        **val,
         "next_filing_est": next_filing, "schema_version": SCHEMA_VERSION,
     }
 
@@ -405,6 +448,15 @@ def main():
             row = capture_one(t, sym, logpath, run_ts)
             if row:
                 all_rows.append(row)
+
+    for t, sym in EXTRA_TICKERS.items():
+        if t in seen or sym not in args.sectors:
+            continue   # already a top-N holding this run, or sector not run
+        seen.add(t)
+        log(logpath, f"{sym}: watchlist name {t} added outside the top {args.top_n}")
+        row = capture_one(t, sym, logpath, run_ts)
+        if row:
+            all_rows.append(row)
 
     log(logpath, f"=== fundamentals capture done: {len(all_rows)}/{len(seen)} names captured ===")
 

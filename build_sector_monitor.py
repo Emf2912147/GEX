@@ -127,10 +127,29 @@ def chips(r, side):
     nf = str(r.get("next_filing_est") or "")
     if nf and nf != "nan" and "filing_estimated_in_window" not in str(r.get("failed_gates")):
         out.append(f"<span class='chip'>earnings ~{esc(nf[5:])}</span>")
+    vt = str(r.get("value_turn") or "")
+    if vt and vt != "nan":
+        out.append(f"<span class='chip chip-pos' title='{esc(vt.replace(';', ', '))}'>"
+                   f"deep value &middot; improving</span>")
     dy = num(r.get("dividend_yield"))
     if side == "short" and dy and dy >= 0.03:
         out.append(f"<span class='chip chip-warn'>pays {dy:.1%} div</span>")
     return "".join(out)
+
+
+def valuation_line(r):
+    bits = []
+    pb, ev = num(r.get("price_to_book")), num(r.get("ev_to_ebitda"))
+    fy, pe = num(r.get("fcf_yield")), num(r.get("forward_pe"))
+    if pb: bits.append(f"P/B {pb:.1f}x")
+    if ev: bits.append(f"EV/EBITDA {ev:.1f}x")
+    if fy is not None: bits.append(f"FCF yld {fy:.1%}")
+    if pe: bits.append(f"fwd P/E {pe:.1f}")
+    vz = num(r.get("value_z"))
+    if vz is not None and bits:
+        word = "cheap" if vz >= 0.5 else ("rich" if vz <= -0.5 else "in line")
+        bits.append(f"{word} vs sector ({vz:+.1f}&sigma;)")
+    return " · ".join(bits) or "valuation n/a"
 
 
 def row_html(r, side, table):
@@ -152,6 +171,7 @@ def row_html(r, side, table):
   {parts_bar(r)}
   <div class="meta">vs sector {pct(rel20, sign=True)} 20d · {pct(rel60, sign=True)} 60d
     <span class="dot">·</span> {exe} <span class="dot">·</span> score {num(r.get('score')) or 0:+.2f}</div>
+  <div class="meta">{valuation_line(r)}</div>
   <div class="chips">{chips(r, side)}</div>
 </li>"""
 
@@ -195,6 +215,32 @@ def sector_card(sym, opt, stk):
 </section>"""
 
 
+LIQ_LABEL = {"options": "options liquid", "stock": "shares liquid (options thin)",
+             "illiquid": "below the liquidity screens &mdash; scored by exception"}
+
+
+def watch_card(wch):
+    """Always-scored names (CPB), shown whatever their liquidity."""
+    if wch.empty:
+        return ""
+    items = []
+    for _, r in wch.iterrows():
+        natural = str(r.get("table", "watch-illiquid"))[6:]
+        side = str(r.get("side"))
+        tbl = natural if natural in ("options", "stock") else "stock"
+        if side == "none":
+            verdict = ("<span class='chip chip-pos'>no short: deep value / below book</span>")
+        else:
+            verdict = (f"<span class='chip {'chip-pos' if side == 'long' else 'chip-neg'}'>"
+                       f"scores as a {side}</span>")
+        rank = f"ranks {int(num(r.get('rank')) or 0)} of {int(num(r.get('n_in_table')) or 0)} in {esc(r['sector_etf'])}"
+        items.append(f"""
+<div class="wl-head">{verdict} <span class="tbl-note">{rank} &middot; {LIQ_LABEL.get(natural, natural)}</span></div>
+<ol class="picks">{row_html(r, side if side in ('long', 'short') else 'long', tbl)}</ol>""")
+    return (f"<section class='card wl'><div class='k'>Watchlist &mdash; always scored</div>"
+            f"{''.join(items)}</section>")
+
+
 def best_setups(opt, stk, n=3):
     allr = pd.concat([opt.assign(tbl="Options"), stk.assign(tbl="Shares")],
                      ignore_index=True)
@@ -227,10 +273,24 @@ year; net debt above 3&times; EBITDA; estimated earnings within 14 days.
 A <b>long</b> must pass all of them. A <b>short</b> comes from names that fail
 at least one, weakest first.</p>
 <h3>Ranking</h3>
-<p>Composite = 2 &times; quality + momentum. Quality = revenue growth +
-operating margin &minus; net debt/EBITDA &divide; 10 &minus; 0.5 per failed gate.
-Momentum = average 20- and 60-day return relative to the sector ETF.
-Up to three longs and three shorts per table.</p>
+<p>Composite = 2 &times; quality + momentum + 0.25 &times; value
+(+ 0.5 deep-value bonus). Quality = revenue growth + operating margin &minus;
+net debt/EBITDA &divide; 10 &minus; 0.5 per failed gate. Momentum = average
+20- and 60-day return relative to the sector ETF. Up to three longs and three
+shorts per table.</p>
+<h3>Valuation</h3>
+<p><b>Value</b> = how cheap the stock is against its own sector, in standard
+deviations: price-to-book for financials; EV/EBITDA and free-cash-flow yield
+for the others. <b>Below book value (P/B &lt; 1) is never a short</b> &mdash;
+deep value tends to range, not fall further. A <b>deep-value</b> stock (below
+book, or 1&sigma;+ cheaper than its sector) that is <b>improving</b> &mdash; at
+least two of: operating margin up, gross margin up, revenue growing, beating
+its sector &mdash; gets a bonus as a long. Cheap and not improving gets
+nothing extra.</p>
+<h3>Watchlist</h3>
+<p>CPB is scored every run by exception, even below the liquidity screens or
+outside XLP&rsquo;s top 30. Its rank is among every scorable name in its
+sector. It joins the ranked lists only if it qualifies on its own.</p>
 <h3>Trade quality (0&ndash;100)</h3>
 <p>The bar under each name shows its four parts, left to right:</p>
 <ul>
@@ -320,7 +380,11 @@ h1{font-size:20px;margin:0 0 4px;letter-spacing:-0.01em}
 .chips{margin:3px 0 0 20px;display:flex;flex-wrap:wrap;gap:4px}
 .chip{font-size:10.5px;padding:1px 7px;border-radius:999px;background:var(--chip);color:var(--ink-2)}
 .chip-neg{background:var(--neg-bg);color:var(--neg)}
+.chip-pos{background:var(--pos-bg);color:var(--pos)}
 .chip-warn{background:var(--warn-bg);color:var(--warn)}
+.wl .rk{display:none}
+.wl .parts,.wl .meta,.wl .chips{margin-left:0}
+.wl-head{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:2px}
 .empty{font-size:12.5px;color:var(--ink-3);padding:6px 0}
 .bs-wrap{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .bs{list-style:none;margin:0;padding:0}
@@ -337,6 +401,7 @@ details.legend summary{cursor:pointer;font-size:13.5px;color:var(--ink-2)}
 def build(histdir, out_path):
     opt = latest(os.path.join(histdir, "sector_candidates_options.csv"))
     stk = latest(os.path.join(histdir, "sector_candidates_stock.csv"))
+    wch = latest(os.path.join(histdir, "sector_candidates_watch.csv"))
     f_ts = last_ts(os.path.join(histdir, "sector_fundamentals.csv"))
     t_ts = last_ts(os.path.join(histdir, "sector_technicals.csv"))
 
@@ -356,6 +421,7 @@ def build(histdir, out_path):
   <p class="sub">Updates Tue &amp; Wed evenings after the close.</p>
   <div class="nav"><a href="index.html">&larr; GEX Monitor</a></div>
 </header>
+{watch_card(wch)}
 {best_setups(opt, stk)}
 {cards}
 {LEGEND}
