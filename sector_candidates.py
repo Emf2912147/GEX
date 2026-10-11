@@ -120,8 +120,10 @@ RANKED_COLUMNS = [
     "atm_iv_30", "call_wall", "put_wall", "wall_fallback", "gamma_flip",
     "gamma_regime", "to_put_wall", "to_call_wall", "entry", "fund_basis",
     "put_wall_held", "put_wall_days", "put_wall_streak", "put_wall_strength",
-    "put_wall_prev", "call_wall_held", "call_wall_days", "call_wall_streak",
-    "call_wall_strength", "call_wall_prev",
+    "put_wall_prev", "put_wall_held_post", "put_wall_days_post",
+    "call_wall_held", "call_wall_days", "call_wall_streak",
+    "call_wall_strength", "call_wall_prev", "call_wall_held_post",
+    "call_wall_days_post", "wall_last_exp",
     "schema_version",
 ]
 # 2: trade quality score and its four components; dividend_yield and
@@ -661,12 +663,52 @@ def entry_read(row, side):
 #            steady   -- held >= 50%, or 3+ in a row (a wall that reset at
 #                        expiration and has held since counts)
 #            shifting -- otherwise
-# Monthly expiration clears a large share of the <= 30-day book, so walls
-# often move the session after it; that shows up as "moved", as it should.
+# EXPIRATION WEIGHTING (2026-10-11, Eugenio's rule): monthly expiration
+# clears a large share of the <= 30-day book, and quarterly expiration
+# (Mar/Jun/Sep/Dec) more, so history from before one says less about today's
+# wall. Each prior session is weighted by the expirations between it and
+# today: x MONTHLY_EXP_WEIGHT for every monthly crossed, QUARTERLY_EXP_WEIGHT
+# when that monthly is a quarterly. held and the strength grade use the
+# weighted share; held_post/days_post count only sessions since the latest
+# expiration. The expiration session itself counts as after it: the evening
+# capture already excludes the contracts that expired at 4pm.
 # --------------------------------------------------------------------------
 WALL_LOOKBACK = 10
 WALL_TOL = 0.01          # 1% of the wall level -- about one strike on most names
 WALL_MIN_HISTORY = 3
+MONTHLY_EXP_WEIGHT = 0.5
+QUARTERLY_EXP_WEIGHT = 0.25
+
+
+def monthly_expiration(year, month):
+    """Third Friday, or the Thursday before when that Friday is a holiday."""
+    here = os.path.dirname(os.path.abspath(__file__))
+    if here not in sys.path:
+        sys.path.insert(0, here)
+    import market_calendar as cal
+    from datetime import date, timedelta
+    d = date(year, month, 15)
+    d += timedelta(days=(4 - d.weekday()) % 7)
+    return d if cal.is_trading_day(d) else d - timedelta(days=1)
+
+
+def expirations_between(start, end):
+    """Monthly expirations e with start < e <= end, as (date, is_quarterly)."""
+    out = []
+    y, m = start.year, start.month
+    while (y, m) <= (end.year, end.month):
+        e = monthly_expiration(y, m)
+        if start < e <= end:
+            out.append((e, m in (3, 6, 9, 12)))
+        y, m = (y + 1, 1) if m == 12 else (y, m + 1)
+    return out
+
+
+def session_weight(session, today):
+    w = 1.0
+    for _, quarterly in expirations_between(session, today):
+        w *= QUARTERLY_EXP_WEIGHT if quarterly else MONTHLY_EXP_WEIGHT
+    return w
 
 
 def session_of(ts):
@@ -706,15 +748,19 @@ def wall_history(tech_csv):
 def wall_stability(hist, col):
     """hist: one ticker's wall_history frame (today = last row).
     Returns {held, days, streak, strength, prev} for wall column col."""
-    out = {"held": "", "days": 0, "streak": "", "strength": "", "prev": ""}
+    out = {"held": "", "days": 0, "streak": "", "strength": "", "prev": "",
+           "held_post": "", "days_post": "", "last_exp": ""}
     if hist is None or hist.empty:
         return out
     vals = pd.to_numeric(hist[col], errors="coerce").tolist()
+    sessions = list(hist["session"])
     today = vals[-1]
     if today is None or pd.isna(today) or today <= 0:
         return out
-    prior = [v for v in vals[:-1][-WALL_LOOKBACK:]]
+    prior = vals[:-1][-WALL_LOOKBACK:]
+    prior_s = sessions[:-1][-WALL_LOOKBACK:]
     same = [pd.notna(v) and abs(v - today) <= WALL_TOL * today for v in prior]
+    weights = [session_weight(d, sessions[-1]) for d in prior_s]
     streak = 1
     for ok in reversed(same):
         if not ok:
@@ -723,15 +769,23 @@ def wall_stability(hist, col):
     n = len(prior)
     held = sum(same)
     out.update(days=n, held=held if n else "", streak=streak)
+    if prior_s:
+        exps = expirations_between(prior_s[0], sessions[-1])
+        if exps:
+            last_exp = exps[-1][0]
+            post = [ok for ok, d in zip(same, prior_s) if d >= last_exp]
+            out.update(last_exp=str(last_exp), held_post=sum(post), days_post=len(post))
     if n and not same[-1] and pd.notna(prior[-1]):
         out["prev"] = round(float(prior[-1]), 2)
+    wsum = sum(weights)
+    share = (sum(w for w, ok in zip(weights, same) if ok) / wsum) if wsum else 0.0
     if n < WALL_MIN_HISTORY:
         out["strength"] = "new"
     elif not same[-1]:
         out["strength"] = "moved"
-    elif held / n >= 0.8 or streak >= 6:
+    elif share >= 0.8 or streak >= 6:
         out["strength"] = "strong"
-    elif held / n >= 0.5 or streak >= 3:
+    elif share >= 0.5 or streak >= 3:
         out["strength"] = "steady"
     else:
         out["strength"] = "shifting"
@@ -747,7 +801,10 @@ def stability_fields(ticker):
     for side, col in (("put", "put_wall"), ("call", "call_wall")):
         st = wall_stability(h, col)
         for k, v in st.items():
-            out[f"{side}_wall_{k}"] = v
+            if k == "last_exp":
+                out["wall_last_exp"] = v or out.get("wall_last_exp", "")
+            else:
+                out[f"{side}_wall_{k}"] = v
     return out
 
 

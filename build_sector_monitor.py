@@ -142,6 +142,10 @@ def stability_tag(r, side):
         txt = f"moved from {_strike(prev)}" if prev else "moved"
     else:
         txt = f"{st} · held {int(held or 0)}/{int(days or 0)}"
+        exp = str(r.get("wall_last_exp") or "")
+        hp, dpost = num(r.get(f"{side}_wall_held_post")), num(r.get(f"{side}_wall_days_post"))
+        if exp and exp != "nan" and dpost is not None:
+            txt += f" ({int(hp or 0)}/{int(dpost)} since {exp[5:].replace('-', '/')} exp)"
     return f" <b class='{STAB_CLASS.get(st, '')}'>{txt}</b>"
 
 
@@ -398,11 +402,14 @@ distance from price &mdash; the level being tested, and the one on the other
 side as a target or stop reference.</p>
 <p><b>Wall strength</b> is how little a wall has moved over the last ten
 sessions (one reading per session; a wall counts as held if it is within 1% of
-today&rsquo;s level): <b>strong</b> &mdash; held 80%+ of sessions or 6+ in a
-row; <b>steady</b> &mdash; 50%+ or 3+ in a row; <b>shifting</b> &mdash; less;
+today&rsquo;s level): <b>strong</b> &mdash; held 80%+ of the weighted sessions
+or 6+ in a row; <b>steady</b> &mdash; 50%+ or 3+ in a row; <b>shifting</b> &mdash; less;
 <b>moved from X</b> &mdash; it was at X last session, so today&rsquo;s level is
-untested; <b>new</b> &mdash; under three sessions of history. Walls often move
-after monthly expiration.</p>
+untested; <b>new</b> &mdash; under three sessions of history.
+<b>Expirations</b>: sessions before the latest monthly expiration count half,
+before a quarterly (Mar/Jun/Sep/Dec) a quarter &mdash; the expiring contracts
+built those walls. When an expiration falls in the window the tag also shows
+the record since it, e.g. &ldquo;(2/2 since 10/16 exp)&rdquo;.</p>
 <h3>Fundamentals basis</h3>
 <p>Quarterly: trailing four quarters against the four before when eight are
 reported, otherwise the latest quarter against the same quarter a year
