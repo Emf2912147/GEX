@@ -120,7 +120,30 @@ def parts_bar(r):
     return f"<div class='parts'>{''.join(segs)}</div>"
 
 
-def chips(r, side):
+def _strike(v):
+    return f"{v:,.0f}" if v >= 100 else f"{v:,.2f}"
+
+
+def levels_chip(r):
+    """Nearest support (put wall) and resistance (call wall) with their
+    distance from price, shown beside every entry read so the level the
+    read refers to -- and the one on the other side, the target or the
+    stop -- are both on the card."""
+    pw, cw = num(r.get("put_wall")), num(r.get("call_wall"))
+    dp, dc = num(r.get("to_put_wall")), num(r.get("to_call_wall"))
+    bits = []
+    if cw:
+        bits.append(f"resistance {_strike(cw)}" + (f" ({dc:+.1%})" if dc is not None else ""))
+    if pw:
+        bits.append(f"support {_strike(pw)}" + (f" ({dp:+.1%})" if dp is not None else ""))
+    if not bits:
+        return ""
+    weak = " title='one wall is weak: no strike of the expected gamma sign'" \
+        if num(r.get("wall_fallback")) == 1 else ""
+    return f"<span class='chip chip-lvl'{weak}>{' · '.join(bits)}</span>"
+
+
+def chips(r, side, show_levels=True):
     out = []
     for g in str(r.get("failed_gates") or "").split(";"):
         g = g.strip()
@@ -130,8 +153,9 @@ def chips(r, side):
     if nf and nf != "nan" and "filing_estimated_in_window" not in str(r.get("failed_gates")):
         out.append(f"<span class='chip'>earnings ~{esc(nf[5:])}</span>")
     ent = str(r.get("entry") or "")
-    if ent and ent != "nan":
-        out.insert(0, f"<span class='chip {ENTRY_CLASS.get(ent, '')}'>entry: {esc(ent)}</span>")
+    if show_levels and ent and ent != "nan":
+        out.insert(0, f"<span class='chip {ENTRY_CLASS.get(ent, '')}'>entry: {esc(ent)}</span>"
+                      f"{levels_chip(r)}")
     if str(r.get("fund_basis") or "") == "annual":
         out.append("<span class='chip chip-warn' title='fewer than 5 quarters reported'>annual data</span>")
     vt = str(r.get("value_turn") or "")
@@ -158,12 +182,8 @@ def gamma_line(r, table):
     iv = num(r.get("atm_iv_30"))
     if iv:
         bits.append(f"IV {iv:.0%}")
-    pw, cw = num(r.get("put_wall")), num(r.get("call_wall"))
-    dp, dc = num(r.get("to_put_wall")), num(r.get("to_call_wall"))
-    if pw:
-        bits.append(f"put wall {pw:,.2f}" + (f" ({dp:+.1%})" if dp is not None else ""))
-    if cw:
-        bits.append(f"call wall {cw:,.2f}" + (f" ({dc:+.1%})" if dc is not None else ""))
+    # The wall strikes themselves are shown once, in the entry chips
+    # (levels_chip), not repeated here.
     reg = str(r.get("gamma_regime") or "")
     if reg in ("positive", "negative"):
         bits.append("+&gamma; range" if reg == "positive" else "&minus;&gamma; trend")
@@ -189,7 +209,11 @@ def valuation_line(r):
     return " · ".join(bits) or "valuation n/a"
 
 
-def row_html(r, side, table):
+def row_html(r, side, table, show_levels=None):
+    # Entry read + support/resistance: options table and the watchlist.
+    # Shares-table names have thin chains, so their walls are not shown.
+    if show_levels is None:
+        show_levels = table == "options"
     rel20, rel60 = r.get("rel_strength_20d"), r.get("rel_strength_60d")
     if table == "options":
         exe = f"spread {pct(r.get('atm_spread_pct'))} · OI {num(r.get('atm_oi')) or 0:,.0f}"
@@ -210,7 +234,7 @@ def row_html(r, side, table):
     <span class="dot">·</span> {exe} <span class="dot">·</span> score {num(r.get('score')) or 0:+.2f}</div>
   <div class="meta">{valuation_line(r)}</div>
   {gamma_line(r, table)}
-  <div class="chips">{chips(r, side)}</div>
+  <div class="chips">{chips(r, side, show_levels)}</div>
 </li>"""
 
 
@@ -279,7 +303,7 @@ def watch_card(wch):
         rank = f"ranks {int(num(r.get('rank')) or 0)} of {int(num(r.get('n_in_table')) or 0)} in {esc(r['sector_etf'])}"
         items.append(f"""
 <div class="wl-head">{verdict} <span class="tbl-note">{rank} &middot; {LIQ_LABEL.get(natural, natural)}</span></div>
-<ol class="picks">{row_html(r, side if side in ('long', 'short') else 'long', tbl)}</ol>""")
+<ol class="picks">{row_html(r, side if side in ('long', 'short') else 'long', tbl, show_levels=True)}</ol>""")
     return (f"<section class='card wl'><div class='k'>Watchlist &mdash; always scored</div>"
             f"{''.join(items)}</section>")
 
@@ -345,7 +369,10 @@ wall, little room &mdash; wait for a pullback. <b>Short</b>: &ldquo;at
 resistance&rdquo; = within 2% below the call wall; &ldquo;near support&rdquo; =
 wait for a bounce. +&gamma; (price above the gamma flip) tends to range;
 &minus;&gamma; tends to trend. IV is at-the-money on the ~30-day monthly.
-Entry is shown, not scored.</p>
+Entry is shown, not scored. Beside each entry read: the nearest
+<b>resistance</b> (call wall) and <b>support</b> (put wall) strikes and their
+distance from price &mdash; the level being tested, and the one on the other
+side as a target or stop reference.</p>
 <h3>Fundamentals basis</h3>
 <p>Quarterly: trailing four quarters against the four before when eight are
 reported, otherwise the latest quarter against the same quarter a year
@@ -442,6 +469,8 @@ h1{font-size:20px;margin:0 0 4px;letter-spacing:-0.01em}
 .chip{font-size:10.5px;padding:1px 7px;border-radius:999px;background:var(--chip);color:var(--ink-2)}
 .chip-neg{background:var(--neg-bg);color:var(--neg)}
 .chip-pos{background:var(--pos-bg);color:var(--pos)}
+.chip-lvl{background:transparent;border:1px solid var(--border);color:var(--ink-2);
+  font-variant-numeric:tabular-nums}
 .chip-warn{background:var(--warn-bg);color:var(--warn)}
 .wl .rk{display:none}
 .wl .parts,.wl .meta,.wl .chips{margin-left:0}
