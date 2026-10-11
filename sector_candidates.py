@@ -119,6 +119,9 @@ RANKED_COLUMNS = [
     "value_turn",
     "atm_iv_30", "call_wall", "put_wall", "wall_fallback", "gamma_flip",
     "gamma_regime", "to_put_wall", "to_call_wall", "entry", "fund_basis",
+    "put_wall_held", "put_wall_days", "put_wall_streak", "put_wall_strength",
+    "put_wall_prev", "call_wall_held", "call_wall_days", "call_wall_streak",
+    "call_wall_strength", "call_wall_prev",
     "schema_version",
 ]
 # 2: trade quality score and its four components; dividend_yield and
@@ -126,7 +129,8 @@ RANKED_COLUMNS = [
 # 3: valuation columns; composite includes value_z; below-book names are
 #    never shorts.
 # 4: gamma context and entry read from call/put walls; fund_basis.
-RANKED_SCHEMA_VERSION = 4
+# 5: wall stability -- how often each wall has held over recent sessions.
+RANKED_SCHEMA_VERSION = 5
 # Within this distance of a wall, price is "at" it.
 WALL_NEAR = 0.02
 WATCHLIST = {"CPB"}
@@ -636,6 +640,117 @@ def entry_read(row, side):
     return dp, dc, e, regime
 
 
+# --------------------------------------------------------------------------
+# Wall stability (2026-10-11)
+#
+# Each run recomputes the walls from that session's open interest. Strength
+# here is how little a wall has MOVED: over the last WALL_LOOKBACK sessions
+# before today, how many had the same wall within WALL_TOL of today's level.
+#
+#   session  OI settles overnight, so a capture reflects the last session
+#            that closed before it: capture time (ET) minus 16 hours, rolled
+#            back to a trading day. A Mon 9:15pm run is Monday's book; a
+#            Saturday or Sunday run is Friday's; several runs on one session
+#            count once (the latest wins).
+#   held     prior sessions within WALL_TOL of today's wall / prior sessions
+#   streak   consecutive sessions, ending today, at today's level
+#   strength new      -- fewer than WALL_MIN_HISTORY prior sessions
+#            moved    -- yesterday's wall was elsewhere (put_wall_prev shows
+#                        where), so today's level is untested
+#            strong   -- held >= 80% of prior sessions, or 6+ sessions in a row
+#            steady   -- held >= 50%, or 3+ in a row (a wall that reset at
+#                        expiration and has held since counts)
+#            shifting -- otherwise
+# Monthly expiration clears a large share of the <= 30-day book, so walls
+# often move the session after it; that shows up as "moved", as it should.
+# --------------------------------------------------------------------------
+WALL_LOOKBACK = 10
+WALL_TOL = 0.01          # 1% of the wall level -- about one strike on most names
+WALL_MIN_HISTORY = 3
+
+
+def session_of(ts):
+    """UTC capture timestamp -> the trading session its OI reflects."""
+    here = os.path.dirname(os.path.abspath(__file__))
+    if here not in sys.path:          # run from another directory
+        sys.path.insert(0, here)
+    import market_calendar as cal
+    from datetime import timedelta
+    et = cal.et_wall_clock(ts.to_pydatetime()) - timedelta(hours=16)
+    d = et.date()
+    while not cal.is_trading_day(d):
+        d -= timedelta(days=1)
+    return d
+
+
+def wall_history(tech_csv):
+    """{ticker: DataFrame(session, put_wall, call_wall)} -- one row per
+    session (latest capture wins), oldest first. Empty dict if the file or
+    the wall columns are missing."""
+    if not os.path.exists(tech_csv):
+        return {}
+    df = pd.read_csv(tech_csv)
+    if "call_wall" not in df.columns:
+        return {}
+    df = df[df["call_wall"].notna() | df["put_wall"].notna()].copy()
+    if df.empty:
+        return {}
+    df["ts"] = pd.to_datetime(df["capture_ts"], format="mixed", utc=True)
+    sess = {t: session_of(t) for t in df["ts"].unique()}
+    df["session"] = df["ts"].map(sess)
+    df = df.sort_values("ts").drop_duplicates(["ticker", "session"], keep="last")
+    return {t: g[["session", "put_wall", "call_wall"]].reset_index(drop=True)
+            for t, g in df.groupby("ticker")}
+
+
+def wall_stability(hist, col):
+    """hist: one ticker's wall_history frame (today = last row).
+    Returns {held, days, streak, strength, prev} for wall column col."""
+    out = {"held": "", "days": 0, "streak": "", "strength": "", "prev": ""}
+    if hist is None or hist.empty:
+        return out
+    vals = pd.to_numeric(hist[col], errors="coerce").tolist()
+    today = vals[-1]
+    if today is None or pd.isna(today) or today <= 0:
+        return out
+    prior = [v for v in vals[:-1][-WALL_LOOKBACK:]]
+    same = [pd.notna(v) and abs(v - today) <= WALL_TOL * today for v in prior]
+    streak = 1
+    for ok in reversed(same):
+        if not ok:
+            break
+        streak += 1
+    n = len(prior)
+    held = sum(same)
+    out.update(days=n, held=held if n else "", streak=streak)
+    if n and not same[-1] and pd.notna(prior[-1]):
+        out["prev"] = round(float(prior[-1]), 2)
+    if n < WALL_MIN_HISTORY:
+        out["strength"] = "new"
+    elif not same[-1]:
+        out["strength"] = "moved"
+    elif held / n >= 0.8 or streak >= 6:
+        out["strength"] = "strong"
+    elif held / n >= 0.5 or streak >= 3:
+        out["strength"] = "steady"
+    else:
+        out["strength"] = "shifting"
+    return out
+
+
+WALL_HIST = {}     # filled in main(); empty means "no history" everywhere
+
+
+def stability_fields(ticker):
+    h = WALL_HIST.get(ticker)
+    out = {}
+    for side, col in (("put", "put_wall"), ("call", "call_wall")):
+        st = wall_stability(h, col)
+        for k, v in st.items():
+            out[f"{side}_wall_{k}"] = v
+    return out
+
+
 def gamma_fields(r, side):
     dp, dc, e, regime = entry_read(r, side)
     return {
@@ -649,6 +764,7 @@ def gamma_fields(r, side):
         "to_call_wall": "" if dc is None else round(dc, 4),
         "entry": e,
         "fund_basis": r.get("fund_basis") or "",
+        **stability_fields(r.get("ticker")),
     }
 
 
@@ -741,6 +857,12 @@ def main():
     logpath = os.path.join(args.outdir, "candidates.log")
     fund = latest_rows(os.path.join(args.outdir, "sector_fundamentals.csv"))
     tech = latest_rows(os.path.join(args.outdir, "sector_technicals.csv"))
+    global WALL_HIST
+    try:
+        WALL_HIST = wall_history(os.path.join(args.outdir, "sector_technicals.csv"))
+    except Exception as e:      # stability is context; never block scoring
+        log(logpath, f"wall history unavailable -- {e}")
+        WALL_HIST = {}
 
     if fund is None or tech is None:
         log(logpath, "missing fundamentals or technicals capture -- nothing to score")

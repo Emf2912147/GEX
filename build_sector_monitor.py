@@ -124,6 +124,27 @@ def _strike(v):
     return f"{v:,.0f}" if v >= 100 else f"{v:,.2f}"
 
 
+STAB_CLASS = {"strong": "st-strong", "steady": "st-steady",
+              "shifting": "st-weak", "moved": "st-weak", "new": "st-new"}
+
+
+def stability_tag(r, side):
+    """' · held 7/7' etc. -- how the wall has behaved over recent sessions
+    (sector_candidates.wall_stability)."""
+    st = str(r.get(f"{side}_wall_strength") or "")
+    if not st or st == "nan":
+        return ""
+    held, days = num(r.get(f"{side}_wall_held")), num(r.get(f"{side}_wall_days"))
+    if st == "new":
+        txt = "new"
+    elif st == "moved":
+        prev = num(r.get(f"{side}_wall_prev"))
+        txt = f"moved from {_strike(prev)}" if prev else "moved"
+    else:
+        txt = f"{st} · held {int(held or 0)}/{int(days or 0)}"
+    return f" <b class='{STAB_CLASS.get(st, '')}'>{txt}</b>"
+
+
 def levels_chip(r):
     """Nearest support (put wall) and resistance (call wall) with their
     distance from price, shown beside every entry read so the level the
@@ -133,9 +154,11 @@ def levels_chip(r):
     dp, dc = num(r.get("to_put_wall")), num(r.get("to_call_wall"))
     bits = []
     if cw:
-        bits.append(f"resistance {_strike(cw)}" + (f" ({dc:+.1%})" if dc is not None else ""))
+        bits.append(f"resistance {_strike(cw)}" + (f" ({dc:+.1%})" if dc is not None else "")
+                    + stability_tag(r, "call"))
     if pw:
-        bits.append(f"support {_strike(pw)}" + (f" ({dp:+.1%})" if dp is not None else ""))
+        bits.append(f"support {_strike(pw)}" + (f" ({dp:+.1%})" if dp is not None else "")
+                    + stability_tag(r, "put"))
     if not bits:
         return ""
     weak = " title='one wall is weak: no strike of the expected gamma sign'" \
@@ -373,6 +396,13 @@ Entry is shown, not scored. Beside each entry read: the nearest
 <b>resistance</b> (call wall) and <b>support</b> (put wall) strikes and their
 distance from price &mdash; the level being tested, and the one on the other
 side as a target or stop reference.</p>
+<p><b>Wall strength</b> is how little a wall has moved over the last ten
+sessions (one reading per session; a wall counts as held if it is within 1% of
+today&rsquo;s level): <b>strong</b> &mdash; held 80%+ of sessions or 6+ in a
+row; <b>steady</b> &mdash; 50%+ or 3+ in a row; <b>shifting</b> &mdash; less;
+<b>moved from X</b> &mdash; it was at X last session, so today&rsquo;s level is
+untested; <b>new</b> &mdash; under three sessions of history. Walls often move
+after monthly expiration.</p>
 <h3>Fundamentals basis</h3>
 <p>Quarterly: trailing four quarters against the four before when eight are
 reported, otherwise the latest quarter against the same quarter a year
@@ -469,6 +499,10 @@ h1{font-size:20px;margin:0 0 4px;letter-spacing:-0.01em}
 .chip{font-size:10.5px;padding:1px 7px;border-radius:999px;background:var(--chip);color:var(--ink-2)}
 .chip-neg{background:var(--neg-bg);color:var(--neg)}
 .chip-pos{background:var(--pos-bg);color:var(--pos)}
+.st-strong{color:var(--pos);font-weight:600}
+.st-steady{color:var(--ink);font-weight:600}
+.st-weak{color:var(--warn);font-weight:600}
+.st-new{color:var(--ink-3);font-weight:500}
 .chip-lvl{background:transparent;border:1px solid var(--border);color:var(--ink-2);
   font-variant-numeric:tabular-nums}
 .chip-warn{background:var(--warn-bg);color:var(--warn)}
