@@ -508,7 +508,7 @@ def build(histdir, out_path):
 <header>
   <h1>Sector Trade Monitor</h1>
   <p class="sub">Prices &amp; options {et(t_ts)} &middot; fundamentals {et(f_ts)}</p>
-  <p class="sub">Updates Tue &amp; Wed evenings after the close.</p>
+  <p class="sub">Prices, options &amp; walls update every weekday evening; fundamentals on Fridays.</p>
   <div class="nav"><a href="index.html">&larr; GEX Monitor</a></div>
 </header>
 {watch_card(wch)}

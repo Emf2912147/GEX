@@ -9,8 +9,8 @@ SCOPE
     Agent007 pipeline's files are never opened by this script.
 
 CADENCE
-    Twice weekly, Tue and Wed evenings ET (see
-    .github/workflows/sector_technicals.yml).
+    Every weekday evening ET after the close (since 2026-10-11; was twice
+    weekly) -- see .github/workflows/sector_technicals.yml.
 
 SCOPE (2026-10-10)
     Whatever the latest fundamentals capture holds: the top 30 holdings of

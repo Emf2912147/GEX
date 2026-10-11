@@ -22,9 +22,9 @@ SCOPE NARROWED 2026-10-10
     single pair.
 
 CADENCE
-    Twice weekly (Tue/Fri by default -- see
-    .github/workflows/sector_fundamentals.yml). Fundamentals move slowly;
-    there is no value refreshing them daily.
+    Once a week, Friday evening (since 2026-10-11; was Tue/Fri) -- see
+    .github/workflows/sector_fundamentals.yml. Fundamentals move slowly;
+    a weekly pull catches each new quarterly report within days.
 
 SOURCE CHANGE, 2026-09-12: SEC EDGAR -> Yahoo Finance
     The first live run against SEC EDGAR (data.sec.gov / www.sec.gov) was

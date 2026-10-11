@@ -1,7 +1,8 @@
 name: Sector agent - fundamentals capture
 
-# Twice weekly (Tue/Fri, ~9pm ET post-close) -- fundamentals move slowly,
-# no value refreshing daily. Scope since 2026-10-10: the top 30 holdings by
+# Once a week, Friday evening after the close (Eugenio, 2026-10-11; was
+# Tue/Fri). Fundamentals move slowly and are quarterly now, so a weekly
+# refresh catches every new report within a few days. Scope since 2026-10-10: the top 30 holdings by
 # weight of XLF, XLV, XLK and XLP (120 names), re-read from State Street each run. Cron is UTC and does NOT auto-adjust for US
 # DST. The times below assume EDT (UTC-4), in effect now. After the clock
 # change to EST (UTC-5, first Sunday in November) and back to EDT (second
@@ -21,7 +22,11 @@ name: Sector agent - fundamentals capture
 
 on:
   schedule:
-    - cron: "0 1 * * 3,6"   # Tue 21:00 ET -> Wed 01:00 UTC; Fri 21:00 ET -> Sat 01:00 UTC
+    # Fridays only (Eugenio, 2026-10-11). Sat 00:30 UTC = Fri 8:30pm EDT /
+    # 7:30pm EST -- after the close either way, and ahead of the technicals
+    # run (Sat 01:15 UTC) so Friday's ranking uses the fresh fundamentals.
+    - cron: "30 0 * * 6"
+    - cron: "30 3 * * 6"    # backup -- skips itself if the primary ran
   workflow_dispatch: {}      # lets Eugenio trigger a run manually from the Actions tab
 
 permissions:
@@ -42,17 +47,46 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # The second (backup) cron exists because GitHub's scheduler is
+      # best-effort and drops runs. This step makes it a no-op when the
+      # primary already ran: a scheduled run is skipped if the last capture
+      # in history/sector/sector_fundamentals.csv is under 4 hours old. Manual runs never skip.
+      - name: Skip if already captured in the last 4 hours (scheduled runs only)
+        id: guard
+        if: github.event_name == 'schedule'
+        run: |
+          python - <<'PY'
+          import csv, os
+          from datetime import datetime, timezone
+          path, skip = "history/sector/sector_fundamentals.csv", False
+          try:
+              with open(path, newline="") as fh:
+                  rows = list(csv.reader(fh))
+              ts = datetime.fromisoformat(rows[-1][0].replace("Z", "+00:00"))
+              age_h = (datetime.now(timezone.utc) - ts).total_seconds() / 3600
+              skip = age_h < 4
+              print(f"last capture {rows[-1][0]} ({age_h:.1f}h ago) -> skip={skip}")
+          except Exception as e:
+              print(f"no usable last capture ({e}) -> run")
+          with open(os.environ["GITHUB_OUTPUT"], "a") as fh:
+              fh.write(f"skip={'true' if skip else 'false'}\n")
+          PY
+
       - uses: actions/setup-python@v5
+        if: steps.guard.outputs.skip != 'true'
         with:
           python-version: "3.12"
 
       - name: Install dependencies
+        if: steps.guard.outputs.skip != 'true'
         run: pip install pandas numpy requests openpyxl yfinance
 
       - name: Run fundamentals capture
+        if: steps.guard.outputs.skip != 'true'
         run: python sector_fundamentals.py --outdir history/sector
 
       - name: Commit and push (history/sector only)
+        if: steps.guard.outputs.skip != 'true'
         run: |
           git config user.name "sector-agent-bot"
           git config user.email "actions@users.noreply.github.com"
