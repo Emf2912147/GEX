@@ -25,6 +25,7 @@ import numpy as np
 import pandas as pd
 
 import gamma_exposure as gx
+import support_resistance as sr
 
 SYMBOL_ORDER = ["SPX", "SPY", "QQQ", "IWM", "GLD", "TLT"]
 TRAIL = 90          # sparkline lookback, observations
@@ -146,7 +147,7 @@ def sparkline(values, width=260, height=44, pad=4):
 # --------------------------------------------------------------------------
 
 def strike_bars(sym, calls, puts, spot, call_wall, put_wall, flip,
-                width=320, height=170, pad=10, foot=16):
+                width=320, height=170, pad=10, foot=16, band=None):
     """Two SVGs -- split (call up / put down) and net -- plus a toggle."""
     net = calls.add(puts, fill_value=0.0)
     strikes = sorted(set(calls.index) | set(puts.index))
@@ -174,8 +175,18 @@ def strike_bars(sym, calls, puts, spot, call_wall, put_wall, flip,
             return bot - (v - lo) / rng * (bot - top)
 
         zero = sy(0.0)
-        out = [f'<line x1="{x0}" y1="{zero:.1f}" x2="{x1}" y2="{zero:.1f}" '
-               f'class="gb-zero"/>']
+        out = []
+        # +/-1 sigma band behind the bars (support_resistance.py)
+        if band is not None:
+            blo, bhi = max(band[0], lo_k), min(band[1], hi_k)
+            if bhi > blo:
+                out.append(f'<rect x="{sx(blo):.1f}" y="{top}" '
+                           f'width="{sx(bhi) - sx(blo):.1f}" height="{bot - top}" '
+                           f'class="gb-band"/>')
+                out.append(f'<text x="{sx(blo) + 2:.1f}" y="{top + 18}" '
+                           f'class="gb-ax">&#177;1&#963;</text>')
+        out.append(f'<line x1="{x0}" y1="{zero:.1f}" x2="{x1}" y2="{zero:.1f}" '
+                   f'class="gb-zero"/>')
 
         for series, cls, flag in series_list:
             for k, v in series.items():
@@ -318,6 +329,39 @@ h1{font-size:20px;margin:0 0 4px;letter-spacing:-0.01em}
 .gb-lab-p{fill:var(--neg)}
 .gb-ax{font-size:8px;fill:var(--ink-3)}
 .gb-ax-spot{fill:var(--ink-2);font-weight:600}
+.gb-band{fill:var(--flip);opacity:.07}
+
+.sr{margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+.sr-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px;
+  flex-wrap:wrap}
+.sr-t{font-size:12px;color:var(--ink-3);letter-spacing:.02em}
+.sr-b{font-size:11.5px;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.sr table{margin-top:4px;font-size:12.5px}
+.sr td,.sr th{padding:5px 4px}
+.sr th{font-size:10px}
+.sr td.lv{white-space:nowrap}
+.sr .sd{display:inline-block;width:15px;font-size:10px;font-weight:700;
+  text-align:center;border-radius:4px;margin-right:5px;padding:1px 0}
+.sr .sd-R{background:var(--pos-bg);color:var(--pos)}
+.sr .sd-S{background:var(--neg-bg);color:var(--neg)}
+.sr .wtag{font-size:10px;color:var(--ink-3);margin-left:3px}
+.sr .sub2{display:block;font-size:10.5px;color:var(--ink-3);line-height:1.2}
+.sr tr.spotrow td{color:var(--ink-3);font-size:11px;border-bottom:1px dashed var(--border);
+  padding:3px 4px;text-align:left}
+.meter{display:inline-block;width:26px;height:4px;border-radius:3px;
+  background:var(--border);vertical-align:middle;margin-left:4px;overflow:hidden}
+.meter i{display:block;height:100%;background:var(--line)}
+.gr{display:inline-block;min-width:74px;text-align:center;font-size:11px;
+  font-weight:650;padding:2px 7px;border-radius:999px;white-space:nowrap}
+.gr-A{background:var(--pos-bg);color:var(--pos)}
+.gr-B{background:color-mix(in srgb,var(--pos-bg) 45%,var(--surface));color:var(--ink)}
+.gr-C{background:color-mix(in srgb,var(--border) 55%,var(--surface));color:var(--ink-2)}
+.gr-D{background:var(--neg-bg);color:var(--neg)}
+.ps-strong{color:var(--pos);font-weight:600}
+.ps-steady{color:var(--ink)}
+.ps-shifting,.ps-fresh{color:var(--neg)}
+.ps-new{color:var(--ink-3)}
+.sr-empty{font-size:12px;color:var(--ink-3);padding:6px 0}
 
 .coil{margin-top:9px;font-size:12.5px;line-height:1.45;color:var(--flip);
   display:flex;gap:6px;align-items:flex-start}
@@ -406,7 +450,60 @@ def intraday_block(sym, live, settled_spot):
         f"</div>")
 
 
-def card(row, hist, has_chart, bars="", live=None):
+def _k(v):
+    """Strike label: no decimals unless the strike has them (GLD 387.5)."""
+    return f"{v:,.0f}" if float(v).is_integer() else f"{v:,.1f}"
+
+
+def sr_block(L):
+    """Graded support / resistance inside +/-1 sigma (support_resistance.py)."""
+    if L is None:
+        return ""
+    head = (f"<div class='sr-h'><span class='sr-t'>Support &amp; resistance "
+            f"&middot; within &plusmn;1&sigma; (30d)</span>"
+            f"<span class='sr-b'>{fmt(L['lo'], 0 if L['spot'] > 500 else 1)} &ndash; "
+            f"{fmt(L['hi'], 0 if L['spot'] > 500 else 1)} "
+            f"<small>&middot; IV30 {L['iv']:.1%}</small></span></div>")
+    rows_r, rows_s = L["resistance"], L["support"]
+    if not rows_r and not rows_s:
+        return (f"<div class='sr'>{head}<div class='sr-empty'>No option "
+                f"concentration inside the band.</div></div>")
+
+    def tr(x):
+        tag = {"call_wall": "call wall", "put_wall": "put wall"}.get(x["wall"], "")
+        tag = f"<span class='wtag'>{tag}</span>" if tag else ""
+        st = x["strength"]
+        if st == "new":
+            sub = f"{x['days']} prior"
+        else:
+            sub = f"held {x['held']}/{x['days']}"
+        tip = (f"{'call' if x['net'] > 0 else 'put'}-heavy; net gamma "
+               f"{x['net'] / 1e9:+,.2f} $Bn/1%; OI {x['oi']:,.0f}; "
+               f"{x['dmoves']:+.1f} daily moves; streak {x['streak']}")
+        if x.get("last_exp") and x.get("days_post") is not None:
+            tip += (f"; {x['held_post']}/{x['days_post']} held since "
+                    f"{x['last_exp']:%m/%d} expiration")
+        return (f"<tr title='{html.escape(tip)}'>"
+                f"<td class='lv'><span class='sd sd-{x['side']}'>{x['side']}</span>"
+                f"<b>{_k(x['strike'])}</b>{tag}"
+                f"<span class='sub2'>OI {x['oi'] / 1e3:,.0f}k</span></td>"
+                f"<td>{x['dist']:+.1%}<span class='sub2'>{x['sig']:+.2f}&sigma;</span></td>"
+                f"<td><span class='ps-{st}'>{st}</span><span class='sub2'>{sub}</span></td>"
+                f"<td><span class='gr gr-{x['grade']}'>{x['grade']} {x['label']}</span>"
+                f"<span class='sub2'>density {x['density']:.2f}"
+                f"<span class='meter'><i style='width:{x['density'] * 100:.0f}%'>"
+                f"</i></span></span></td></tr>")
+
+    body = "".join(tr(x) for x in sorted(rows_r, key=lambda x: -x["strike"]))
+    body += (f"<tr class='spotrow'><td colspan='4'>spot {_k(L['spot'])} "
+             f"&middot; session {L['session']}</td></tr>")
+    body += "".join(tr(x) for x in sorted(rows_s, key=lambda x: -x["strike"]))
+    return (f"<div class='sr'>{head}<table><thead><tr><th>Level</th>"
+            f"<th>From spot</th><th>Persistence</th>"
+            f"<th>Grade</th></tr></thead><tbody>{body}</tbody></table></div>")
+
+
+def card(row, hist, has_chart, bars="", live=None, levels=""):
     sym = row["symbol"]
     spot = float(row["spot"])
     pos = str(row["regime"]) == "positive"
@@ -473,6 +570,7 @@ def card(row, hist, has_chart, bars="", live=None):
   </div>
   {coil}
   {intraday_html}
+  {levels}
   {bars_html}
   <div class="sparkwrap">
     <div class="k">Flip distance from spot &middot; last {len(h)} obs</div>
@@ -510,14 +608,21 @@ def build(histdir, docsdir, charts=True):
         for sym in order:
             sub = metrics[metrics["symbol"] == sym]
             row = sub.iloc[-1]
-            ok, bars = False, ""
+            ok, bars, lv, L = False, "", "", None
+            try:
+                L = sr.levels(histdir, metrics, sym,
+                              BIN_SIZE.get(sym, DEFAULT_BIN), row)
+                lv = sr_block(L)
+            except Exception as e:
+                print(f"{sym}: levels failed -- {e}")
             raw = latest_raw(histdir, sym)
             if raw is not None:
                 try:
                     v = strike_view(raw, row)
                     if v is not None:
                         bars = strike_bars(sym, v["calls"], v["puts"], v["spot"],
-                                           v["call_wall"], v["put_wall"], v["flip"])
+                                           v["call_wall"], v["put_wall"], v["flip"],
+                                           band=(L["lo"], L["hi"]) if L else None)
                 except Exception as e:
                     print(f"{sym}: bars failed -- {e}")
                 if charts:
@@ -526,7 +631,7 @@ def build(histdir, docsdir, charts=True):
                                           os.path.join(docsdir, "charts", f"{sym}.png"))
                     except Exception as e:
                         print(f"{sym}: chart failed -- {e}")
-            body += card(row, metrics, ok, bars, live)
+            body += card(row, metrics, ok, bars, live, lv)
 
     page = f"""<!doctype html>
 <html lang="en"><head>
@@ -562,6 +667,23 @@ function gbToggle(btn){{
     convention, not a measurement of real positioning.<br>
     <b>Walls ignore strikes within 0.4% of spot.</b> Gamma peaks at the money,
     so without that exclusion the "wall" is just the ATM strike.<br>
+    <b>Support &amp; resistance</b> lists option concentrations inside
+    &plusmn;1&sigma;, where &sigma; = spot &times; ATM IV30 &times;
+    &radic;(30/365), from the settled chain. <b>Density</b> (0&ndash;1) =
+    0.6&times;&radic;(net gamma &divide; largest bin within &plusmn;10%) +
+    0.4&times;&radic;(open interest &divide; largest), so the bigger wall
+    scores near 1 and a round-number OI pile still registers.
+    <b>Persistence</b> uses the Sector Monitor&rsquo;s wall-strength rules
+    over the last ten sessions: a session counts as held when a bin within one
+    strike of the level was a top-quartile concentration with the same gamma
+    sign; <b>strong</b> = held 80%+ of weighted sessions or 6+ in a row,
+    <b>steady</b> = 50%+ or 3+, <b>shifting</b> = less, <b>fresh</b> = not a
+    level last session, <b>new</b> = under three sessions of history.
+    Sessions before a monthly expiration count half, before a quarterly a
+    quarter. <b>Grade</b> = 50&times;persistence + 50&times;density, cut at the
+    Sector Monitor&rsquo;s 75 / 60 / 45: A strong, B solid, C moderate,
+    D weak (no history caps at B). &ldquo;d&rdquo; is distance in daily moves
+    (IV30&divide;16). Levels are prior-close positioning, like the walls.<br>
     <b>Chart panels use different gamma sources</b> &mdash; bars from Cboe's
     reported gamma, the profile from Black-Scholes with IV held fixed. The
     flip location is robust; the profile's magnitudes are not comparable to
