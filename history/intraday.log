@@ -8669,3 +8669,28 @@ egress, this endpoint has to be reachable for the script to work.
 2026-10-12T13:22:05+00:00  RV GLD: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
 2026-10-12T13:22:05+00:00  RV TLT: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
 2026-10-12T13:22:05+00:00  --- intraday done  ok=6  skipped=0  failed=0  vix=written
+2026-10-12T13:37:00+00:00  --- intraday capture  symbols=SPX SPY QQQ IWM GLD TLT
+2026-10-12T13:37:02+00:00  SPX: greek fill gamma 67.5% / iv 96.5%
+2026-10-12T13:37:02+00:00  SPX: 10,950 contracts -> SPX__133458.parquet
+2026-10-12T13:37:02+00:00  SPX: spot 7,811.54  netGEX(win) 64.05Bn  flip 7777.5487  walls 7900.0/7700.0  positive  RR25 -0.0361 (STEEP)  P/C 1.5239
+2026-10-12T13:37:03+00:00  SPY: greek fill gamma 80.7% / iv 86.0%
+2026-10-12T13:37:03+00:00  SPY: 3,592 contracts -> SPY__133616.parquet
+2026-10-12T13:37:03+00:00  SPY: spot 778.92  netGEX(win) 3.86Bn  flip 776.8025  walls 785.0/772.0  positive  RR25 -0.0378 (STEEP)  P/C 1.5163
+2026-10-12T13:37:03+00:00  QQQ: greek fill gamma 79.7% / iv 89.3%
+2026-10-12T13:37:03+00:00  QQQ: 3,456 contracts -> QQQ__133334.parquet
+2026-10-12T13:37:03+00:00  QQQ: spot 750.12  netGEX(win) -0.14Bn  flip 750.7865  walls 760.0/725.0  negative  RR25 -0.0488 (STEEP)  P/C 0.9808
+2026-10-12T13:37:04+00:00  IWM: greek fill gamma 87.0% / iv 88.4%
+2026-10-12T13:37:04+00:00  IWM: 2,072 contracts -> IWM__133324.parquet
+2026-10-12T13:37:04+00:00  IWM: spot 278.58  netGEX(win) -2.40Bn  flip 283.9064  walls 284.0/275.0  negative  RR25 -0.0312 (STEEP)  P/C 1.4641
+2026-10-12T13:37:04+00:00  GLD: greek fill gamma 77.7% / iv 82.8%
+2026-10-12T13:37:04+00:00  GLD: 2,216 contracts -> GLD__133326.parquet
+2026-10-12T13:37:04+00:00  GLD: spot 382.34  netGEX(win) 0.20Bn  flip 381.1214  walls 388.0/375.0  positive  RR25 0.0042 (FLAT)  P/C 0.4843
+2026-10-12T13:37:05+00:00  TLT: greek fill gamma 90.2% / iv 72.8%
+2026-10-12T13:37:05+00:00  TLT: 762 contracts -> TLT__133325.parquet
+2026-10-12T13:37:05+00:00  TLT: spot 77.84  netGEX(win) 0.26Bn  flip 77.2783  walls 80.0/77.0  positive  RR25 -0.0065 (FLAT)  P/C 0.6702
+2026-10-12T13:37:05+00:00  appended 6 state row(s)
+2026-10-12T13:37:05+00:00  VIX: 15.41 (+3.8% 1d, -9.9% 20d)  VIX9D: 11.26  term unreliable(vix9d-stale) -> vix_state.csv
+2026-10-12T13:37:05+00:00  RV QQQ: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
+2026-10-12T13:37:05+00:00  RV GLD: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
+2026-10-12T13:37:05+00:00  RV TLT: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
+2026-10-12T13:37:05+00:00  --- intraday done  ok=6  skipped=0  failed=0  vix=written
