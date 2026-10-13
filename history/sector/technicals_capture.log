@@ -54,3 +54,9 @@
 2026-10-11T21:20:58.384106+00:00Z  yfinance batch 2: 24/25 with history
 2026-10-11T21:20:58.384244+00:00Z  no usable history for 1 names -- ['VYLR']
 2026-10-11T21:24:01.687998+00:00Z  === technicals capture done: 121/121 names captured ===
+2026-10-13T07:40:49.984367+00:00Z  universe: 121 names from fundamentals 2026-10-10
+2026-10-13T07:40:49.984512+00:00Z  === technicals capture start (121 names) ===
+2026-10-13T07:40:59.719264+00:00Z  yfinance batch 1: 100/100 with history
+2026-10-13T07:41:01.993440+00:00Z  yfinance batch 2: 24/25 with history
+2026-10-13T07:41:01.993575+00:00Z  no usable history for 1 names -- ['VYLR']
+2026-10-13T07:44:23.766486+00:00Z  === technicals capture done: 121/121 names captured ===
