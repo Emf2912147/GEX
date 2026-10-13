@@ -42,6 +42,8 @@ jobs:
         run: |
           git config user.name  "gex-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # Generated pages: keep origin's copy on a rebase clash (see .gitattributes)
+          git config merge.ours.driver true
           git add -A
           if git diff --staged --quiet; then
             echo "nothing new to commit (likely a stale feed, already captured)"

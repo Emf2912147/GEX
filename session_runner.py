@@ -104,6 +104,7 @@ CYCLE_BUDGET = dt.timedelta(minutes=6)
 # A link boots in under a minute; ten gives it room on a slow day.
 HANDOFF_LEAD = dt.timedelta(minutes=10)
 CAPTURE_TIMEOUT_S = 480
+PAGE_TIMEOUT_S = 120
 
 INTRADAY_WORKFLOW = "intraday.yml"
 CAPTURE_WORKFLOW = "capture.yml"
@@ -218,10 +219,31 @@ class RealIO:
         try:
             r = subprocess.run([sys.executable, os.path.join(HERE, "gex_intraday.py")],
                                cwd=HERE, timeout=CAPTURE_TIMEOUT_S)
-            return r.returncode
         except subprocess.TimeoutExpired:
             self.note(f"--- runner: capture exceeded {CAPTURE_TIMEOUT_S}s and was killed")
             return 124
+        self.rebuild_page()
+        return r.returncode
+
+    def rebuild_page(self):
+        """Rebuild docs/index.html so the GEX Monitor's "last intraday
+        capture" panel moves every 15 minutes instead of once a day.
+
+        Until 2026-10-12 only capture.yml built the page, once a day and
+        hours late when GitHub's scheduler lagged, so the live panel sat on
+        the previous session's close all day. --no-charts: the PNGs come from
+        settled OI and only change with the daily capture, which still
+        renders them. Never fatal -- a failed build must not cost a capture.
+        """
+        try:
+            b = subprocess.run([sys.executable, os.path.join(HERE, "build_dashboard.py"),
+                                "--no-charts"], cwd=HERE, timeout=PAGE_TIMEOUT_S,
+                               capture_output=True, text=True)
+            if b.returncode != 0:
+                self.note(f"--- runner: page rebuild exited {b.returncode}: "
+                          f"{(b.stderr or b.stdout).strip()[-200:]}")
+        except subprocess.TimeoutExpired:
+            self.note(f"--- runner: page rebuild exceeded {PAGE_TIMEOUT_S}s, skipped")
 
     def _git(self, *args):
         return subprocess.run(["git", *args], cwd=HERE, capture_output=True, text=True)
@@ -233,6 +255,12 @@ class RealIO:
         would run the gex_intraday.py it was checked out with, not the one on
         main, and would not see daily rows another workflow pushed.
         """
+        # docs/index.html and docs/latest.json are rebuilt by both this
+        # runner and capture.yml. .gitattributes marks them merge=ours; this
+        # defines that driver (keep the version already on origin), so two
+        # builds landing together never stop a rebase. The next build
+        # regenerates the page from the merged data anyway.
+        self._git("config", "merge.ours.driver", "true")
         pull = self._git("pull", "--rebase", "--autostash")
         if pull.returncode != 0:
             # Never leave the checkout mid-rebase: every later cycle would

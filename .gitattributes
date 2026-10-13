@@ -1,0 +1,6 @@
+# Generated pages, rebuilt by both session_runner.py (every intraday capture)
+# and capture.yml (daily). On a rebase clash keep the copy already on origin;
+# the next build regenerates it from the merged data. The "ours" driver is
+# defined by `git config merge.ours.driver true`, which both workflows run.
+docs/index.html merge=ours
+docs/latest.json merge=ours
