@@ -1,57 +1,57 @@
 {
-  "generated_utc": "2026-10-14T20:52:08.453226+00:00",
-  "IWM": {
-    "spot": 276.79,
-    "flip": 282.473,
-    "call_wall": 284.0,
-    "put_wall": 275.0,
-    "regime": "negative",
-    "net_gex_full": -2998487664.22,
-    "flip_pct_vs_spot": 0.020532
-  },
+  "generated_utc": "2026-10-15T11:47:29.188414+00:00",
   "TLT": {
-    "spot": 78.3509,
-    "flip": 77.4287,
+    "spot": 78.85,
+    "flip": 77.249,
     "call_wall": 80.0,
     "put_wall": 77.0,
     "regime": "positive",
-    "net_gex_full": 357403844.08,
-    "flip_pct_vs_spot": -0.01177
+    "net_gex_full": 422063959.42,
+    "flip_pct_vs_spot": -0.020305
   },
-  "SPY": {
-    "spot": 777.81,
-    "flip": 777.4716,
-    "call_wall": 785.0,
-    "put_wall": 772.0,
-    "regime": "positive",
-    "net_gex_full": 1205447486.07,
-    "flip_pct_vs_spot": -0.000435
-  },
-  "GLD": {
-    "spot": 381.1893,
-    "flip": 380.8205,
-    "call_wall": 387.0,
-    "put_wall": 375.0,
-    "regime": "positive",
-    "net_gex_full": 62001037.49,
-    "flip_pct_vs_spot": -0.000968
+  "IWM": {
+    "spot": 271.1258,
+    "flip": 280.6225,
+    "call_wall": 284.0,
+    "put_wall": 270.0,
+    "regime": "negative",
+    "net_gex_full": -4174083875.31,
+    "flip_pct_vs_spot": 0.035027
   },
   "QQQ": {
-    "spot": 743.06,
-    "flip": 746.016,
+    "spot": 728.12,
+    "flip": 738.8467,
     "call_wall": 760.0,
     "put_wall": 725.0,
     "regime": "negative",
-    "net_gex_full": -1736686876.86,
-    "flip_pct_vs_spot": 0.003978
+    "net_gex_full": -6440043636.28,
+    "flip_pct_vs_spot": 0.014732
+  },
+  "SPY": {
+    "spot": 769.11,
+    "flip": 772.2544,
+    "call_wall": 775.0,
+    "put_wall": 765.0,
+    "regime": "negative",
+    "net_gex_full": -7052434244.8,
+    "flip_pct_vs_spot": 0.004088
+  },
+  "GLD": {
+    "spot": 375.76,
+    "flip": 377.2865,
+    "call_wall": 400.0,
+    "put_wall": 370.0,
+    "regime": "negative",
+    "net_gex_full": -88917872.63,
+    "flip_pct_vs_spot": 0.004062
   },
   "SPX": {
-    "spot": 7805.4502,
-    "flip": 7779.8517,
+    "spot": 7718.9399,
+    "flip": 7754.8358,
     "call_wall": 7900.0,
-    "put_wall": 7700.0,
-    "regime": "positive",
-    "net_gex_full": 60773026540.37,
-    "flip_pct_vs_spot": -0.00328
+    "put_wall": 7650.0,
+    "regime": "negative",
+    "net_gex_full": -59545902634.89,
+    "flip_pct_vs_spot": 0.00465
   }
 }
