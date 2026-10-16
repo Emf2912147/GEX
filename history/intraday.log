@@ -12737,3 +12737,4 @@ StaleFeedError: feed_ts 2026-10-16 17:01:55 is 20.1 min behind the capture (limi
 2026-10-16T17:52:07+00:00  RV GLD: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
 2026-10-16T17:52:07+00:00  RV TLT: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
 2026-10-16T17:52:07+00:00  --- intraday done  ok=9  skipped=0  failed=0  vix=written
+2026-10-16T17:57:01+00:00  --- runner handoff before the 2026-10-16 18:07 UTC slot: successor dispatched
