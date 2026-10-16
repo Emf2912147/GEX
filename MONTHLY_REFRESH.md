@@ -53,12 +53,12 @@ the Robinhood connector and the GitHub runner has no access to it.
 
 In a chat with the Robinhood connector enabled, ask:
 
-> Pull official daily closes for SPY, QQQ, IWM and SPX from <first missing
+> Pull official daily closes for SPY, QQQ, IWM, SMH, XLF, GLD, TLT and SPX from <first missing
 > date> to <last session> and give me an updated `official_closes.json` for
 > the GEX repo.
 
 Claude uses `get_equity_historicals` (interval `day`, bounds `regular`,
-adjustment `none`) for the three ETFs and `get_index_historicals` for SPX, and
+adjustment `none`) for the ETFs and `get_index_historicals` for SPX, and
 returns the merged file. Save it over `history/official_closes.json` — note
 the browser saves to Downloads, and it must end up in `history/`, not the
 repo root.

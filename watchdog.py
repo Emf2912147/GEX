@@ -56,8 +56,9 @@ CADENCE_MIN = 15
 # of nominal flags a real outage without crying wolf over ordinary drift.
 MIN_FRACTION = 0.60
 # Rows a complete daily capture writes: one per symbol in
-# gex_capture.DEFAULT_SYMBOLS (GLD and TLT added 2026-10-08).
-DAILY_SYMBOLS = 6
+# gex_capture.DEFAULT_SYMBOLS (GLD and TLT added 2026-10-08, SMH and XLF
+# 2026-10-15).
+DAILY_SYMBOLS = 8
 # Longest acceptable silence mid-session. Four consecutive missed cycles.
 MAX_SILENCE_MIN = 60
 

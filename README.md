@@ -1,6 +1,7 @@
 # GEX
 
-Daily gamma-exposure history for SPX, SPY, QQQ and IWM, built from Cboe's
+Daily gamma-exposure history for SPX, SPY, QQQ, IWM, SMH, XLF, GLD and TLT,
+built from Cboe's
 free delayed-quote endpoint.
 
 **Dashboard:** enable GitHub Pages (Settings -> Pages -> Deploy from a branch

@@ -114,8 +114,9 @@ DAILY_DUE_UTC = dt.time(11, 45)
 DAILY_RETRY = dt.timedelta(minutes=60)
 DAILY_MAX_DISPATCHES = 2
 # One row per symbol in gex_capture.DEFAULT_SYMBOLS (GLD and TLT added
-# 2026-10-08). Keep in step with it, and with watchdog.py.
-DAILY_SYMBOLS = 6
+# 2026-10-08, SMH and XLF 2026-10-15). Keep in step with it, and with
+# watchdog.py.
+DAILY_SYMBOLS = 8
 DAILY_CHECK_EVERY = dt.timedelta(minutes=10)
 
 # Local mode only (no relay): a start earlier than this before the first slot
