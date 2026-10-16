@@ -9,6 +9,7 @@ are gathered by the Claude session that runs it, through the Robinhood
 connector, and passed in as JSON files.
 
     python sector_support_agent.py etfs   --sector XLK
+    python sector_support_agent.py indices --bars-dir bars/
     python sector_support_agent.py rank   --sector XLK --bars-dir bars/ [--short si.json]
     python sector_support_agent.py check  --sector XLK --ticker T --bars b.json --price P
     python sector_support_agent.py score  --sector XLK --ticker T --chain chain.json
@@ -57,6 +58,23 @@ CHECK (gate 3 -- price at support, room still there)
     still >= wall x 0.9975 -- and the call wall still >= 2% above the live
     price. A close below the band is a broken level, never traded.
 
+INDICES (the index scan -- runs beside the sector scan)
+    Universe: INDEX_UNIVERSE, the GEX Monitor's ETFs. For each, the setup is
+    built from the monitor's own graded levels (support_resistance.py):
+      support    the nearest A/B-graded support inside +/-1 sigma
+      target     the nearest A/B-graded resistance above that support; it
+                 must be >= MIN_ROOM (2%) above the support, or "no room"
+      regime     its own trend (above the 20-day average, 20d change > 0)
+                 and its own dealer gamma (positive, >= 0.5% above the flip;
+                 fewer than MIN_GEX_ROWS captures falls back to QQQ for
+                 tech ETFs, SPY otherwise), plus the VIX checks
+    Score 0-100: support quality 35 (the level's own S/R grade score),
+    trend 25, room to target 15, closeness to support 15 (best inside 1.5%),
+    volatility 10 (ATM IV30 below its realized-vol-free ceiling of 35%).
+    A setup is eligible when regime is favorable and room >= 2%. The same
+    check and score modes then run with --put-wall = support and
+    --call-wall = target.
+
 SCORE (the trade)
     Bull call verticals, long strike from the wall up to ~ATM, short strike
     at or below the call wall, expirations 14-60 DTE, scored on
@@ -103,6 +121,9 @@ INDUSTRY = {
     },
     "XLP": {},
 }
+INDEX_UNIVERSE = ["SPY", "QQQ", "IWM", "XLK", "SMH", "XLF", "GLD", "TLT"]
+INDEX_PROXY = {"QQQ": "QQQ", "XLK": "QQQ", "SMH": "QQQ"}     # else SPY
+INDEX_NEAR = 0.015
 NEVER_TRADE = {"CPB"}       # employer -- watched in the monitor, never traded
 BAND = 0.0025
 MIN_ROOM = 0.02
@@ -214,6 +235,106 @@ def regimes(sector, bars_dir):
         blocks = [f"{c['check']}: {c['detail']}" for c in checks if not c["ok"]]
         res[etf] = {"favorable": not blocks, "checks": checks, "blocks": blocks}
     return res
+
+
+# --------------------------------------------------------------------------
+# indices
+# --------------------------------------------------------------------------
+
+def index_setups(bars_dir):
+    import build_dashboard as bd
+    import support_resistance as sr
+    metrics = bd.load_metrics(HIST)
+    s = pd.read_csv(os.path.join(HIST, "intraday_state.csv")).sort_values("capture_ts")
+    v = pd.read_csv(os.path.join(HIST, "vix_state.csv")).tail(1)
+    vr = v.iloc[0] if len(v) else None
+    out_rows = []
+    for sym in INDEX_UNIVERSE:
+        sub = metrics[metrics["symbol"] == sym]
+        row = {"symbol": sym, "eligible": False, "excluded_because": []}
+        if sub.empty:
+            row["excluded_because"].append("not captured by the GEX Monitor yet")
+            out_rows.append(row)
+            continue
+        try:
+            L = sr.levels(HIST, metrics, sym, bd.BIN_SIZE.get(sym, bd.DEFAULT_BIN),
+                          sub.iloc[-1])
+        except Exception as e:
+            L = None
+            row["excluded_because"].append(f"levels failed: {e}")
+        if not L:
+            row["excluded_because"].append("no graded levels inside 1 sigma")
+            out_rows.append(row)
+            continue
+        # live price: the latest intraday capture
+        live = s[s["symbol"] == sym]
+        price = float(live.iloc[-1]["spot"]) if len(live) else float(L["spot"])
+        sup = [x for x in L["support"] if x["grade"] in ("A", "B")]
+        sup = max(sup, key=lambda x: x["strike"]) if sup else None
+        res = None
+        if sup:
+            above = [x for x in L["resistance"] if x["grade"] in ("A", "B")
+                     and x["strike"] > sup["strike"]]
+            res = min(above, key=lambda x: x["strike"]) if above else None
+
+        checks = []
+        ok, d = trend(sym, bars_dir)
+        checks.append({"check": f"{sym} rising", "ok": ok, "detail": d})
+        g_ok, g_d, used = gamma_state(sym, s)
+        if g_ok is None:
+            g_ok, g_d, used = gamma_state(INDEX_PROXY.get(sym, "SPY"), s)
+            g_ok = bool(g_ok)
+        checks.append({"check": f"{used} gamma stable", "ok": bool(g_ok), "detail": g_d})
+        if vr is not None:
+            term = str(vr["term_state"])
+            checks.append({"check": "VIX term not in backwardation",
+                           "ok": not term.startswith("backwardation"), "detail": term})
+            hi = str(vr.get("vix_20d_high")).lower() == "true"
+            checks.append({"check": "VIX not at a 20-day high", "ok": not hi,
+                           "detail": f"VIX {vr['vix']}"})
+        favorable = all(c["ok"] for c in checks)
+
+        reasons = []
+        if not sup:
+            reasons.append("no A/B-graded support inside 1 sigma")
+        room = (res["strike"] / sup["strike"] - 1) if (sup and res) else None
+        if sup and (room is None or room < MIN_ROOM):
+            reasons.append(f"no room to run: next strong resistance {room:+.1%} above support"
+                           if room is not None else "no strong resistance target above support")
+        if not favorable:
+            reasons.append("regime not favorable")
+
+        dist = (price / sup["strike"] - 1) if sup else None
+        chg = None
+        try:
+            chg = float(d.split("20d ")[1].rstrip("%")) / 100
+        except (IndexError, ValueError):
+            pass
+        p_sup = (sup["score"] / 100) if sup else 0.0
+        p_trend = (0.5 * (1.0 if ok else 0.0) + 0.5 * clamp(0.5 + (chg or 0) / 0.10))
+        p_room = clamp((room or 0) / 0.05)
+        p_near = clamp(1 - dist / INDEX_NEAR) if (dist is not None and dist >= 0) else 0.0
+        iv = L.get("iv")
+        p_vol = clamp(1 - (iv or 0.35) / 0.35) if iv else 0.5
+        total = round(35 * p_sup + 25 * p_trend + 15 * p_room + 15 * p_near + 10 * p_vol, 1)
+        row.update({
+            "score": total, "grade": next(g for c, g in GRADE_CUTS if total >= c),
+            "price": round(price, 2), "regime_favorable": favorable, "checks": checks,
+            "support": sup["strike"] if sup else None,
+            "support_grade": f"{sup['grade']} {sup['label']}" if sup else None,
+            "support_strength": sup["strength"] if sup else None,
+            "target": res["strike"] if res else None,
+            "target_grade": f"{res['grade']} {res['label']}" if res else None,
+            "room_from_support": round(room, 4) if room is not None else None,
+            "to_support": round(dist, 4) if dist is not None else None,
+            "band": [round(sup["strike"] * (1 - BAND), 2), round(sup["strike"] * (1 + BAND), 2)] if sup else None,
+            "iv30": round(iv, 4) if iv else None,
+            "eligible": not reasons, "excluded_because": reasons,
+        })
+        out_rows.append(row)
+    out_rows.sort(key=lambda x: (not x["eligible"], -(x.get("score") or 0)))
+    best = next((x for x in out_rows if x["eligible"]), None)
+    return {"best": best, "setups": out_rows}
 
 
 # --------------------------------------------------------------------------
@@ -456,7 +577,7 @@ def _load(path):
 
 def main():
     p = argparse.ArgumentParser(description="Sector support agent arithmetic.")
-    p.add_argument("mode", choices=["etfs", "rank", "check", "score"])
+    p.add_argument("mode", choices=["etfs", "indices", "rank", "check", "score"])
     p.add_argument("--sector", default="XLK", choices=SECTORS)
     p.add_argument("--bars-dir", help="folder of <ETF>.json daily bars (rank)")
     p.add_argument("--short", help='JSON {"TICKER": short_float_fraction} (rank)')
@@ -470,10 +591,20 @@ def main():
 
     if a.mode == "etfs":
         out({"sector": a.sector, "bars_needed": needed_etfs(a.sector),
+             "index_bars_needed": INDEX_UNIVERSE,
              "gamma_proxy": BROAD_PROXY[a.sector]})
         return 0
     if a.mode == "rank":
         out(rank(a.sector, a.bars_dir, _load(a.short)))
+        return 0
+    if a.mode == "indices":
+        out(index_setups(a.bars_dir))
+        return 0
+    if a.put_wall and a.call_wall:          # index setups pass both levels
+        if a.mode == "check":
+            out(check(a.ticker, _load(a.bars), a.put_wall, a.call_wall, a.price))
+        else:
+            out(score(a.ticker, _load(a.chain), a.put_wall, a.call_wall))
         return 0
     r = rank(a.sector)
     row = next((x for x in r.get("ranked", []) if x["ticker"] == a.ticker), None)

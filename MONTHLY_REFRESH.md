@@ -53,7 +53,7 @@ the Robinhood connector and the GitHub runner has no access to it.
 
 In a chat with the Robinhood connector enabled, ask:
 
-> Pull official daily closes for SPY, QQQ, IWM, SMH, XLF, GLD, TLT and SPX from <first missing
+> Pull official daily closes for SPY, QQQ, IWM, XLK, SMH, XLF, GLD, TLT and SPX from <first missing
 > date> to <last session> and give me an updated `official_closes.json` for
 > the GEX repo.
 

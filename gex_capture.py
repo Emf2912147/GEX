@@ -48,12 +48,13 @@ import gamma_exposure as gx
 # stay interpretable. Raw chains are unaffected by this.
 SCHEMA_VERSION = 3
 
-# GLD and TLT added 2026-10-08; SMH and XLF 2026-10-15. When this list
+# GLD and TLT added 2026-10-08; SMH and XLF 2026-10-15; XLK 2026-10-16
+# (the Robinhood Trade Agent's index scan). When this list
 # changes, change DAILY_SYMBOLS in watchdog.py and session_runner.py to match
 # -- both check the daily capture is complete by counting rows, and neither
 # can import this module (it pulls in matplotlib, which the watchdog's runner
 # does not install).
-DEFAULT_SYMBOLS = ["SPX", "SPY", "QQQ", "IWM", "SMH", "XLF", "GLD", "TLT"]
+DEFAULT_SYMBOLS = ["SPX", "SPY", "QQQ", "IWM", "XLK", "SMH", "XLF", "GLD", "TLT"]
 
 # Cash indexes. Served while the market is closed, Cboe's `spot` for these
 # IS the official close -- index settlement is fixed overnight. SPX matched

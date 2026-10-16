@@ -27,7 +27,7 @@ import pandas as pd
 import gamma_exposure as gx
 import support_resistance as sr
 
-SYMBOL_ORDER = ["SPX", "SPY", "QQQ", "IWM", "SMH", "XLF", "GLD", "TLT"]
+SYMBOL_ORDER = ["SPX", "SPY", "QQQ", "IWM", "XLK", "SMH", "XLF", "GLD", "TLT"]
 TRAIL = 90          # sparkline lookback, observations
 
 # Strike binning per symbol. SPX lists 5/10/25 increments in one chain; the
@@ -40,7 +40,9 @@ TRAIL = 90          # sparkline lookback, observations
 # SMH lists $5 strikes on the monthlies (~559 on 2026-10-15): 5 gives ~22 bars
 # across the plot window. XLF (~55) is TLT's case -- $1 monthlies, $0.50
 # weeklies -- so it is binned at 1 for the same reason.
-BIN_SIZE = {"SPX": 25, "SPY": 5, "QQQ": 5, "IWM": 2.5, "SMH": 5, "XLF": 1,
+# XLK (~189 on 2026-10-15) lists $1 strikes near the money; 2.5 gives ~15
+# bars across the plot window, the same treatment as IWM.
+BIN_SIZE = {"SPX": 25, "SPY": 5, "QQQ": 5, "IWM": 2.5, "XLK": 2.5, "SMH": 5, "XLF": 1,
             "GLD": 2.5, "TLT": 1}
 DEFAULT_BIN = 5
 

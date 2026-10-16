@@ -57,8 +57,8 @@ CADENCE_MIN = 15
 MIN_FRACTION = 0.60
 # Rows a complete daily capture writes: one per symbol in
 # gex_capture.DEFAULT_SYMBOLS (GLD and TLT added 2026-10-08, SMH and XLF
-# 2026-10-15).
-DAILY_SYMBOLS = 8
+# 2026-10-15, XLK 2026-10-16).
+DAILY_SYMBOLS = 9
 # Longest acceptable silence mid-session. Four consecutive missed cycles.
 MAX_SILENCE_MIN = 60
 

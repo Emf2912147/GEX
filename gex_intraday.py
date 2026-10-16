@@ -206,10 +206,10 @@ class ChainIntegrityError(Exception):
     """
 
 # Keep in step with gex_capture.DEFAULT_SYMBOLS. GLD and TLT added 2026-10-08,
-# SMH and XLF 2026-10-15; none has an entry in RV_HISTORY below (no free Cboe
+# SMH and XLF 2026-10-15, XLK 2026-10-16; none has an entry in RV_HISTORY below (no free Cboe
 # daily-close series), so their realized vol is skipped and logged, the same
 # as QQQ.
-DEFAULT_SYMBOLS = ["SPX", "SPY", "QQQ", "IWM", "SMH", "XLF", "GLD", "TLT"]
+DEFAULT_SYMBOLS = ["SPX", "SPY", "QQQ", "IWM", "XLK", "SMH", "XLF", "GLD", "TLT"]
 
 # OCC symbol: root + YYMMDD + C/P + strike * 1000, zero padded to 8.
 OPT_RE = re.compile(r"^(?P<root>[A-Z]+)(?P<ymd>\d{6})(?P<cp>[CP])(?P<strike>\d{8})$")
