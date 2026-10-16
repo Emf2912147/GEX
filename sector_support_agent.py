@@ -1,59 +1,68 @@
 #!/usr/bin/env python3
 """
-XLK support agent -- the arithmetic behind the scheduled trade alert.
+Sector support agent -- the arithmetic behind the scheduled trade alert.
 
-Reads only what the repo already stores. Writes nothing to the repo: every
-mode prints JSON to stdout. Live inputs (quotes, bars, option chains, short
-interest) are gathered by the Claude session that runs it, through the
-Robinhood connector, and passed in as JSON files.
+Works on any sector the sector pipeline covers (XLK, XLF, XLV, XLP). Reads
+only what the repo already stores and writes nothing to it: every mode
+prints JSON. Live inputs (daily bars, quotes, option chains, short interest)
+are gathered by the Claude session that runs it, through the Robinhood
+connector, and passed in as JSON files.
 
-    python xlk_support_agent.py regime [--xlk xlk_bars.json]
-    python xlk_support_agent.py rank   [--short si.json]
-    python xlk_support_agent.py check  --ticker T --bars bars.json
-    python xlk_support_agent.py score  --ticker T --chain chain.json
+    python sector_support_agent.py etfs   --sector XLK
+    python sector_support_agent.py rank   --sector XLK --bars-dir bars/ [--short si.json]
+    python sector_support_agent.py check  --sector XLK --ticker T --bars b.json --price P
+    python sector_support_agent.py score  --sector XLK --ticker T --chain chain.json
 
-REGIME (gate 1 -- sector favourable)
-    rising     XLK 20-day momentum > 0 (sector_technicals) AND XLK's last
-               close above its 20-day average (xlk_bars.json, daily closes)
-    stable     QQQ in positive gamma with spot >= FLIP_BUFFER above the flip
-               (latest intraday row), VIX term not in backwardation, VIX not
-               at a 20-day high (latest vix_state row). SMH in negative gamma
-               also blocks once SMH has MIN_SMH_ROWS intraday rows.
-    Any failure blocks the alert and the trade, and says which.
+`etfs` lists the ETFs whose daily bars the run must supply in --bars-dir as
+<ETF>.json (a list of Robinhood daily bars, the live price appended as the
+last bar). Every gate is re-evaluated on every run: a block at one check
+says nothing about the next.
+
+REGIME (gate 1 -- judged per name, by the name's own industry)
+    Each constituent maps to an industry ETF (INDUSTRY below): XLK semis to
+    SMH, software to IGV; XLF banks to KBE, brokers and asset managers to
+    IAI, insurers to KIE; XLV biotech to IBB, devices to IHI, managed care
+    and providers to IHF, pharma to PPH. Anything unmapped uses the sector
+    ETF itself.
+    rising     that ETF's last price above its 20-day average AND its 20-day
+               change > 0
+    stable     dealer gamma positive with spot >= 0.5% above the flip, read
+               from the GEX Monitor's latest intraday row -- the industry ETF
+               when the monitor captures it (SMH, XLF), else the sector's
+               broad proxy (QQQ for XLK, SPY otherwise); VIX term not in
+               backwardation; VIX not at a 20-day high. An ETF with fewer
+               than MIN_GEX_ROWS captures falls back to the broad proxy.
+    A name whose industry fails cannot be the watch name. Other names in the
+    sector whose industry passes still can.
 
 RANK (gate 2 -- which name)
-    Every XLK constituent with liquid options (ATM spread <= 10%, ATM OI >=
-    100) is scored 0-100 on how likely it is to rise from here:
+    Every constituent with liquid options (ATM spread <= 10%, ATM OI >= 100)
+    is scored 0-100 on how likely it is to rise from here:
       technical location 35  closeness to the put wall (best inside 3%),
                              wall strength (sector_candidates.wall_stability),
                              spot above the gamma flip, relative strength
-      valuation          25  value_z vs XLK (sector_candidates.add_value_z),
-                             improvement signals, deep-value-and-improving
+      valuation          25  value_z vs the sector, improvement signals,
+                             deep-value-and-improving
       volume / liquidity 15  20d dollar volume, ATM OI, ATM spread
       short interest     15  % of float short -- squeeze fuel at support.
                              Neutral (0.5) when not supplied; flagged.
       event              10  full marks unless earnings fall within 14 days
-    A put wall that MOVED last session, or is NEW, cannot be the watch name:
-    an untested level is not support.
+    Also excluded: a put wall that MOVED last session or is NEW (untested),
+    and NO ROOM TO RUN -- the call wall less than MIN_ROOM (2%) above the
+    price. CPB is never a trade candidate (employer).
 
-CHECK (gate 3 -- price at support)
+CHECK (gate 3 -- price at support, room still there)
     Fires when price is within BAND (0.25%) of the put wall: any 5-minute
-    bar since the last check with low <= wall x 1.0025, and the latest price
-    still >= wall x 0.9975. A close below that is a broken level -- reported,
-    never traded.
+    bar since the last check with low <= wall x 1.0025 and the latest price
+    still >= wall x 0.9975 -- and the call wall still >= 2% above the live
+    price. A close below the band is a broken level, never traded.
 
 SCORE (the trade)
     Bull call verticals, long strike from the wall up to ~ATM, short strike
-    at or below the call wall, expirations 14-60 DTE. Each spread is scored:
-      risk/reward  30  max profit / debit at the mid
-      price edge   30  expected payoff under a lognormal at the long leg's IV
-                       minus the debit, per $ of debit
-      liquidity    25  leg bid-ask as % of mid, open interest on both legs
-      DTE          15  best 21-45 days; edge per day of exposure as tiebreak
-    A best score under MIN_SPREAD_SCORE (55) is reported as "at support, no
-    edge" rather than as a trade.
-    Prices are mids; the natural (pay-the-ask) debit is shown beside it.
-    Nothing here places an order.
+    at or below the call wall, expirations 14-60 DTE, scored on
+    risk/reward 30, price edge vs lognormal fair value at the long leg's IV
+    30, liquidity 25, DTE 15 (best 21-45). Under MIN_SPREAD_SCORE (55) it
+    reports "at support, no edge". Nothing here places an order.
 """
 
 import argparse
@@ -71,17 +80,41 @@ SECT = os.path.join(HIST, "sector")
 sys.path.insert(0, HERE)
 import sector_candidates as sc  # noqa: E402
 
-SECTOR = "XLK"
+SECTORS = ("XLK", "XLF", "XLV", "XLP")
+BROAD_PROXY = {"XLK": "QQQ", "XLF": "SPY", "XLV": "SPY", "XLP": "SPY"}
+# Industry ETF per constituent. Unlisted names use the sector ETF.
+INDUSTRY = {
+    "XLK": {
+        "SMH": ["NVDA", "AMD", "AVGO", "MU", "INTC", "AMAT", "LRCX", "TXN",
+                "KLAC", "MRVL", "ADI", "QCOM"],
+        "IGV": ["MSFT", "ORCL", "CRM", "NOW", "PANW", "CRWD", "PLTR", "ADBE",
+                "INTU"],
+    },
+    "XLF": {
+        "KBE": ["JPM", "BAC", "WFC", "C", "USB", "PNC"],
+        "IAI": ["GS", "MS", "SCHW", "BLK", "BX", "KKR", "HOOD", "BNY"],
+        "KIE": ["ALL", "AON", "AJG", "CB", "PGR", "TRV", "MRSH"],
+    },
+    "XLV": {
+        "IBB": ["AMGN", "GILD", "REGN", "VRTX", "MRNA"],
+        "IHI": ["ABT", "BSX", "BDX", "EW", "ISRG", "MDT", "SYK"],
+        "IHF": ["UNH", "ELV", "CI", "HUM", "CVS", "HCA"],
+        "PPH": ["LLY", "JNJ", "MRK", "PFE", "ABBV", "BMY"],
+    },
+    "XLP": {},
+}
+NEVER_TRADE = {"CPB"}       # employer -- watched in the monitor, never traded
 BAND = 0.0025
+MIN_ROOM = 0.02
 FLIP_BUFFER = 0.005
-MIN_SMH_ROWS = 60          # ~2 sessions of 15-minute captures
+MIN_GEX_ROWS = 60           # ~2 sessions of 15-minute captures
 NEAR_WALL = 0.03
 MAX_ATM_SPREAD = 0.10
 MIN_ATM_OI = 100
 EVENT_DAYS = 14
 DTE_MIN, DTE_MAX = 14, 60
 LEG_MIN_OI = 100
-MIN_SPREAD_SCORE = 55      # below this the alert says "at support, no edge"
+MIN_SPREAD_SCORE = 55
 GRADE_CUTS = ((75, "A"), (60, "B"), (45, "C"), (0, "D"))
 WEIGHTS = {"location": 35, "valuation": 25, "liquidity": 15,
            "short_interest": 15, "event": 10}
@@ -103,97 +136,115 @@ def out(obj):
     print(json.dumps(obj, indent=1, default=str))
 
 
+def industry_of(sector, ticker):
+    for etf, names in INDUSTRY.get(sector, {}).items():
+        if ticker in names:
+            return etf
+    return sector
+
+
+def needed_etfs(sector):
+    return [sector] + list(INDUSTRY.get(sector, {}))
+
+
 # --------------------------------------------------------------------------
 # regime
 # --------------------------------------------------------------------------
 
-def regime(xlk_bars=None):
-    checks, blocks = [], []
+def trend(etf, bars_dir):
+    """(ok, detail) -- last price above the 20-day average, 20d change > 0."""
+    path = os.path.join(bars_dir or "", f"{etf}.json")
+    if not bars_dir or not os.path.exists(path):
+        return False, f"no {etf} bars supplied"
+    with open(path, encoding="utf-8") as fh:
+        bars = json.load(fh)
+    closes = [float(b["close_price"]) for b in bars if not b.get("interpolated")]
+    if len(closes) < 21:
+        return False, f"only {len(closes)} {etf} closes"
+    sma = sum(closes[-20:]) / 20
+    chg = closes[-1] / closes[-21] - 1
+    ok = closes[-1] > sma and chg > 0
+    return ok, f"{etf} {closes[-1]:.2f} vs 20d avg {sma:.2f}, 20d {chg:+.2%}"
 
-    def chk(name, ok, detail):
-        checks.append({"check": name, "ok": bool(ok), "detail": detail})
-        if not ok:
-            blocks.append(f"{name}: {detail}")
 
-    tech = sc.latest_rows(os.path.join(SECT, "sector_technicals.csv"))
-    mom = None
-    if tech is not None:
-        x = tech[tech["sector_etf"] == SECTOR]
-        if len(x):
-            mom = num(x["sector_mom_20d"].median())
-    chk("XLK 20d momentum > 0", mom is not None and mom > 0,
-        f"{mom:+.2%}" if mom is not None else "missing")
+def gamma_state(symbol, s):
+    """(ok, detail, used) from the GEX Monitor's latest row for symbol."""
+    rows = s[s["symbol"] == symbol]
+    if len(rows) < MIN_GEX_ROWS:
+        return None, f"{symbol}: only {len(rows)} captures", symbol
+    r = rows.iloc[-1]
+    spot, flip = float(r["spot"]), float(r["flip"])
+    above = spot / flip - 1
+    ok = r["regime"] == "positive" and above >= FLIP_BUFFER
+    return ok, (f"{symbol} {r['regime']} gamma, spot {spot:.2f} vs flip "
+                f"{flip:.2f} ({above:+.2%}) at {r['capture_ts']}"), symbol
 
-    if xlk_bars:
-        closes = [float(b["close_price"]) for b in xlk_bars
-                  if not b.get("interpolated")]
-        if len(closes) >= 20:
-            sma = sum(closes[-20:]) / 20
-            chk("XLK above 20-day average", closes[-1] > sma,
-                f"{closes[-1]:.2f} vs {sma:.2f}")
-        else:
-            chk("XLK above 20-day average", False, f"only {len(closes)} closes")
-    else:
-        chk("XLK above 20-day average", False, "no XLK bars supplied")
 
+def regimes(sector, bars_dir):
+    """{etf: {favorable, checks, blocks}} for the sector ETF and each
+    industry ETF it uses."""
     s = pd.read_csv(os.path.join(HIST, "intraday_state.csv")).sort_values("capture_ts")
-    q = s[s["symbol"] == "QQQ"].tail(1)
-    if len(q):
-        r = q.iloc[0]
-        spot, flip = float(r["spot"]), float(r["flip"])
-        above = spot / flip - 1
-        chk("QQQ positive gamma, >= 0.5% above flip",
-            r["regime"] == "positive" and above >= FLIP_BUFFER,
-            f"{r['regime']}, spot {spot:.2f} vs flip {flip:.2f} ({above:+.2%}) at {r['capture_ts']}")
-    else:
-        chk("QQQ positive gamma, >= 0.5% above flip", False, "no QQQ rows")
-
-    smh = s[s["symbol"] == "SMH"]
-    if len(smh) >= MIN_SMH_ROWS:
-        r = smh.iloc[-1]
-        chk("SMH not in negative gamma", r["regime"] != "negative",
-            f"{r['regime']} at {r['capture_ts']}")
-    else:
-        checks.append({"check": "SMH not in negative gamma", "ok": None,
-                       "detail": f"not enforced yet ({len(smh)} of {MIN_SMH_ROWS} rows)"})
-
     v = pd.read_csv(os.path.join(HIST, "vix_state.csv")).tail(1)
+    vix_checks = []
     if len(v):
         r = v.iloc[0]
         term = str(r["term_state"])
-        chk("VIX term not in backwardation", not term.startswith("backwardation"),
-            term)
+        vix_checks.append(("VIX term not in backwardation",
+                           not term.startswith("backwardation"), term))
         hi = str(r.get("vix_20d_high")).lower() == "true"
-        chk("VIX not at a 20-day high", not hi, f"VIX {r['vix']} ({'20d high' if hi else 'below 20d high'})")
+        vix_checks.append(("VIX not at a 20-day high", not hi,
+                           f"VIX {r['vix']} ({'20d high' if hi else 'below 20d high'})"))
     else:
-        chk("VIX term not in backwardation", False, "no VIX rows")
+        vix_checks.append(("VIX data", False, "no VIX rows"))
 
-    return {"favorable": not blocks, "blocks": blocks, "checks": checks}
+    res = {}
+    for etf in needed_etfs(sector):
+        checks = []
+        ok, d = trend(etf, bars_dir)
+        checks.append({"check": f"{etf} rising", "ok": ok, "detail": d})
+        g_ok, g_d, used = gamma_state(etf, s)
+        if g_ok is None:                       # not captured: broad proxy
+            g_ok, g_d, used = gamma_state(BROAD_PROXY[sector], s)
+            if g_ok is None:
+                g_ok = False
+        checks.append({"check": f"{used} gamma stable (positive, >= 0.5% above flip)",
+                       "ok": bool(g_ok), "detail": g_d})
+        for name, ok2, d2 in vix_checks:
+            checks.append({"check": name, "ok": bool(ok2), "detail": d2})
+        blocks = [f"{c['check']}: {c['detail']}" for c in checks if not c["ok"]]
+        res[etf] = {"favorable": not blocks, "checks": checks, "blocks": blocks}
+    return res
 
 
 # --------------------------------------------------------------------------
 # rank
 # --------------------------------------------------------------------------
 
-def rank(short=None):
+def rank(sector, bars_dir=None, short=None):
     tech = sc.latest_rows(os.path.join(SECT, "sector_technicals.csv"))
     fund = sc.latest_rows(os.path.join(SECT, "sector_fundamentals.csv"))
     if tech is None:
         return {"error": "no sector technicals"}
-    tech = tech[tech["sector_etf"] == SECTOR]
-    m = tech.merge(fund.drop(columns=["capture_ts", "sector_etf"]), on="ticker",
-                   how="left", suffixes=("", "_f")) if fund is not None else tech
+    tech = tech[tech["sector_etf"] == sector]
+    if tech.empty:
+        return {"error": f"no {sector} rows -- the sector pipeline covers {SECTORS}"}
+    m = (tech.merge(fund.drop(columns=["capture_ts", "sector_etf"]), on="ticker",
+                    how="left", suffixes=("", "_f")) if fund is not None else tech)
     m = sc.add_value_z(m)
     sc.WALL_HIST.update(sc.wall_history(os.path.join(SECT, "sector_technicals.csv")))
+    reg = regimes(sector, bars_dir)
     short = short or {}
     now = datetime.now(timezone.utc)
 
     rows = []
     for _, r in m.iterrows():
         t = r["ticker"]
+        ind = industry_of(sector, t)
         spot, pw, cw = num(r["spot"]), num(r["put_wall"]), num(r["call_wall"])
         spread, oi = num(r.get("atm_spread_pct")), num(r.get("atm_oi"))
         reasons = []
+        if t in NEVER_TRADE:
+            reasons.append("never traded (employer)")
         if spread is None or spread > MAX_ATM_SPREAD or oi is None or oi < MIN_ATM_OI:
             reasons.append("options not liquid enough for a vertical")
         if not (spot and pw and pw < spot):
@@ -202,6 +253,13 @@ def rank(short=None):
         strength = st.get("put_wall_strength") or ""
         if strength in ("moved", "new", ""):
             reasons.append(f"put wall {strength or 'unknown'} -- untested")
+        # Room to run is judged from support -- where the trade is entered.
+        room = (cw / pw - 1) if (cw and pw) else None
+        if room is None or room < MIN_ROOM:
+            reasons.append(f"no room to run: call wall {room:+.1%} above support"
+                           if room is not None else "no call wall")
+        if not reg[ind]["favorable"]:
+            reasons.append(f"{ind} regime not favorable")
 
         dist = (spot / pw - 1) if (spot and pw) else None
         prox = clamp(1 - dist / NEAR_WALL) if dist is not None and dist >= 0 else 0.0
@@ -224,7 +282,7 @@ def rank(short=None):
         liquidity = 0.4 * p_adv + 0.3 * p_oi + 0.3 * p_sp
 
         si = num(short.get(t))
-        si_part = clamp(si / 0.10) if si is not None else 0.5   # 10% of float short = full
+        si_part = clamp(si / 0.10) if si is not None else 0.5
 
         d = sc.days_to_filing(r, now)
         event = 0.0 if (d is not None and 0 <= d <= EVENT_DAYS) else 1.0
@@ -233,11 +291,12 @@ def rank(short=None):
                  "short_interest": si_part, "event": event}
         total = round(sum(WEIGHTS[k] * v for k, v in parts.items()), 1)
         rows.append({
-            "ticker": t, "score": total,
+            "ticker": t, "industry_etf": ind, "score": total,
             "grade": next(g for c, g in GRADE_CUTS if total >= c),
             "eligible": not reasons, "excluded_because": reasons,
             "spot": spot, "put_wall": pw, "call_wall": cw, "gamma_flip": flip,
             "to_put_wall": round(dist, 4) if dist is not None else None,
+            "room_from_support": round(room, 4) if room is not None else None,
             "band": [round(pw * (1 - BAND), 2), round(pw * (1 + BAND), 2)] if pw else None,
             "put_wall_strength": strength,
             "put_wall_held": f"{st.get('put_wall_held')}/{st.get('put_wall_days')}",
@@ -249,21 +308,21 @@ def rank(short=None):
         })
     rows.sort(key=lambda x: (not x["eligible"], -x["score"]))
     watch = next((x for x in rows if x["eligible"]), None)
-    return {"sector": SECTOR, "as_of": str(tech["capture_ts"].max()),
-            "watch": watch, "ranked": rows}
+    return {"sector": sector, "as_of": str(tech["capture_ts"].max()),
+            "regimes": reg, "watch": watch, "ranked": rows}
 
 
 # --------------------------------------------------------------------------
 # check
 # --------------------------------------------------------------------------
 
-def check(ticker, bars, put_wall):
+def check(ticker, bars, put_wall, call_wall=None, price=None):
     lo_band, hi_band = put_wall * (1 - BAND), put_wall * (1 + BAND)
     real = [b for b in bars if not b.get("interpolated")]
     if not real:
         return {"ticker": ticker, "state": "no_data"}
     low = min(float(b["low_price"]) for b in real)
-    last = float(real[-1]["close_price"])
+    last = float(price) if price else float(real[-1]["close_price"])
     touched = low <= hi_band
     if touched and last < lo_band:
         state = "broken"          # went through support -- never trade
@@ -271,7 +330,12 @@ def check(ticker, bars, put_wall):
         state = "at_support"
     else:
         state = "waiting"
+    room = (call_wall / last - 1) if call_wall else None
+    if state == "at_support" and (room is None or room < MIN_ROOM):
+        state = "no_room"         # call wall under 2% overhead -- skip
     return {"ticker": ticker, "state": state, "put_wall": put_wall,
+            "call_wall": call_wall,
+            "room_to_call_wall": round(room, 4) if room is not None else None,
             "band": [round(lo_band, 2), round(hi_band, 2)],
             "low_since_check": low, "last": last,
             "distance_now": round(last / put_wall - 1, 4)}
@@ -391,33 +455,37 @@ def _load(path):
 
 
 def main():
-    p = argparse.ArgumentParser(description="XLK support agent arithmetic.")
-    p.add_argument("mode", choices=["regime", "rank", "check", "score"])
-    p.add_argument("--xlk", help="JSON list of XLK daily bars (regime)")
+    p = argparse.ArgumentParser(description="Sector support agent arithmetic.")
+    p.add_argument("mode", choices=["etfs", "rank", "check", "score"])
+    p.add_argument("--sector", default="XLK", choices=SECTORS)
+    p.add_argument("--bars-dir", help="folder of <ETF>.json daily bars (rank)")
     p.add_argument("--short", help='JSON {"TICKER": short_float_fraction} (rank)')
     p.add_argument("--ticker")
     p.add_argument("--bars", help="JSON list of 5-minute bars since last check (check)")
+    p.add_argument("--price", type=float, help="live last price (check)")
     p.add_argument("--chain", help="JSON chain for the ticker (score)")
     p.add_argument("--put-wall", type=float)
     p.add_argument("--call-wall", type=float)
     a = p.parse_args()
 
-    if a.mode == "regime":
-        out(regime(_load(a.xlk)))
-    elif a.mode == "rank":
-        out(rank(_load(a.short)))
+    if a.mode == "etfs":
+        out({"sector": a.sector, "bars_needed": needed_etfs(a.sector),
+             "gamma_proxy": BROAD_PROXY[a.sector]})
+        return 0
+    if a.mode == "rank":
+        out(rank(a.sector, a.bars_dir, _load(a.short)))
+        return 0
+    r = rank(a.sector)
+    row = next((x for x in r.get("ranked", []) if x["ticker"] == a.ticker), None)
+    pw = a.put_wall or (row or {}).get("put_wall")
+    cw = a.call_wall or (row or {}).get("call_wall")
+    if pw is None:
+        out({"error": f"no put wall for {a.ticker}"})
+        return 1
+    if a.mode == "check":
+        out(check(a.ticker, _load(a.bars), pw, cw, a.price))
     else:
-        r = rank()
-        row = next((x for x in r["ranked"] if x["ticker"] == a.ticker), None)
-        pw = a.put_wall or (row or {}).get("put_wall")
-        cw = a.call_wall or (row or {}).get("call_wall")
-        if pw is None:
-            out({"error": f"no put wall for {a.ticker}"})
-            return 1
-        if a.mode == "check":
-            out(check(a.ticker, _load(a.bars), pw))
-        else:
-            out(score(a.ticker, _load(a.chain), pw, cw))
+        out(score(a.ticker, _load(a.chain), pw, cw))
     return 0
 
 
