@@ -710,6 +710,26 @@ def capture_vix(args, logpath, now):
     vix9d_prev_close = vix9d_data.get("prev_day_close")
 
     feed_ts = vix_data.get("last_trade_time") or vix_data.get("timestamp") or "unknown"
+
+    # ---- wait for VIX9D's first print of the session ---------------------
+    # VIX is calculated in Cboe's overnight session, VIX9D only from the
+    # 9:30 open, and the feed runs ~15 minutes behind. So the 9:07, 9:22 and
+    # 9:37 ET cycles paired a live VIX with VIX9D still at YESTERDAY's close
+    # (last_trade_time 16:15 the prior day): three rows a morning, every
+    # morning, flagged unreliable(vix9d-stale) -- 2026-10-13/14/15 all show
+    # it. term_structure_state() already refused to call a regime on them,
+    # but the rows still went into vix_state.csv carrying a fake term spread
+    # and a vix9d_chg_1d of exactly 0. Nothing is written until VIX9D has
+    # printed in the current session; the first row lands ~9:52 ET.
+    # term_structure_state() stays as the backstop for any later mismatch.
+    v9_date = str(vix9d_data.get("last_trade_time") or "")[:10]
+    session_today = str(cal.et_wall_clock(now).date())
+    if v9_date and v9_date < session_today and not args.force:
+        log(logpath, f"VIX: VIX9D has not printed this session yet (last "
+                     f"{vix9d_data.get('last_trade_time')}), row deferred "
+                     f"(VIX {vix:.2f})")
+        return None
+
     state_path = os.path.join(args.outdir, "vix_state.csv")
     prev = last_vix_row(state_path)
 

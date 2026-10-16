@@ -85,18 +85,27 @@ def main():
         now = now.replace(tzinfo=dt.timezone.utc)
     today = now.date()
     et_now = et_wall_clock(now)
-    print(f"watchdog {now:%Y-%m-%d %H:%M} UTC ({today:%a})\n")
+    # The intraday checks run on the EASTERN date. On the UTC date, any run
+    # after 8 PM ET (midnight UTC) asked about "today" -- tomorrow in New
+    # York, with no session yet -- and reported "0 intraday cycles today"
+    # for a session that had in fact captured 32 of 32 (seen 2026-10-15).
+    # The daily checks stay on the UTC date: capture.yml is scheduled in UTC.
+    et_today = et_now.date()
+    print(f"watchdog {now:%Y-%m-%d %H:%M} UTC ({today:%a}) = "
+          f"{et_now:%Y-%m-%d %H:%M} ET\n")
 
     s = pd.read_csv(os.path.join(HIST, "intraday_state.csv"))
     s["ts"] = pd.to_datetime(s["capture_ts"], utc=True)
+    et_dates = {t: et_wall_clock(t.to_pydatetime()).date() for t in s["ts"].unique()}
+    s["et_date"] = s["ts"].map(et_dates)
 
     # ---- intraday ----------------------------------------------------------
-    if not is_trading_day(today):
-        ok(f"{today} is not an NYSE session -- intraday not expected")
+    if not is_trading_day(et_today):
+        ok(f"{et_today} is not an NYSE session -- intraday not expected")
     elif et_now.time() < OPEN_ET:
         ok("before the open -- intraday not expected yet")
     else:
-        today_rows = s[s["ts"].dt.date == today]
+        today_rows = s[s["et_date"] == et_today]
         cycles = today_rows["capture_ts"].nunique()
 
         elapsed = (min(et_now.time(), CLOSE_ET).hour * 60
@@ -141,9 +150,9 @@ def main():
     # ---- staleness backstop -------------------------------------------------
     # Catches a multi-day outage even if the per-day logic above is somehow
     # satisfied -- the 2026-09-23 case, where the gap spanned sessions.
-    last = s["ts"].max().date()
-    gap = sum(1 for n in range(1, (today - last).days + 1)
-              if is_trading_day(today - dt.timedelta(days=n - 1)) and n > 1)
+    last = s["et_date"].max()
+    gap = sum(1 for n in range(1, (et_today - last).days + 1)
+              if is_trading_day(et_today - dt.timedelta(days=n - 1)) and n > 1)
     if gap >= 2:
         fail(f"last intraday capture was {last} -- {gap} sessions with nothing")
     else:
