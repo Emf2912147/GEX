@@ -25,6 +25,7 @@ import numpy as np
 import pandas as pd
 
 import gamma_exposure as gx
+import vol_metrics as vm
 import support_resistance as sr
 
 SYMBOL_ORDER = ["SPX", "SPY", "QQQ", "IWM", "XLK", "SMH", "XLF", "GLD", "TLT"]
@@ -771,6 +772,23 @@ def build_latest_json(histdir, docsdir):
             "flip_pct_vs_spot":
                 float(row["flip_pct_vs_spot"])
         }
+
+        # Additive vol fields (vol_metrics.py). A failure here must never
+        # cost the agent its walls and flip, so it is contained per symbol.
+        sym = str(row["symbol"])
+        try:
+            raw = latest_raw(histdir, sym)
+            if raw is not None:
+                output[sym]["vol"] = vm.symbol_vol_block(histdir, raw, row, df)
+        except Exception as ex:                     # pragma: no cover
+            print(f"latest.json: vol block skipped for {sym} ({ex})")
+
+    try:
+        vix = vm.vix_block(histdir)
+        if vix is not None:
+            output["market"] = {"vix": vix}
+    except Exception as ex:                         # pragma: no cover
+        print(f"latest.json: vix block skipped ({ex})")
 
     outfile = os.path.join(
         docsdir,

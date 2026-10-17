@@ -32,6 +32,27 @@ under a new methodology — and it will need to be. The wall definition changed
 twice on the day this was written; had only derived numbers been kept, every
 historical row would be wrong and unrecoverable. **Never delete `history/raw/`.**
 
+## Agent feed: `docs/latest.json`
+
+One record per symbol for the trading agent (gex-trading-agent): `spot`,
+`flip`, `call_wall`, `put_wall`, `regime`, `net_gex_full`,
+`flip_pct_vs_spot`. Since 2026-10-17 each record also carries a `vol` block
+(`vol_metrics.py`), computed from the same raw chain as the walls:
+
+| field | meaning |
+|---|---|
+| `atm_iv_7d`, `atm_iv_30d` | constant-maturity ATM IV (decimal), OTM quotes, variance-interpolated |
+| `term_ratio` | `atm_iv_7d / atm_iv_30d`; above 1 = inverted front end |
+| `skew_25d` | 25-delta put IV minus 25-delta call IV, ~30-day expiry |
+| `vol_trigger` | price where the dealer gamma profile recovers to 25% of its peak; below it long-gamma support is weak or gone |
+| `rv_20d`, `rv_source`, `rv_proxy` | 20-session realized vol: `realized_vol.csv` (Cboe history) when fresh, else this repo's own closes |
+| `iv_rv_ratio` | `atm_iv_30d / rv_20d`; above 1 = options rich to recent movement |
+
+and a top-level `market.vix` block from `vix_state.csv` (VIX, VIX9D, term
+spread and state, 1d and 20d change). All additive: a reader that ignores
+them is unaffected. Nothing new is fetched or stored; these are derived from
+data already captured. Tests: `python -m pytest test_vol_metrics.py`.
+
 ## Known limits
 
 - Cboe's feed is ~15 minutes delayed. Nothing here is real-time.
