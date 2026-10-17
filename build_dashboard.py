@@ -26,6 +26,7 @@ import pandas as pd
 
 import gamma_exposure as gx
 import vol_metrics as vm
+import dealer_flows as dfl
 import support_resistance as sr
 
 SYMBOL_ORDER = ["SPX", "SPY", "QQQ", "IWM", "XLK", "SMH", "XLF", "GLD", "TLT"]
@@ -782,6 +783,15 @@ def build_latest_json(histdir, docsdir):
                 output[sym]["vol"] = vm.symbol_vol_block(histdir, raw, row, df)
         except Exception as ex:                     # pragma: no cover
             print(f"latest.json: vol block skipped for {sym} ({ex})")
+
+        # Dealer vanna / charm flows (dealer_flows.py), same containment.
+        try:
+            raw = latest_raw(histdir, sym)
+            if raw is not None:
+                output[sym]["flows"] = dfl.flows_block(
+                    histdir, raw, sym, str(row.get("session_date", "")))
+        except Exception as ex:                     # pragma: no cover
+            print(f"latest.json: flows block skipped for {sym} ({ex})")
 
     try:
         vix = vm.vix_block(histdir)
