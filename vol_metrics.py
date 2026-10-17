@@ -23,6 +23,8 @@ Per symbol, per capture:
     rv_20d         20-session realized vol from official closes (annualized).
     iv_rv_ratio    atm_iv_30d / rv_20d: implied vs realized, the vol-supply
                    read. Above 1 options are rich to recent movement.
+    smile          (feed only) put/call IV by strike for the expiry nearest
+                   7 days, +/-8% of spot, so the agent can price its spreads.
 
 Method notes, read before trusting a number:
 
@@ -145,6 +147,58 @@ def skew_25d(df: pd.DataFrame, days: float = 30.0) -> float | None:
         if put_iv is not None and call_iv is not None:
             return put_iv - call_iv
     return None
+
+
+# ------------------------------------------------------------------
+# IV smile for the trade expiry
+# ------------------------------------------------------------------
+#
+# The agent prices its wall-anchored spreads from this, so its credit /
+# width filter can run. Only the expiry nearest SMILE_TARGET_DTE is
+# published (the agent's trade tenor), only strikes within SMILE_BAND of
+# spot, and only IVs Cboe actually quotes on contracts with open interest
+# or volume. A strike with no usable quote on one side is null on that
+# side: the agent then reports the spread as unpriced rather than guess.
+
+SMILE_TARGET_DTE = 7.0
+SMILE_MIN_DTE = 2.0      # never pick an expiry about to settle
+SMILE_BAND = 0.08        # +/- 8% of spot
+
+
+def smile(df: pd.DataFrame, spot: float,
+          target_dte: float = SMILE_TARGET_DTE,
+          band: float = SMILE_BAND) -> dict | None:
+    usable = _usable(df)
+    usable = usable[usable["dte"] >= SMILE_MIN_DTE]
+    if usable.empty:
+        return None
+
+    dtes = usable.groupby("expiry")["dte"].first()
+    expiry = (dtes - target_dte).abs().idxmin()
+    exp = usable[(usable["expiry"] == expiry)
+                 & (usable["strike"] >= spot * (1 - band))
+                 & (usable["strike"] <= spot * (1 + band))]
+    if exp.empty:
+        return None
+
+    puts = exp[exp["type"] == "P"].groupby("strike")["iv"].first()
+    calls = exp[exp["type"] == "C"].groupby("strike")["iv"].first()
+    strikes = sorted(set(puts.index) | set(calls.index))
+
+    def iv_list(side):
+        return [round(float(side[k]), 4) if k in side.index else None for k in strikes]
+
+    exp_ts = pd.Timestamp(expiry)
+    if exp_ts.tzinfo is None:
+        exp_ts = exp_ts.tz_localize("UTC")
+
+    return {
+        "expiry_utc": exp_ts.isoformat(),
+        "dte": round(float(dtes[expiry]), 3),
+        "strikes": [float(k) for k in strikes],
+        "put_iv": iv_list(puts),
+        "call_iv": iv_list(calls),
+    }
 
 
 def vol_trigger(chain: pd.DataFrame, spot: float,
@@ -298,6 +352,7 @@ def symbol_vol_block(histdir: str, raw: pd.DataFrame, row,
     out["rv_proxy"] = proxy
     iv30 = out.get("atm_iv_30d")
     out["iv_rv_ratio"] = round(iv30 / rv, 3) if iv30 and rv else None
+    out["smile"] = smile(df, spot)
     return out
 
 

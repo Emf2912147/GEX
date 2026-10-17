@@ -47,6 +47,7 @@ One record per symbol for the trading agent (gex-trading-agent): `spot`,
 | `vol_trigger` | price where the dealer gamma profile recovers to 25% of its peak; below it long-gamma support is weak or gone |
 | `rv_20d`, `rv_source`, `rv_proxy` | 20-session realized vol: `realized_vol.csv` (Cboe history) when fresh, else this repo's own closes |
 | `iv_rv_ratio` | `atm_iv_30d / rv_20d`; above 1 = options rich to recent movement |
+| `smile` | put/call IV by strike for the expiry nearest 7 days, strikes within 8% of spot; the agent prices its spreads from it (model value, not a fill) |
 
 and a top-level `market.vix` block from `vix_state.csv` (VIX, VIX9D, term
 spread and state, 1d and 20d change). All additive: a reader that ignores

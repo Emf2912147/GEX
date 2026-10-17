@@ -147,3 +147,37 @@ def test_market_vix_block(feed):
     vix = feed["market"]["vix"]
     assert vix["vix"] > 0
     assert "term_state" in vix
+
+
+# ------------------------------------------------------------------
+# IV smile (agent prices its spreads from it)
+# ------------------------------------------------------------------
+
+def test_smile_targets_the_weekly_nearest_seven_days():
+    df, spot = chain("TLT")
+    sm = vm.smile(df, spot)
+    assert sm["expiry_utc"].startswith("2026-10-23")
+    assert vm.SMILE_MIN_DTE <= sm["dte"] <= 14
+
+
+def test_smile_strikes_stay_inside_the_band():
+    df, spot = chain("SPX")
+    sm = vm.smile(df, spot)
+    assert min(sm["strikes"]) >= spot * (1 - vm.SMILE_BAND)
+    assert max(sm["strikes"]) <= spot * (1 + vm.SMILE_BAND)
+    assert len(sm["strikes"]) == len(sm["put_iv"]) == len(sm["call_iv"])
+
+
+def test_smile_carries_cboe_iv_unchanged():
+    df, spot = chain("TLT")
+    sm = vm.smile(df, spot)
+    i = sm["strikes"].index(79.0)
+    assert sm["put_iv"][i] == pytest.approx(0.138, abs=1e-3)
+
+
+def test_every_symbol_has_a_smile_in_the_feed(feed):
+    for sym, rec in feed.items():
+        if sym in ("generated_utc", "market"):
+            continue
+        sm = rec["vol"]["smile"]
+        assert sm is not None and len(sm["strikes"]) >= 5, sym
