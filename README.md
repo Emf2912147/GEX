@@ -49,7 +49,14 @@ One record per symbol for the trading agent (gex-trading-agent): `spot`,
 | `iv_rv_ratio` | `atm_iv_30d / rv_20d`; above 1 = options rich to recent movement |
 | `smile` | put/call IV by strike for the expiry nearest 7 days, strikes within 8% of spot; the agent prices its spreads from it (model value, not a fill) |
 
-and a top-level `market.vix` block from `vix_state.csv` (VIX, VIX9D, term
+and a `flows` block (`dealer_flows.py`): dealer vanna and charm hedge flows
+in basis points of the 0.5-30 day open-interest notional (`charm_bp_day`,
+`vanna_bp_per_volpt`, positive = dealer buying) and `charm_support_ratio`,
+today's charm against its own median of the previous 20 sessions (null under
+10). Same dealers-long-calls / short-puts convention as the GEX numbers;
+an assumption, not observed positioning.
+
+Also and a top-level `market.vix` block from `vix_state.csv` (VIX, VIX9D, term
 spread and state, 1d and 20d change). All additive: a reader that ignores
 them is unaffected. Nothing new is fetched or stored; these are derived from
 data already captured. Tests: `python -m pytest test_vol_metrics.py`.
