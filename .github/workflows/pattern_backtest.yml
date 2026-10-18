@@ -1,15 +1,16 @@
 name: Pattern backtest (research)
 
 # Research only: runs research/pattern_backtest.py on a push to the
-# research branch and uploads results as an artifact. Commits nothing.
+# research branch and commits ONLY the results (research/results/*.md,
+# *.json: summary statistics, no price data) back to the research branch.
 on:
   push:
     branches: [research/pattern-backtest]
-    paths: [research/**, .github/workflows/pattern_backtest.yml]
+    paths: [research/*.py, .github/workflows/pattern_backtest.yml]
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   backtest:
@@ -21,8 +22,11 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install yfinance pandas numpy
-      - run: python research/pattern_backtest.py --out results
-      - uses: actions/upload-artifact@v4
-        with:
-          name: pattern-backtest-results
-          path: results/
+      - run: python research/pattern_backtest.py --out research/results
+      - name: Commit results only
+        run: |
+          git config user.name "gex-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add research/results/results.md research/results/results.json
+          git commit -m "research: pattern backtest results [skip ci]" || echo "no change"
+          git push
