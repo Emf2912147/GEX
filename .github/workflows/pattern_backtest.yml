@@ -1,0 +1,28 @@
+name: Pattern backtest (research)
+
+# Research only: runs research/pattern_backtest.py on a push to the
+# research branch and uploads results as an artifact. Commits nothing.
+on:
+  push:
+    branches: [research/pattern-backtest]
+    paths: [research/**, .github/workflows/pattern_backtest.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install yfinance pandas numpy
+      - run: python research/pattern_backtest.py --out results
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pattern-backtest-results
+          path: results/
