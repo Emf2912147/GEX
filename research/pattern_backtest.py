@@ -194,7 +194,7 @@ def pivots(d: pd.DataFrame, w: int, col: str, fn):
     return out
 
 
-def t1_zone_touches(name, group, d):
+def t1_zone_touches(name, group, d, w=5, up=1.5, dn=0.5, horizon=H):
     """Law 1: each touch drains a zone. Support from pivot lows (and
     resistance from pivot highs, mirrored). Outcome y=1 if the zone HOLDS:
     price moves 1.5 ATR away before closing 0.5 ATR through it (10 days)."""
@@ -202,12 +202,12 @@ def t1_zone_touches(name, group, d):
     hi, lo, cl, atr = (d[c].to_numpy() for c in ("high", "low", "close", "atr"))
     n = len(d)
     for side in ("S", "R"):
-        piv = pivots(d, 5, "low" if side == "S" else "high", np.min if side == "S" else np.max)
+        piv = pivots(d, w, "low" if side == "S" else "high", np.min if side == "S" else np.max)
         confirm = {}
         for i in piv:
-            confirm.setdefault(i + 5, []).append(i)
+            confirm.setdefault(i + w, []).append(i)
         active = {}                       # pivot index -> [level, touches]
-        for t in range(20, n - H):
+        for t in range(20, n - horizon):
             for i in confirm.get(t, []):
                 active[i] = [lo[i] if side == "S" else hi[i], 0]
             a = atr[t]
@@ -230,17 +230,17 @@ def t1_zone_touches(name, group, d):
                 k += 1
                 active[i][1] = k
                 held = 0
-                for j in range(t + 1, t + H + 1):
+                for j in range(t + 1, t + horizon + 1):
                     if side == "S":
-                        if cl[j] < L - 0.5 * a:
+                        if cl[j] < L - dn * a:
                             break
-                        if hi[j] >= L + 1.5 * a:
+                        if hi[j] >= L + up * a:
                             held = 1
                             break
                     else:
-                        if cl[j] > L + 0.5 * a:
+                        if cl[j] > L + dn * a:
                             break
-                        if lo[j] <= L - 1.5 * a:
+                        if lo[j] <= L - up * a:
                             held = 1
                             break
                 ev.append({"ticker": name, "group": group, "kind": f"touch{side}{i}",
@@ -469,151 +469,219 @@ def t7_opex(name, group, d):
 # run
 # ======================================================================
 
-def run(data):
-    E = {k: [] for k in ("t1", "t2", "t3", "t4", "t5", "t6", "t7")}
-    fns = {"t1": t1_zone_touches, "t2": t2_gap_breakout, "t3": t3_slope, "t4": t4_fib_close,
-           "t5": t5_phase, "t6": t6_sweep, "t7": t7_opex}
+
+# ======================================================================
+# placebo (random-walk surrogates with the same bar statistics)
+# ======================================================================
+
+def surrogate(df: pd.DataFrame, rng) -> pd.DataFrame:
+    """Shuffle 10-day blocks of bars (each bar relative to the prior close)
+    and rebuild prices: same volatility and gap/range profile, no patterns."""
+    pc = df["close"].shift()
+    rel = pd.DataFrame({"o": df["open"] / pc, "h": df["high"] / pc, "l": df["low"] / pc,
+                        "c": df["close"] / pc, "v": df["volume"]}).iloc[1:]
+    n = len(rel)
+    starts = rng.integers(0, max(1, n - 10), size=n // 10 + 1)
+    idx = np.concatenate([np.arange(s0, s0 + 10) for s0 in starts])[:n]
+    r = rel.iloc[idx].to_numpy()
+    c = np.empty(n + 1)
+    c[0] = df["close"].iloc[0]
+    o, h, l = (np.empty(n) for _ in range(3))
+    for k in range(n):
+        o[k], h[k], l[k] = c[k] * r[k, 0], c[k] * r[k, 1], c[k] * r[k, 2]
+        c[k + 1] = c[k] * r[k, 3]
+    out = pd.DataFrame({"open": np.r_[df["open"].iloc[0], o], "high": np.r_[df["high"].iloc[0], h],
+                        "low": np.r_[df["low"].iloc[0], l], "close": c,
+                        "volume": np.r_[df["volume"].iloc[0], r[:, 4]]}, index=df.index)
+    return out
+
+
+# ======================================================================
+# tests
+# ======================================================================
+
+SPECS = [
+    # name, lesson, claim, metric, events, filter, a, b, field, min effect
+    ("Zone touch count", "5 (Law 1)", "First touch of a support/resistance zone holds more often than the 3rd+",
+     "hold rate, 1st touch minus 3rd+", "t1", None, lambda e: e["touch"] == 1, lambda e: e["touch"] >= 3, "y", 0.04),
+    ("Gap breakout vs grind", "5 (Law 2)", "Breaking a 20-day level on a gap continues better than grinding through",
+     "10-day continuation (ATR), gap minus grind", "t2", None, lambda e: e["gap"], lambda e: not e["gap"], "y", 0.15),
+    ("Move character: orderly", "5 (Law 3)", "Steep, orderly moves continue",
+     "10-day continuation (ATR), orderly minus ordinary trends", "t3", None,
+     lambda e: e["cls"] == "orderly", lambda e: e["cls"] == "other", "y", 0.15),
+    ("Move character: absorbed", "5 (Law 3)", "Steep-then-stalling moves reverse",
+     "10-day continuation (ATR), ordinary minus absorbed", "t3", None,
+     lambda e: e["cls"] == "other", lambda e: e["cls"] == "absorbed", "y", 0.15),
+    ("Move character: violent", "5 (Law 3)", "Wide, violent moves have no trend (stand aside)",
+     "10-day continuation (ATR), ordinary minus violent", "t3", None,
+     lambda e: e["cls"] == "other", lambda e: e["cls"] == "violent", "y", 0.15),
+    ("Close strength vs Fibonacci", "5 (Law 4)",
+     "Moves that hold above the 23.6% retracement continue better than those that lose 50%",
+     "10-day continuation (ATR), strong minus weak", "t4", None,
+     lambda e: e["bucket"] == "strong", lambda e: e["bucket"] == "weak", "y", 0.15),
+    ("Breakout from contraction", "1 (Master Pattern)",
+     "Breakouts out of a volatility contraction continue better than other breakouts",
+     "10-day continuation (ATR), squeeze minus other", "t5", lambda e: e["kind"] == "bo",
+     lambda e: e["squeeze"], lambda e: not e["squeeze"], "y", 0.15),
+    ("Late entry (extended)", "1-2 (entries)",
+     "Entering > 2.5 ATR from the 20-day EMA does worse than entering 0.5-1.5 ATR away",
+     "10-day continuation (ATR), normal minus extended", "t5", lambda e: e["kind"].startswith("ext"),
+     lambda e: not e["extended"], lambda e: e["extended"], "y", 0.15),
+    ("Stop sweep and reclaim", "6", "A reclaimed sweep of a swing low/high reverses",
+     "10-day move in the signal direction (ATR)", "t6", None, lambda e: e["kind"] == "sweep", None, "y", 0.15),
+    ("Sweep vs clean breakdown", "6", "Reclaimed sweeps beat breakdowns that hold",
+     "signal-direction move (ATR), sweep minus breakdown", "t6", None,
+     lambda e: e["kind"] == "sweep", lambda e: e["kind"] == "breakdown", "y", 0.15),
+    ("Pin window (monthly OPEX)", "8", "Price compresses in the 1-4 days before monthly expiration",
+     "daily |move| / ATR, other days minus pin window", "t7", lambda e: not e["quad"],
+     lambda e: e["win"] == "other", lambda e: e["win"] == "pin", "move", 0.03),
+    ("Shakeout window (monthly OPEX)", "8", "Breakouts ~2 weeks before monthly expiration fail more often",
+     "false-breakout rate, shakeout minus other days", "t7", lambda e: not e["quad"] and e["fake"] is not None,
+     lambda e: e["win"] == "shake", lambda e: e["win"] == "other", "fake", 0.04),
+    ("Pin window (quad witching)", "8", "Price compresses ~2 weeks before quad witching",
+     "daily |move| / ATR, other days minus pin window", "t7", lambda e: e["quad"],
+     lambda e: e["win"] == "other", lambda e: e["win"] == "pin", "move", 0.03),
+    ("Shakeout window (quad witching)", "8", "Breakouts ~1 month before quad witching fail more often",
+     "false-breakout rate, shakeout minus other days", "t7", lambda e: e["quad"] and e["fake"] is not None,
+     lambda e: e["win"] == "shake", lambda e: e["win"] == "other", "fake", 0.04),
+]
+
+FNS = {"t1": t1_zone_touches, "t2": t2_gap_breakout, "t3": t3_slope, "t4": t4_fib_close,
+       "t5": t5_phase, "t6": t6_sweep, "t7": t7_opex}
+
+
+def events(data, keys=None, **kw):
+    E = {k: [] for k in FNS}
     for name, (group, df) in data.items():
         d = prep(df)
-        for k, fn in fns.items():
-            E[k] += fn(name, group, d)
+        for k, fn in FNS.items():
+            if keys is None or k in keys:
+                E[k] += fn(name, group, d, **kw.get(k, {}))
+    return E
 
+
+def stats(E, specs=SPECS):
+    out = {}
+    for name, _, _, _, key, flt, a, b, field, _ in specs:
+        ev = [e for e in E[key] if flt is None or flt(e)]
+        out[name] = {g: summarize(ev, g, a, b, field=field) for g in ("INDEX", "BROAD")}
+    return out
+
+
+def excess(real, placebos):
+    """Real effect minus the mean placebo effect, with a t that includes
+    the placebo's own spread."""
+    out = {}
+    for name, groups in real.items():
+        out[name] = {}
+        for g, r in groups.items():
+            def one(rr, path):
+                eff, t = rr.get("effect"), rr.get("t")
+                ps = [_get(p[name][g], path) for p in placebos]
+                ps = [x for x in ps if x is not None]
+                if eff is None or t is None or not ps or t == 0:
+                    return {"effect": None, "t": None, "n": rr.get("n"), "raw": eff, "placebo": None}
+                se = abs(eff / t)
+                pm = float(np.mean(ps))
+                psd = float(np.std(ps, ddof=1)) if len(ps) > 1 else 0.0
+                se_c = math.sqrt(se * se + psd * psd / len(ps) + psd * psd)
+                return {"effect": eff - pm, "t": (eff - pm) / se_c if se_c > 0 else None,
+                        "n": rr.get("n"), "raw": eff, "placebo": pm}
+            res = one(r, ())
+            res["half1"] = one(r["half1"], ("half1",))
+            res["half2"] = one(r["half2"], ("half2",))
+            out[name][g] = res
+    return out
+
+
+def _get(d, path):
+    for p in path:
+        d = d.get(p, {})
+    return d.get("effect")
+
+
+def run(data, k_placebo=5, seed=11):
+    real = stats(events(data))
+    rng = np.random.default_rng(seed)
+    placebos = []
+    for _ in range(k_placebo):
+        sur = {n: (g, surrogate(df, rng)) for n, (g, df) in data.items()}
+        placebos.append(stats(events(sur)))
+    X = excess(real, placebos)
     R = []
-
-    def add(test, lesson, claim, metric, idx, broad, min_eff, extra=None):
-        g, why = grade(idx, broad, min_eff)
-        R.append({"test": test, "lesson": lesson, "claim": claim, "metric": metric,
-                  "index": idx, "broad": broad, "grade": g, "why": why, **(extra or {})})
-
-    # T1: first touch holds better than 3rd+
-    for grp in ("INDEX", "BROAD"):
-        pass
-    S = lambda g: summarize(E["t1"], g, lambda e: e["touch"] == 1, lambda e: e["touch"] >= 3)
-    rates = {}
-    for g in ("INDEX", "BROAD"):
-        ev = [e for e in E["t1"] if e["group"] == g]
-        rates[g] = {str(k): (round(float(np.mean([e["y"] for e in ev if (e["touch"] == k if k < 3 else e["touch"] >= 3)])), 3)
-                             if any((e["touch"] == k if k < 3 else e["touch"] >= 3) for e in ev) else None)
-                    for k in (1, 2, 3)}
-    add("Zone touch count", "5 (Law 1)", "First touch of a support/resistance zone holds more often than the 3rd+",
-        "hold rate, 1st touch minus 3rd+ touch", S("INDEX"), S("BROAD"), 0.04, {"hold_rates": rates})
-
-    S = lambda g: summarize(E["t2"], g, lambda e: e["gap"], lambda e: not e["gap"])
-    add("Gap breakout vs grind", "5 (Law 2)", "Breaking a 20-day level on a gap continues better than grinding through",
-        "10-day continuation (ATR), gap minus grind", S("INDEX"), S("BROAD"), 0.15)
-
-    for cls, claim, sign in (("orderly", "Steep, orderly moves continue", 1),
-                             ("absorbed", "Steep-then-stalling moves reverse", -1)):
-        sel = (lambda c: (lambda e: e["cls"] == c))(cls)
-        base = lambda e: e["cls"] != "violent"
-        if sign > 0:
-            S = lambda g, sel=sel: summarize(E["t3"], g, sel, lambda e: e["cls"] == "other")
-        else:
-            S = lambda g, sel=sel: summarize(E["t3"], g, lambda e: e["cls"] == "other", sel)
-        add(f"Move character: {cls}", "5 (Law 3)", claim,
-            "10-day continuation (ATR) vs ordinary trends" + (" (sign flipped: reversal)" if sign < 0 else ""),
-            S("INDEX"), S("BROAD"), 0.15)
-    # violent: no edge either way, wider dispersion
-    viol = {}
-    for g in ("INDEX", "BROAD"):
-        v = [e["y"] for e in E["t3"] if e["group"] == g and e["cls"] == "violent"]
-        o = [e["y"] for e in E["t3"] if e["group"] == g and e["cls"] == "other"]
-        m, t, n = mean_t(v)
-        viol[g] = {"mean": m, "t": t, "n": n,
-                   "dispersion_ratio": (float(np.std(v) / np.std(o)) if len(v) > 5 and len(o) > 5 else None)}
-    vi = viol["INDEX"]
-    g_v = ("SLIGHT" if vi["t"] is not None and abs(vi["t"]) < 1.5 and (vi["dispersion_ratio"] or 0) >= 1.2
-           else "NONE")
-    R.append({"test": "Move character: violent", "lesson": "5 (Law 3)",
-              "claim": "Wide, violent moves have no trend: stand aside",
-              "metric": "mean continuation ~0 and wider dispersion than ordinary trends",
-              "index": vi, "broad": viol["BROAD"], "grade": g_v,
-              "why": "no directional edge, outcomes more dispersed" if g_v == "SLIGHT" else "not supported"})
-
-    S = lambda g: summarize(E["t4"], g, lambda e: e["bucket"] == "strong", lambda e: e["bucket"] == "weak")
-    add("Close strength vs Fibonacci", "5 (Law 4)",
-        "Moves that hold above the 23.6% retracement continue better than those that lose 50%",
-        "10-day continuation (ATR), strong minus weak", S("INDEX"), S("BROAD"), 0.15)
-
-    S = lambda g: summarize([e for e in E["t5"] if e["kind"] == "bo"], g,
-                            lambda e: e["squeeze"], lambda e: not e["squeeze"])
-    add("Breakout from contraction", "1 (Master Pattern)",
-        "Breakouts out of a volatility contraction continue better than other breakouts",
-        "10-day continuation (ATR), squeeze minus other", S("INDEX"), S("BROAD"), 0.15)
-    S = lambda g: summarize([e for e in E["t5"] if e["kind"].startswith("ext")], g,
-                            lambda e: not e["extended"], lambda e: e["extended"])
-    add("Late entry (extended)", "1-2 (entries)",
-        "Entering > 2.5 ATR from the 20-day EMA does worse than entering 0.5-1.5 ATR away",
-        "10-day continuation (ATR), normal minus extended", S("INDEX"), S("BROAD"), 0.15)
-
-    S = lambda g: summarize(E["t6"], g, lambda e: e["kind"] == "sweep")
-    add("Stop sweep and reclaim", "6", "A sweep below a swing low that is reclaimed leads to a move the other way",
-        "10-day move in the signal direction (ATR)", S("INDEX"), S("BROAD"), 0.15)
-    S = lambda g: summarize(E["t6"], g, lambda e: e["kind"] == "sweep", lambda e: e["kind"] == "breakdown")
-    add("Sweep vs clean breakdown", "6", "Reclaimed sweeps beat breakdowns that hold",
-        "10-day move in the signal direction (ATR), sweep minus breakdown", S("INDEX"), S("BROAD"), 0.15)
-
-    for quad in (False, True):
-        label = "quad witching" if quad else "monthly OPEX"
-        sel = [e for e in E["t7"] if e["quad"] == quad]
-        S = lambda g: summarize(sel, g, lambda e: e["win"] == "other", lambda e: e["win"] == "pin", field="move")
-        add(f"Pin window ({label})", "8", "Price compresses (pins) in the days before expiration",
-            "daily |move| / ATR, other days minus pin window", S("INDEX"), S("BROAD"), 0.03)
-        fk = [e for e in sel if e["fake"] is not None]
-        S = lambda g: summarize(fk, g, lambda e: e["win"] == "shake", lambda e: e["win"] == "other", field="fake")
-        add(f"Shakeout window ({label})", "8", "Breakouts in the shakeout window fail more often",
-            "false-breakout rate, shakeout minus other days", S("INDEX"), S("BROAD"), 0.04)
-
+    for name, lesson, claim, metric, *_rest in SPECS:
+        min_eff = _rest[-1]
+        g, why = grade(X[name]["INDEX"], X[name]["BROAD"], min_eff)
+        R.append({"test": name, "lesson": lesson, "claim": claim, "metric": metric,
+                  "index": X[name]["INDEX"], "broad": X[name]["BROAD"], "grade": g, "why": why,
+                  "raw_index": real[name]["INDEX"], "raw_broad": real[name]["BROAD"]})
     R.append({"test": "Open-interest wall shapes", "lesson": "7",
               "claim": "One-sided walls V-reverse; stacked walls chop; sloping walls give an ABC path",
-              "metric": "needs daily open-interest history", "index": {}, "broad": {},
-              "grade": "UNTESTED",
+              "metric": "needs daily open-interest history", "index": {}, "broad": {}, "grade": "UNTESTED",
               "why": "only 35 sessions of stored chains (2 monthly expirations): too few to test"})
     counts = {g: sum(1 for (gg, _) in data.values() if gg == g) for g in ("INDEX", "BROAD")}
     return R, counts
+
+
+def robustness(data, k_placebo=3, seed=23):
+    """Zone touches under other settings (placebo-adjusted)."""
+    rows = []
+    rng = np.random.default_rng(seed)
+    surs = [{n: (g, surrogate(df, rng)) for n, (g, df) in data.items()} for _ in range(k_placebo)]
+    spec = [x for x in SPECS if x[0] == "Zone touch count"]
+    for w, up, dn in ((3, 1.5, 0.5), (8, 1.5, 0.5), (5, 1.0, 0.5), (5, 2.0, 0.75), (5, 1.5, 0.25)):
+        kw = {"t1": {"w": w, "up": up, "dn": dn}}
+        real = stats(events(data, keys={"t1"}, **kw), spec)
+        pl = [stats(events(s, keys={"t1"}, **kw), spec) for s in surs]
+        X = excess(real, pl)["Zone touch count"]
+        rows.append({"test": f"zone touch: pivot {w}, hold {up} ATR, break {dn} ATR",
+                     "index": X["INDEX"], "broad": X["BROAD"]})
+    return rows
 
 
 def fmt(x, p=3):
     return "–" if x is None else (f"{x:+.{p}f}" if isinstance(x, float) else str(x))
 
 
-def report(R, counts, outdir):
+def report(R, counts, rob, outdir):
     os.makedirs(outdir, exist_ok=True)
     with open(os.path.join(outdir, "results.json"), "w") as f:
-        json.dump({"counts": counts, "results": R}, f, indent=1, default=str)
-    lines = ["# Course pattern backtest", "",
-             f"Index series: {counts['INDEX']} · broad tickers: {counts['BROAD']} · horizon {H} days · "
-             "outcomes in ATR, drift-adjusted", "",
-             "| Test | Lesson | Grade | Index effect (t, n) | 1st half / 2nd half | Broad effect (t, n) |",
-             "|---|---|---|---|---|---|"]
+        json.dump({"counts": counts, "results": R, "robustness": rob}, f, indent=1, default=str)
+    L = ["# Course pattern backtest", "",
+         f"Index series: {counts['INDEX']} (SPY, QQQ, IWM, SPX 1985-93) · broad: {counts['BROAD']} tickers · "
+         f"horizon {H} days · ATR units, drift-adjusted · effects are EXCESS over a random-walk placebo", "",
+         "| Test | Lesson | Grade | Index excess (t, n) [raw / placebo] | halves | Broad excess (t, n) |",
+         "|---|---|---|---|---|---|"]
     for r in R:
         i, b = r["index"], r["broad"]
-        h1 = (i.get("half1") or {}).get("effect")
-        h2 = (i.get("half2") or {}).get("effect")
-        lines.append(f"| {r['test']} | {r['lesson']} | **{r['grade']}** | "
-                     f"{fmt(i.get('effect') if 'effect' in i else i.get('mean'))} "
-                     f"(t {fmt(i.get('t'), 1)}, n {i.get('n', '–')}) | {fmt(h1)} / {fmt(h2)} | "
-                     f"{fmt(b.get('effect') if 'effect' in b else b.get('mean'))} "
-                     f"(t {fmt(b.get('t'), 1)}, n {b.get('n', '–')}) |")
-    lines += ["", "Notes:"]
-    for r in R:
-        lines.append(f"- **{r['test']}** — {r['claim']}. Metric: {r['metric']}. → {r['grade']}: {r['why']}."
-                     + (f" Hold rates by touch (1/2/3+): {r['hold_rates']}" if "hold_rates" in r else "")
-                     + (f" Dispersion ratio: {fmt(r['index'].get('dispersion_ratio'), 2)}" if "dispersion_ratio" in r["index"] else ""))
+        L.append(f"| {r['test']} | {r['lesson']} | **{r['grade']}** | {fmt(i.get('effect'))} "
+                 f"(t {fmt(i.get('t'), 1)}, n {i.get('n', '–')}) [{fmt(i.get('raw'))} / {fmt(i.get('placebo'))}] | "
+                 f"{fmt((i.get('half1') or {}).get('effect'))} / {fmt((i.get('half2') or {}).get('effect'))} | "
+                 f"{fmt(b.get('effect'))} (t {fmt(b.get('t'), 1)}, n {b.get('n', '–')}) |")
+    L += ["", "## Zone-touch robustness (placebo-adjusted)", "",
+          "| Variant | Index excess (t, n) | halves | Broad excess (t, n) |", "|---|---|---|---|"]
+    for r in rob:
+        i, b = r["index"], r["broad"]
+        L.append(f"| {r['test']} | {fmt(i.get('effect'))} (t {fmt(i.get('t'), 1)}, n {i.get('n')}) | "
+                 f"{fmt(i['half1'].get('effect'))} / {fmt(i['half2'].get('effect'))} | "
+                 f"{fmt(b.get('effect'))} (t {fmt(b.get('t'), 1)}, n {b.get('n')}) |")
+    L += ["", "## Notes"] + [f"- **{r['test']}**: {r['claim']}. {r['metric']}. → {r['grade']}: {r['why']}." for r in R]
     with open(os.path.join(outdir, "results.md"), "w") as f:
-        f.write("\n".join(lines) + "\n")
-    print("\n".join(lines))
+        f.write("\n".join(L) + "\n")
+    print("\n".join(L))
 
 
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--data-dir", default=None, help="offline CSVs (tests)")
     p.add_argument("--out", default="results")
+    p.add_argument("--placebo", type=int, default=5)
     a = p.parse_args()
     data = load(a.data_dir)
     print(f"loaded {len(data)} series")
-    R, counts = run(data)
-    report(R, counts, a.out)
+    R, counts = run(data, k_placebo=a.placebo)
+    rob = robustness(data)
+    report(R, counts, rob, a.out)
 
 
 if __name__ == "__main__":
