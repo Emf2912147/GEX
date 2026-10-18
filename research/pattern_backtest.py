@@ -244,7 +244,8 @@ def t1_zone_touches(name, group, d, w=5, up=1.5, dn=0.5, horizon=H):
                             held = 1
                             break
                 ev.append({"ticker": name, "group": group, "kind": f"touch{side}{i}",
-                           "i": t, "date": d.index[t], "touch": k, "y": held})
+                           "i": t, "date": d.index[t], "touch": k, "y": held,
+                           "s": 1 if side == "S" else -1})
             for i in dead:
                 active.pop(i, None)
             # keep the active set small: drop zones > 4 ATR away
@@ -262,10 +263,10 @@ def t2_gap_breakout(name, group, d):
         R, S = hi[t - 20:t].max(), lo[t - 20:t].min()
         if cl[t] > R and cl[t - 1] <= R:
             ev.append({"ticker": name, "group": group, "kind": "brk", "i": t, "date": d.index[t],
-                       "gap": op[t] > R, "y": fwd[t]})
+                       "gap": op[t] > R, "y": fwd[t], "s": 1})
         elif cl[t] < S and cl[t - 1] >= S:
             ev.append({"ticker": name, "group": group, "kind": "brk", "i": t, "date": d.index[t],
-                       "gap": op[t] < S, "y": -fwd[t]})
+                       "gap": op[t] < S, "y": -fwd[t], "s": -1})
     return dedupe(ev)
 
 
@@ -304,7 +305,7 @@ def t3_slope(name, group, d):
         else:
             cls = "other"
         ev.append({"ticker": name, "group": group, "kind": cls, "i": t, "date": d.index[t],
-                   "cls": cls, "dir": "down" if s < 0 else "up", "y": s * fwd[t]})
+                   "cls": cls, "dir": "down" if s < 0 else "up", "y": s * fwd[t], "s": s})
     return dedupe(ev)
 
 
@@ -324,14 +325,14 @@ def t4_fib_close(name, group, d):
             if imp >= 3 * a:
                 r = (hi[t] - lo[t + 1:t + 6].min()) / imp
                 ev.append({"ticker": name, "group": group, "kind": "fibU", "i": t, "date": d.index[t],
-                           "bucket": _fib(r), "y": fwd[t + 5]})
+                           "bucket": _fib(r), "y": fwd[t + 5], "s": 1, "ctx_i": t + 5})
         if lo[t] <= lo[t - 10:t + 1].min():
             top = hi[t - 10:t + 1].max()
             imp = top - lo[t]
             if imp >= 3 * a:
                 r = (hi[t + 1:t + 6].max() - lo[t]) / imp
                 ev.append({"ticker": name, "group": group, "kind": "fibD", "i": t, "date": d.index[t],
-                           "bucket": _fib(r), "y": -fwd[t + 5]})
+                           "bucket": _fib(r), "y": -fwd[t + 5], "s": -1, "ctx_i": t + 5})
     return dedupe(ev)
 
 
@@ -354,15 +355,15 @@ def t5_phase(name, group, d):
         squeeze = np.nanmin(pct[t - 5:t]) <= 0.2
         if cl[t] > R and cl[t - 1] <= R:
             ev.append({"ticker": name, "group": group, "kind": "bo", "i": t, "date": d.index[t],
-                       "squeeze": bool(squeeze), "y": fwd[t]})
+                       "squeeze": bool(squeeze), "y": fwd[t], "s": 1})
         elif cl[t] < S and cl[t - 1] >= S:
             ev.append({"ticker": name, "group": group, "kind": "bo", "i": t, "date": d.index[t],
-                       "squeeze": bool(squeeze), "y": -fwd[t]})
+                       "squeeze": bool(squeeze), "y": -fwd[t], "s": -1})
         ext = (cl[t] - ema[t]) / atr[t]
         if abs(ext) >= 2.5 or 0.5 <= abs(ext) <= 1.5:
             s = 1 if ext > 0 else -1
             ev.append({"ticker": name, "group": group, "kind": "ext" + ("X" if abs(ext) >= 2.5 else "N"),
-                       "i": t, "date": d.index[t], "extended": abs(ext) >= 2.5, "y": s * fwd[t]})
+                       "i": t, "date": d.index[t], "extended": abs(ext) >= 2.5, "y": s * fwd[t], "s": s})
     return dedupe(ev)
 
 
@@ -388,24 +389,24 @@ def t6_sweep(name, group, d):
                 if side == "L":
                     if lo[t] < L - 0.1 * a and cl[t - 1] > L:
                         if cl[t] > L:
-                            ev.append(_ev(name, group, "sweep", t, d, fwd[t]))
+                            ev.append(_ev(name, group, "sweep", t, d, fwd[t], 1))
                         elif cl[t + 1] > L:
-                            ev.append(_ev(name, group, "sweep", t + 1, d, fwd[t + 1]))
+                            ev.append(_ev(name, group, "sweep", t + 1, d, fwd[t + 1], 1))
                         elif cl[t] < L - 0.25 * a and cl[t + 1] < L and cl[t + 2] < L:
-                            ev.append(_ev(name, group, "breakdown", t + 2, d, -fwd[t + 2]))
+                            ev.append(_ev(name, group, "breakdown", t + 2, d, -fwd[t + 2], -1))
                 else:
                     if hi[t] > L + 0.1 * a and cl[t - 1] < L:
                         if cl[t] < L:
-                            ev.append(_ev(name, group, "sweep", t, d, -fwd[t]))
+                            ev.append(_ev(name, group, "sweep", t, d, -fwd[t], -1))
                         elif cl[t + 1] < L:
-                            ev.append(_ev(name, group, "sweep", t + 1, d, -fwd[t + 1]))
+                            ev.append(_ev(name, group, "sweep", t + 1, d, -fwd[t + 1], -1))
                         elif cl[t] > L + 0.25 * a and cl[t + 1] > L and cl[t + 2] > L:
-                            ev.append(_ev(name, group, "breakdown", t + 2, d, fwd[t + 2]))
+                            ev.append(_ev(name, group, "breakdown", t + 2, d, fwd[t + 2], 1))
     return dedupe(ev)
 
 
-def _ev(name, group, kind, i, d, y):
-    return {"ticker": name, "group": group, "kind": kind, "i": i, "date": d.index[i], "y": y}
+def _ev(name, group, kind, i, d, y, s=0):
+    return {"ticker": name, "group": group, "kind": kind, "i": i, "date": d.index[i], "y": y, "s": s}
 
 
 def third_fridays(start: date, end: date):

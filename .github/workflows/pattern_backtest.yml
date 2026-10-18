@@ -22,7 +22,7 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install yfinance pandas numpy requests
-      - run: python research/pcr_probe.py
+      - run: cd research && python pattern_backtest_v2.py --out results
       - name: Commit results only
         run: |
           git config user.name "gex-bot"
