@@ -1,0 +1,39 @@
+== https://cdn.cboe.com/data/us/options/market_statistics/daily/2020-10-15_daily_options -> 200 application/json len=3924
+{"ratios": [{"name": "TOTAL PUT/CALL RATIO", "value": "0.75"}, {"name": "INDEX PUT/CALL RATIO", "value": "1.29"}, {"name": "EXCHANGE TRADED PRODUCTS PUT/CALL RATIO", "value": "0.93"}, {"name": "EQUITY PUT/CALL RATIO", "value": "0.46"}, {"name": "CBOE VOLATILITY INDEX (VIX) PUT/CALL RATIO", "value": "0.91"}, {"name": "SPX + SPXW PUT/CALL RATIO", "value": "1.60"}, {"name": "OEX PUT/CALL RATIO", "value": "1.26"}, {"name": "MRUT PUT/CALL RATIO", "value": "0.00"}, {"name": "MXEA PUT/CALL RATIO", "value": "31.57"}, {"name": "MXEF PUT/CALL RATIO", "value": "0.22"}, {"name": "MXACW PUT/CALL RATIO", "value": "0.00"}, {"name": "MXWLD PUT/CALL RATIO", "value": "0.00"}, {"name": "MXUSA PUT/CALL RATIO", "value": "0.00"}], "SUM OF ALL PRODUCTS": [{"name": "VOLUME", "call": 2750656, "put": 2072612, "total": 4823268}, {"name": "OPEN INTEREST", "call": 208870053, "put": 178236034, "total": 387106087}], "INDEX OPTIONS": [{"name": "VOLUME", "call": 698233, "put": 903342, "total": 1601575}, {"name": "OPEN INTEREST", "call": 9840577, "put": 13537526, "total": 23378103}], "EXCHANGE TRADED PRODUCTS": [{"name": "VOLUME", "call": 493885, "put": 458903, "total": 952788}, {"name": "OPEN INTEREST", "call": 51634942, "put": 61428594, "total": 113063536}], "EQUITY OPTIONS": [{"name": "VOLUME", "call": 1558538, "put": 710367, "total": 2268905}, {"name": "OPEN INTEREST", "call": 147394534, "put": 103269914, "total": 250664448}], "CBOE VOLATILITY INDEX (VIX)": [{"name": "VOLUME", "call": 261303, "put": 23784
+== https://www.cboe.com/us/options/market_statistics/daily/?dt=2020-10-15 -> 200 text/html; charset=utf-8 len=425623
+HTML: TOTAL PUT/CALL RATIO\",\"value\":\"0.75
+HTML: INDEX PUT/CALL RATIO\",\"value\":\"1.29
+HTML: EQUITY PUT/CALL RATIO\",\"value\":\"0.46
+HTML: INDEX (VIX) PUT/CALL RATIO\",\"value\":\"0.91
+HTML: SPX + SPXW PUT/CALL RATIO\",\"value\":\"1.60
+HTML: TOTAL PUT/CALL RATIO</td><td class="tw-align-middle tw-text-right">0.75
+HTML: INDEX PUT/CALL RATIO</td><td class="tw-align-middle tw-text-right">1.29
+HTML: EQUITY PUT/CALL RATIO</td><td class="tw-align-middle tw-text-right">0.46
+HTML: INDEX (VIX) PUT/CALL RATIO</td><td class="tw-align-middle tw-text-right">0.91
+HTML: SPX + SPXW PUT/CALL RATIO</td><td class="tw-align-middle tw-text-right">1.60
+== https://cdn.cboe.com/data/us/options/market_statistics/daily/2023-06-14_daily_options -> 200 application/json len=3954
+{"ratios": [{"name": "TOTAL PUT/CALL RATIO", "value": "1.01"}, {"name": "INDEX PUT/CALL RATIO", "value": "0.96"}, {"name": "EXCHANGE TRADED PRODUCTS PUT/CALL RATIO", "value": "1.61"}, {"name": "EQUITY PUT/CALL RATIO", "value": "0.74"}, {"name": "CBOE VOLATILITY INDEX (VIX) PUT/CALL RATIO", "value": "0.24"}, {"name": "SPX + SPXW PUT/CALL RATIO", "value": "1.28"}, {"name": "OEX PUT/CALL RATIO", "value": "5.12"}, {"name": "MRUT PUT/CALL RATIO", "value": "1.52"}, {"name": "MXEA PUT/CALL RATIO", "value": "838.50"}, {"name": "MXEF PUT/CALL RATIO", "value": "154.33"}, {"name": "MXACW PUT/CALL RATIO", "value": "0.00"}, {"name": "MXWLD PUT/CALL RATIO", "value": "0.00"}, {"name": "MXUSA PUT/CALL RATIO", "value": "0.00"}], "SUM OF ALL PRODUCTS": [{"name": "VOLUME", "call": 4859030, "put": 4893317, "total": 9752347}, {"name": "OPEN INTEREST", "call": 256453629, "put": 229180777, "total": 485634406}], "INDEX OPTIONS": [{"name": "VOLUME", "call": 1860895, "put": 1778154, "total": 3639049}, {"name": "OPEN INTEREST", "call": 20449880, "put": 20570419, "total": 41020299}], "EXCHANGE TRADED PRODUCTS": [{"name": "VOLUME", "call": 1027371, "put": 1656459, "total": 2683830}, {"name": "OPEN INTEREST", "call": 61872907, "put": 74296970, "total": 136169877}], "EQUITY OPTIONS": [{"name": "VOLUME", "call": 1970764, "put": 1458704, "total": 3429468}, {"name": "OPEN INTEREST", "call": 174130842, "put": 134313388, "total": 308444230}], "CBOE VOLATILITY INDEX (VIX)": [{"name": "VOLUME", "call": 573488, "p
+== https://www.cboe.com/us/options/market_statistics/daily/?dt=2023-06-14 -> 200 text/html; charset=utf-8 len=425690
+HTML: TOTAL PUT/CALL RATIO\",\"value\":\"1.01
+HTML: INDEX PUT/CALL RATIO\",\"value\":\"0.96
+HTML: EQUITY PUT/CALL RATIO\",\"value\":\"0.74
+HTML: INDEX (VIX) PUT/CALL RATIO\",\"value\":\"0.24
+HTML: SPX + SPXW PUT/CALL RATIO\",\"value\":\"1.28
+HTML: TOTAL PUT/CALL RATIO</td><td class="tw-align-middle tw-text-right">1.01
+HTML: INDEX PUT/CALL RATIO</td><td class="tw-align-middle tw-text-right">0.96
+HTML: EQUITY PUT/CALL RATIO</td><td class="tw-align-middle tw-text-right">0.74
+HTML: INDEX (VIX) PUT/CALL RATIO</td><td class="tw-align-middle tw-text-right">0.24
+HTML: SPX + SPXW PUT/CALL RATIO</td><td class="tw-align-middle tw-text-right">1.28
+== https://cdn.cboe.com/data/us/options/market_statistics/daily/2026-10-16_daily_options -> 200 application/json len=7007
+{"ratios": [{"name": "TOTAL PUT/CALL RATIO", "value": "0.92"}, {"name": "INDEX PUT/CALL RATIO", "value": "1.05"}, {"name": "EXCHANGE TRADED PRODUCTS PUT/CALL RATIO", "value": "1.06"}, {"name": "EQUITY PUT/CALL RATIO", "value": "0.65"}, {"name": "CBOE VOLATILITY INDEX (VIX) PUT/CALL RATIO", "value": "0.32"}, {"name": "SPX + SPXW PUT/CALL RATIO", "value": "1.46"}, {"name": "KPI BINARY OPTIONS PUT/CALL RATIO", "value": "0.00"}, {"name": "OEX PUT/CALL RATIO", "value": "5.00"}, {"name": "MRUT PUT/CALL RATIO", "value": "1.60"}, {"name": "MXEA PUT/CALL RATIO", "value": "0.00"}, {"name": "MXEF PUT/CALL RATIO", "value": "0.00"}, {"name": "MXACW PUT/CALL RATIO", "value": "0.00"}, {"name": "MXWLD PUT/CALL RATIO", "value": "0.00"}, {"name": "MXUSA PUT/CALL RATIO", "value": "0.00"}, {"name": "CBTX PUT/CALL RATIO", "value": "49.00"}, {"name": "MBTX PUT/CALL RATIO", "value": "4.00"}, {"name": "SPEQX PUT/CALL RATIO", "value": "0.00"}, {"name": "SPEQW PUT/CALL RATIO", "value": "0.00"}, {"name": "MGTN PUT/CALL RATIO", "value": "0.31"}, {"name": "MGTNW PUT/CALL RATIO", "value": "0.09"}, {"name": "DJX PUT/CALL RATIO", "value": "0.02"}, {"name": "DJXW PUT/CALL RATIO", "value": "1.34"}, {"name": "XSPBX PUT/CALL RATIO", "value": "0.00"}, {"name": "XSPBW PUT/CALL RATIO", "value": "0.64"}], "SUM OF ALL PRODUCTS": [{"name": "VOLUME", "call": 10401864, "put": 9619756, "total": 20021620}, {"name": "OPEN INTEREST", "call": 411938145, "put": 306183961, "total": 718122106}], "INDEX OPTIONS": [{"name": "VOL
+== https://www.cboe.com/us/options/market_statistics/daily/?dt=2026-10-16 -> 200 text/html; charset=utf-8 len=450977
+HTML: TOTAL PUT/CALL RATIO\",\"value\":\"0.92
+HTML: INDEX PUT/CALL RATIO\",\"value\":\"1.05
+HTML: EQUITY PUT/CALL RATIO\",\"value\":\"0.65
+HTML: INDEX (VIX) PUT/CALL RATIO\",\"value\":\"0.32
+HTML: SPX + SPXW PUT/CALL RATIO\",\"value\":\"1.46
+HTML: TOTAL PUT/CALL RATIO</td><td class="tw-align-middle tw-text-right">0.92
+HTML: INDEX PUT/CALL RATIO</td><td class="tw-align-middle tw-text-right">1.05
+HTML: EQUITY PUT/CALL RATIO</td><td class="tw-align-middle tw-text-right">0.65
+HTML: INDEX (VIX) PUT/CALL RATIO</td><td class="tw-align-middle tw-text-right">0.32
+HTML: SPX + SPXW PUT/CALL RATIO</td><td class="tw-align-middle tw-text-right">1.46
