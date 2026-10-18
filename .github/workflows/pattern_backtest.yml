@@ -22,7 +22,7 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install yfinance pandas numpy requests
-      - run: cd research && python futures_stops_backtest.py --out results
+      - run: cd research && python futures_targets_backtest.py --out results
       - name: Commit results only
         run: |
           git config user.name "gex-bot"
