@@ -206,12 +206,15 @@ def summarize(E):
             b = base[base["group"] == g]
             for h in HS:
                 x = ev[f"exc{h}"].dropna()
-                t, n = tstat(x, h)
+                _, n = tstat(x, h)
+                # Same-day signals across tickers are one event: average per date first.
+                xc = ev.dropna(subset=[f"exc{h}"]).groupby("date")[f"exc{h}"].mean()
+                t, n_dates = tstat(xc, h)
                 med = ev["date"].median() if len(ev) else None
                 halves = ([float(ev.loc[ev["date"] < med, f"exc{h}"].mean()),
                            float(ev.loc[ev["date"] >= med, f"exc{h}"].mean())] if len(ev) > 8 else [None, None])
                 row[f"{g}_{h}"] = {
-                    "n": n, "excess": float(x.mean()) if n else None, "t": t,
+                    "n": n, "n_dates": n_dates, "excess": float(x.mean()) if n else None, "t": t,
                     "ret": float(ev[f"ret{h}"].mean()) if n else None,
                     "win": float((ev[f"ret{h}"] > 0).mean()) if n else None,
                     "win_base": float((b[f"ret{h}"] > 0).mean()) if len(b) else None,
