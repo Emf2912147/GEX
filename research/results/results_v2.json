@@ -1,0 +1,2883 @@
+{
+ "cells": [
+  {
+   "pattern": "First touch of a zone",
+   "context": "RSI extreme",
+   "index": {
+    "n_A": 4,
+    "n_B": 259,
+    "mean_A": 2.441781035095805,
+    "mean_B": 0.025341463253103547,
+    "mean_C": 0.2155881087782843,
+    "win_A": 0.75,
+    "win_B": 0.49034749034749037,
+    "A_minus_B": null,
+    "t_AB": null,
+    "A_minus_C": null,
+    "t_AC": null,
+    "half1": null,
+    "half2": null
+   },
+   "broad": {
+    "n_A": 191,
+    "n_B": 6631,
+    "mean_A": 0.1103613503256815,
+    "mean_B": 0.051792275711261486,
+    "mean_C": 0.0491671692212251,
+    "win_A": 0.5340314136125655,
+    "win_B": 0.4938923239330418,
+    "A_minus_B": 0.05856907461442002,
+    "t_AB": 0.3369513641434692,
+    "A_minus_C": 0.06119418110445641,
+    "t_AC": 0.3457627286623226,
+    "half1": 0.25039453148232427,
+    "half2": -0.07725429812887241
+   },
+   "grade": "NONE",
+   "why": "too few index signals at this extreme"
+  },
+  {
+   "pattern": "First touch of a zone",
+   "context": "Put/call extreme",
+   "index": {
+    "n_A": 45,
+    "n_B": 218,
+    "mean_A": -0.03271569439041599,
+    "mean_B": 0.08166407968121904,
+    "mean_C": -0.031143034517384205,
+    "win_A": 0.5111111111111111,
+    "win_B": 0.4908256880733945,
+    "A_minus_B": -0.11437977407163502,
+    "t_AB": -0.36606881082151055,
+    "A_minus_C": -0.0015726598730317828,
+    "t_AC": -0.005095996051406062,
+    "half1": -0.8015767529450705,
+    "half2": 0.6869123266910863
+   },
+   "broad": {
+    "n_A": 1216,
+    "n_B": 5606,
+    "mean_A": 0.07739436138987378,
+    "mean_B": 0.048234401481179724,
+    "mean_C": -0.03887701669480784,
+    "win_A": 0.506578947368421,
+    "win_B": 0.49250802711380665,
+    "A_minus_B": 0.029159959908694057,
+    "t_AB": 0.3945861233395798,
+    "A_minus_C": 0.11627137808468162,
+    "t_AC": 1.5958218936171944,
+    "half1": -0.099809262726545,
+    "half2": 0.2312026727140551
+   },
+   "grade": "NONE",
+   "why": "no reliable improvement at the extreme"
+  },
+  {
+   "pattern": "First touch of a zone",
+   "context": "RSI divergence",
+   "index": {
+    "n_A": 37,
+    "n_B": 226,
+    "mean_A": 0.21891653723326177,
+    "mean_B": 0.03641881081993959,
+    "mean_C": -0.06068020090092069,
+    "win_A": 0.4594594594594595,
+    "win_B": 0.5,
+    "A_minus_B": 0.18249772641332218,
+    "t_AB": 0.4366152704406673,
+    "A_minus_C": 0.27959673813418245,
+    "t_AC": 0.6310579096108567,
+    "half1": 0.25238922768140926,
+    "half2": 0.12987226988523606
+   },
+   "broad": {
+    "n_A": 845,
+    "n_B": 5977,
+    "mean_A": 0.0063202553928636065,
+    "mean_B": 0.06009251837821823,
+    "mean_C": 0.07599084829564028,
+    "win_A": 0.49230769230769234,
+    "win_B": 0.4953990296135185,
+    "A_minus_B": -0.053772262985354626,
+    "t_AB": -0.5787699014814395,
+    "A_minus_C": -0.06967059290277666,
+    "t_AC": -0.7213659558550615,
+    "half1": -0.07201944765383612,
+    "half2": -0.03485516869572878
+   },
+   "grade": "NONE",
+   "why": "no reliable improvement at the extreme"
+  },
+  {
+   "pattern": "First touch of a zone",
+   "context": "Any of the three",
+   "index": {
+    "n_A": 74,
+    "n_B": 189,
+    "mean_A": 0.2366351242449351,
+    "mean_B": -0.006245693498350093,
+    "mean_C": 0.07434079762670238,
+    "win_A": 0.5,
+    "win_B": 0.49206349206349204,
+    "A_minus_B": 0.24288081774328518,
+    "t_AB": 0.8114142646545051,
+    "A_minus_C": 0.16229432661823273,
+    "t_AC": 0.5724978680261736,
+    "half1": -0.08820627502246242,
+    "half2": 0.5625311632462348
+   },
+   "broad": {
+    "n_A": 1986,
+    "n_B": 4836,
+    "mean_A": 0.055794600862010976,
+    "mean_B": 0.052461852944918584,
+    "mean_C": 0.031577291671574866,
+    "win_A": 0.5040281973816717,
+    "win_B": 0.4913151364764268,
+    "A_minus_B": 0.003332747917092392,
+    "t_AB": 0.05204291458092912,
+    "A_minus_C": 0.02421730919043611,
+    "t_AC": 0.41260049897193224,
+    "half1": -0.06507602812760782,
+    "half2": 0.08431172854411678
+   },
+   "grade": "NONE",
+   "why": "no reliable improvement at the extreme"
+  },
+  {
+   "pattern": "3rd+ touch of a zone",
+   "context": "RSI extreme",
+   "index": {
+    "n_A": 0,
+    "n_B": 55,
+    "mean_A": null,
+    "mean_B": -0.39593673514682076,
+    "mean_C": 0.2155881087782843,
+    "win_A": null,
+    "win_B": 0.4727272727272727,
+    "A_minus_B": null,
+    "t_AB": null,
+    "A_minus_C": null,
+    "t_AC": null,
+    "half1": null,
+    "half2": null
+   },
+   "broad": {
+    "n_A": 0,
+    "n_B": 1550,
+    "mean_A": null,
+    "mean_B": 0.18058294082112464,
+    "mean_C": 0.0491671692212251,
+    "win_A": null,
+    "win_B": 0.5348387096774193,
+    "A_minus_B": null,
+    "t_AB": null,
+    "A_minus_C": null,
+    "t_AC": null,
+    "half1": null,
+    "half2": null
+   },
+   "grade": "NONE",
+   "why": "too few index signals at this extreme"
+  },
+  {
+   "pattern": "3rd+ touch of a zone",
+   "context": "Put/call extreme",
+   "index": {
+    "n_A": 12,
+    "n_B": 43,
+    "mean_A": -0.9963090465986112,
+    "mean_B": -0.22839097381143744,
+    "mean_C": -0.031143034517384205,
+    "win_A": 0.3333333333333333,
+    "win_B": 0.5116279069767442,
+    "A_minus_B": -0.7679180727871737,
+    "t_AB": -1.244061496490372,
+    "A_minus_C": -0.965166012081227,
+    "t_AC": -1.7636305846089533,
+    "half1": null,
+    "half2": -0.7349290572193452
+   },
+   "broad": {
+    "n_A": 263,
+    "n_B": 1287,
+    "mean_A": 0.3126422763035092,
+    "mean_B": 0.1535964565694796,
+    "mean_C": -0.03887701669480784,
+    "win_A": 0.5741444866920152,
+    "win_B": 0.5268065268065268,
+    "A_minus_B": 0.15904581973402962,
+    "t_AB": 0.9469654569871909,
+    "A_minus_C": 0.3515192929983171,
+    "t_AC": 2.264641572944226,
+    "half1": -0.1424041994743738,
+    "half2": 0.49869741632042314
+   },
+   "grade": "NONE",
+   "why": "too few index signals at this extreme"
+  },
+  {
+   "pattern": "3rd+ touch of a zone",
+   "context": "RSI divergence",
+   "index": {
+    "n_A": 13,
+    "n_B": 42,
+    "mean_A": -0.06946604502727594,
+    "mean_B": -0.4969871868504894,
+    "mean_C": -0.06068020090092069,
+    "win_A": 0.6153846153846154,
+    "win_B": 0.42857142857142855,
+    "A_minus_B": 0.4275211418232135,
+    "t_AB": 0.6553480978681202,
+    "A_minus_C": -0.008785844126355247,
+    "t_AC": -0.014519253949884636,
+    "half1": null,
+    "half2": -0.03325800918344701
+   },
+   "broad": {
+    "n_A": 146,
+    "n_B": 1404,
+    "mean_A": 0.2969378238054029,
+    "mean_B": 0.16848335897233213,
+    "mean_C": 0.07599084829564028,
+    "win_A": 0.5547945205479452,
+    "win_B": 0.5327635327635327,
+    "A_minus_B": 0.12845446483307077,
+    "t_AB": 0.5372180768674958,
+    "A_minus_C": 0.2209469755097626,
+    "t_AC": 0.9475928276193105,
+    "half1": -0.3346969711806416,
+    "half2": 0.5110733258691103
+   },
+   "grade": "NONE",
+   "why": "too few index signals at this extreme"
+  },
+  {
+   "pattern": "3rd+ touch of a zone",
+   "context": "Any of the three",
+   "index": {
+    "n_A": 22,
+    "n_B": 33,
+    "mean_A": -0.5193377345772008,
+    "mean_B": -0.3136694021932341,
+    "mean_C": 0.07434079762670238,
+    "win_A": 0.5,
+    "win_B": 0.45454545454545453,
+    "A_minus_B": -0.2056683323839667,
+    "t_AB": -0.36768517219070435,
+    "A_minus_C": -0.5936785322039032,
+    "t_AC": -1.3574618259244973,
+    "half1": null,
+    "half2": -0.5510858380658433
+   },
+   "broad": {
+    "n_A": 386,
+    "n_B": 1164,
+    "mean_A": 0.2663430465461122,
+    "mean_B": 0.1521435930463435,
+    "mean_C": 0.031577291671574866,
+    "win_A": 0.5569948186528497,
+    "win_B": 0.5274914089347079,
+    "A_minus_B": 0.11419945349976868,
+    "t_AB": 0.7558913289683631,
+    "A_minus_C": 0.23476575487453732,
+    "t_AC": 1.7506657069880875,
+    "half1": -0.21887183095883778,
+    "half2": 0.4569603788123156
+   },
+   "grade": "NONE",
+   "why": "no reliable improvement at the extreme"
+  },
+  {
+   "pattern": "Gap breakout",
+   "context": "RSI extreme",
+   "index": {
+    "n_A": 0,
+    "n_B": 75,
+    "mean_A": null,
+    "mean_B": 0.23617057766311045,
+    "mean_C": 0.2155881087782843,
+    "win_A": null,
+    "win_B": 0.48,
+    "A_minus_B": null,
+    "t_AB": null,
+    "A_minus_C": null,
+    "t_AC": null,
+    "half1": null,
+    "half2": null
+   },
+   "broad": {
+    "n_A": 0,
+    "n_B": 1546,
+    "mean_A": null,
+    "mean_B": -0.04323151129899236,
+    "mean_C": 0.0491671692212251,
+    "win_A": null,
+    "win_B": 0.49805950840879687,
+    "A_minus_B": null,
+    "t_AB": null,
+    "A_minus_C": null,
+    "t_AC": null,
+    "half1": null,
+    "half2": null
+   },
+   "grade": "NONE",
+   "why": "too few index signals at this extreme"
+  },
+  {
+   "pattern": "Gap breakout",
+   "context": "Put/call extreme",
+   "index": {
+    "n_A": 1,
+    "n_B": 74,
+    "mean_A": -1.1741165169786159,
+    "mean_B": 0.2552285113744851,
+    "mean_C": -0.031143034517384205,
+    "win_A": 0.0,
+    "win_B": 0.4864864864864865,
+    "A_minus_B": null,
+    "t_AB": null,
+    "A_minus_C": null,
+    "t_AC": null,
+    "half1": null,
+    "half2": null
+   },
+   "broad": {
+    "n_A": 135,
+    "n_B": 1411,
+    "mean_A": -0.035417857855975614,
+    "mean_B": -0.04397909685165519,
+    "mean_C": -0.03887701669480784,
+    "win_A": 0.5407407407407407,
+    "win_B": 0.4939759036144578,
+    "A_minus_B": 0.00856123899567958,
+    "t_AB": 0.04479945556527369,
+    "A_minus_C": 0.003459158838832223,
+    "t_AC": 0.018850587131278955,
+    "half1": 0.07957480023687123,
+    "half2": -0.05433539983484869
+   },
+   "grade": "NONE",
+   "why": "too few index signals at this extreme"
+  },
+  {
+   "pattern": "Gap breakout",
+   "context": "RSI divergence",
+   "index": {
+    "n_A": 0,
+    "n_B": 75,
+    "mean_A": null,
+    "mean_B": 0.23617057766311045,
+    "mean_C": -0.06068020090092069,
+    "win_A": null,
+    "win_B": 0.48,
+    "A_minus_B": null,
+    "t_AB": null,
+    "A_minus_C": null,
+    "t_AC": null,
+    "half1": null,
+    "half2": null
+   },
+   "broad": {
+    "n_A": 28,
+    "n_B": 1518,
+    "mean_A": -0.8197086471352496,
+    "mean_B": -0.028909139886992886,
+    "mean_C": 0.07599084829564028,
+    "win_A": 0.42857142857142855,
+    "win_B": 0.4993412384716733,
+    "A_minus_B": -0.7907995072482568,
+    "t_AB": -1.9422189427149992,
+    "A_minus_C": -0.8956994954308899,
+    "t_AC": -2.2117742395958673,
+    "half1": -0.9470362500727272,
+    "half2": -0.6979658715223638
+   },
+   "grade": "NONE",
+   "why": "too few index signals at this extreme"
+  },
+  {
+   "pattern": "Gap breakout",
+   "context": "Any of the three",
+   "index": {
+    "n_A": 1,
+    "n_B": 74,
+    "mean_A": -1.1741165169786159,
+    "mean_B": 0.2552285113744851,
+    "mean_C": 0.07434079762670238,
+    "win_A": 0.0,
+    "win_B": 0.4864864864864865,
+    "A_minus_B": null,
+    "t_AB": null,
+    "A_minus_C": null,
+    "t_AC": null,
+    "half1": null,
+    "half2": null
+   },
+   "broad": {
+    "n_A": 160,
+    "n_B": 1386,
+    "mean_A": -0.1643639225889061,
+    "mean_B": -0.029247971756145165,
+    "mean_C": 0.031577291671574866,
+    "win_A": 0.51875,
+    "win_B": 0.49567099567099565,
+    "A_minus_B": -0.13511595083276093,
+    "t_AB": -0.7540208156465485,
+    "A_minus_C": -0.19594121426048094,
+    "t_AC": -1.1532935558442372,
+    "half1": -0.0463748289954935,
+    "half2": -0.2187495637026436
+   },
+   "grade": "NONE",
+   "why": "too few index signals at this extreme"
+  },
+  {
+   "pattern": "Grind breakout",
+   "context": "RSI extreme",
+   "index": {
+    "n_A": 0,
+    "n_B": 182,
+    "mean_A": null,
+    "mean_B": -0.004422938516700058,
+    "mean_C": 0.2155881087782843,
+    "win_A": null,
+    "win_B": 0.521978021978022,
+    "A_minus_B": null,
+    "t_AB": null,
+    "A_minus_C": null,
+    "t_AC": null,
+    "half1": null,
+    "half2": null
+   },
+   "broad": {
+    "n_A": 0,
+    "n_B": 4415,
+    "mean_A": null,
+    "mean_B": -0.06857551837756906,
+    "mean_C": 0.0491671692212251,
+    "win_A": null,
+    "win_B": 0.49513023782559457,
+    "A_minus_B": null,
+    "t_AB": null,
+    "A_minus_C": null,
+    "t_AC": null,
+    "half1": null,
+    "half2": null
+   },
+   "grade": "NONE",
+   "why": "too few index signals at this extreme"
+  },
+  {
+   "pattern": "Grind breakout",
+   "context": "Put/call extreme",
+   "index": {
+    "n_A": 10,
+    "n_B": 172,
+    "mean_A": -0.5239438637639777,
+    "mean_B": 0.02578176643953697,
+    "mean_C": -0.031143034517384205,
+    "win_A": 0.3,
+    "win_B": 0.5348837209302325,
+    "A_minus_B": -0.5497256302035147,
+    "t_AB": -1.1307601507181193,
+    "A_minus_C": -0.4928008292465935,
+    "t_AC": -1.019305434210452,
+    "half1": null,
+    "half2": 0.053091047283813614
+   },
+   "broad": {
+    "n_A": 431,
+    "n_B": 3984,
+    "mean_A": -0.04753669588080319,
+    "mean_B": -0.07085155565068806,
+    "mean_C": -0.03887701669480784,
+    "win_A": 0.5011600928074246,
+    "win_B": 0.49447791164658633,
+    "A_minus_B": 0.023314859769884864,
+    "t_AB": 0.2046754311691871,
+    "A_minus_C": -0.008659679185995355,
+    "t_AC": -0.07769781387318253,
+    "half1": -0.09263959494277682,
+    "half2": 0.14869963531136118
+   },
+   "grade": "NONE",
+   "why": "too few index signals at this extreme"
+  },
+  {
+   "pattern": "Grind breakout",
+   "context": "RSI divergence",
+   "index": {
+    "n_A": 3,
+    "n_B": 179,
+    "mean_A": 1.6264751270089362,
+    "mean_B": -0.03175642564841465,
+    "mean_C": -0.06068020090092069,
+    "win_A": 1.0,
+    "win_B": 0.5139664804469274,
+    "A_minus_B": null,
+    "t_AB": null,
+    "A_minus_C": null,
+    "t_AC": null,
+    "half1": null,
+    "half2": null
+   },
+   "broad": {
+    "n_A": 83,
+    "n_B": 4332,
+    "mean_A": -0.15539554661760613,
+    "mean_B": -0.06691206908303465,
+    "mean_C": 0.07599084829564028,
+    "win_A": 0.4939759036144578,
+    "win_B": 0.4951523545706371,
+    "A_minus_B": -0.08848347753457148,
+    "t_AB": -0.3304891945625907,
+    "A_minus_C": -0.23138639491324642,
+    "t_AC": -0.8622307338928688,
+    "half1": -0.03073572541750845,
+    "half2": -0.14470842702789918
+   },
+   "grade": "NONE",
+   "why": "too few index signals at this extreme"
+  },
+  {
+   "pattern": "Grind breakout",
+   "context": "Any of the three",
+   "index": {
+    "n_A": 13,
+    "n_B": 169,
+    "mean_A": -0.027693327431766866,
+    "mean_B": -0.0026329086001564863,
+    "mean_C": 0.07434079762670238,
+    "win_A": 0.46153846153846156,
+    "win_B": 0.5266272189349113,
+    "A_minus_B": -0.02506041883161038,
+    "t_AB": -0.05380175866491762,
+    "A_minus_C": -0.10203412505846925,
+    "t_AC": -0.22333614407723706,
+    "half1": -0.3802352985837082,
+    "half2": 0.35241237619718674
+   },
+   "broad": {
+    "n_A": 505,
+    "n_B": 3910,
+    "mean_A": -0.05924775102223875,
+    "mean_B": -0.06978025559353886,
+    "mean_C": 0.031577291671574866,
+    "win_A": 0.500990099009901,
+    "win_B": 0.49437340153452686,
+    "A_minus_B": 0.01053250457130011,
+    "t_AB": 0.09814516020236623,
+    "A_minus_C": -0.09082504269381361,
+    "t_AC": -0.8820101790603351,
+    "half1": -0.09486544683614367,
+    "half2": 0.12162242147823416
+   },
+   "grade": "NONE",
+   "why": "too few index signals at this extreme"
+  },
+  {
+   "pattern": "Fibonacci strong close",
+   "context": "RSI extreme",
+   "index": {
+    "n_A": 0,
+    "n_B": 130,
+    "mean_A": null,
+    "mean_B": -0.12701802090861145,
+    "mean_C": 0.2155881087782843,
+    "win_A": null,
+    "win_B": 0.4846153846153846,
+    "A_minus_B": null,
+    "t_AB": null,
+    "A_minus_C": null,
+    "t_AC": null,
+    "half1": null,
+    "half2": null
+   },
+   "broad": {
+    "n_A": 0,
+    "n_B": 2520,
+    "mean_A": null,
+    "mean_B": 0.004592499532588235,
+    "mean_C": 0.0491671692212251,
+    "win_A": null,
+    "win_B": 0.5091269841269841,
+    "A_minus_B": null,
+    "t_AB": null,
+    "A_minus_C": null,
+    "t_AC": null,
+    "half1": null,
+    "half2": null
+   },
+   "grade": "NONE",
+   "why": "too few index signals at this extreme"
+  },
+  {
+   "pattern": "Fibonacci strong close",
+   "context": "Put/call extreme",
+   "index": {
+    "n_A": 3,
+    "n_B": 127,
+    "mean_A": 1.6133228204589898,
+    "mean_B": -0.1681284344842241,
+    "mean_C": -0.031143034517384205,
+    "win_A": 1.0,
+    "win_B": 0.47244094488188976,
+    "A_minus_B": null,
+    "t_AB": null,
+    "A_minus_C": null,
+    "t_AC": null,
+    "half1": null,
+    "half2": null
+   },
+   "broad": {
+    "n_A": 222,
+    "n_B": 2298,
+    "mean_A": 0.003818805988748204,
+    "mean_B": 0.004667242773115838,
+    "mean_C": -0.03887701669480784,
+    "win_A": 0.5315315315315315,
+    "win_B": 0.5069625761531766,
+    "A_minus_B": -0.0008484367843676339,
+    "t_AB": -0.004952690260276082,
+    "A_minus_C": 0.04269582268355604,
+    "t_AC": 0.25705704549351605,
+    "half1": -0.12352355198555161,
+    "half2": 0.18433310966248298
+   },
+   "grade": "NONE",
+   "why": "too few index signals at this extreme"
+  },
+  {
+   "pattern": "Fibonacci strong close",
+   "context": "RSI divergence",
+   "index": {
+    "n_A": 0,
+    "n_B": 130,
+    "mean_A": null,
+    "mean_B": -0.12701802090861145,
+    "mean_C": -0.06068020090092069,
+    "win_A": null,
+    "win_B": 0.4846153846153846,
+    "A_minus_B": null,
+    "t_AB": null,
+    "A_minus_C": null,
+    "t_AC": null,
+    "half1": null,
+    "half2": null
+   },
+   "broad": {
+    "n_A": 0,
+    "n_B": 2520,
+    "mean_A": null,
+    "mean_B": 0.004592499532588235,
+    "mean_C": 0.07599084829564028,
+    "win_A": null,
+    "win_B": 0.5091269841269841,
+    "A_minus_B": null,
+    "t_AB": null,
+    "A_minus_C": null,
+    "t_AC": null,
+    "half1": null,
+    "half2": null
+   },
+   "grade": "NONE",
+   "why": "too few index signals at this extreme"
+  },
+  {
+   "pattern": "Fibonacci strong close",
+   "context": "Any of the three",
+   "index": {
+    "n_A": 3,
+    "n_B": 127,
+    "mean_A": 1.6133228204589898,
+    "mean_B": -0.1681284344842241,
+    "mean_C": 0.07434079762670238,
+    "win_A": 1.0,
+    "win_B": 0.47244094488188976,
+    "A_minus_B": null,
+    "t_AB": null,
+    "A_minus_C": null,
+    "t_AC": null,
+    "half1": null,
+    "half2": null
+   },
+   "broad": {
+    "n_A": 222,
+    "n_B": 2298,
+    "mean_A": 0.003818805988748204,
+    "mean_B": 0.004667242773115838,
+    "mean_C": 0.031577291671574866,
+    "win_A": 0.5315315315315315,
+    "win_B": 0.5069625761531766,
+    "A_minus_B": -0.0008484367843676339,
+    "t_AB": -0.004952690260276082,
+    "A_minus_C": -0.027758485682826663,
+    "t_AC": -0.16812949857476736,
+    "half1": -0.12352355198555161,
+    "half2": 0.18433310966248298
+   },
+   "grade": "NONE",
+   "why": "too few index signals at this extreme"
+  },
+  {
+   "pattern": "Orderly trend (continuation)",
+   "context": "RSI extreme",
+   "index": {
+    "n_A": 0,
+    "n_B": 31,
+    "mean_A": null,
+    "mean_B": -0.2696364896822519,
+    "mean_C": 0.2155881087782843,
+    "win_A": null,
+    "win_B": 0.6451612903225806,
+    "A_minus_B": null,
+    "t_AB": null,
+    "A_minus_C": null,
+    "t_AC": null,
+    "half1": null,
+    "half2": null
+   },
+   "broad": {
+    "n_A": 0,
+    "n_B": 788,
+    "mean_A": null,
+    "mean_B": 0.24514514872165935,
+    "mean_C": 0.0491671692212251,
+    "win_A": null,
+    "win_B": 0.5406091370558376,
+    "A_minus_B": null,
+    "t_AB": null,
+    "A_minus_C": null,
+    "t_AC": null,
+    "half1": null,
+    "half2": null
+   },
+   "grade": "NONE",
+   "why": "too few index signals at this extreme"
+  },
+  {
+   "pattern": "Orderly trend (continuation)",
+   "context": "Put/call extreme",
+   "index": {
+    "n_A": 0,
+    "n_B": 31,
+    "mean_A": null,
+    "mean_B": -0.2696364896822519,
+    "mean_C": -0.031143034517384205,
+    "win_A": null,
+    "win_B": 0.6451612903225806,
+    "A_minus_B": null,
+    "t_AB": null,
+    "A_minus_C": null,
+    "t_AC": null,
+    "half1": null,
+    "half2": null
+   },
+   "broad": {
+    "n_A": 52,
+    "n_B": 736,
+    "mean_A": 0.14454853771909476,
+    "mean_B": 0.2522525179772753,
+    "mean_C": -0.03887701669480784,
+    "win_A": 0.5192307692307693,
+    "win_B": 0.5421195652173914,
+    "A_minus_B": -0.10770398025818056,
+    "t_AB": -0.3856090853476072,
+    "A_minus_C": 0.1834255544139026,
+    "t_AC": 0.6945898377208736,
+    "half1": 0.5966132407461077,
+    "half2": -0.7910872492051599
+   },
+   "grade": "NONE",
+   "why": "too few index signals at this extreme"
+  },
+  {
+   "pattern": "Orderly trend (continuation)",
+   "context": "RSI divergence",
+   "index": {
+    "n_A": 0,
+    "n_B": 31,
+    "mean_A": null,
+    "mean_B": -0.2696364896822519,
+    "mean_C": -0.06068020090092069,
+    "win_A": null,
+    "win_B": 0.6451612903225806,
+    "A_minus_B": null,
+    "t_AB": null,
+    "A_minus_C": null,
+    "t_AC": null,
+    "half1": null,
+    "half2": null
+   },
+   "broad": {
+    "n_A": 0,
+    "n_B": 788,
+    "mean_A": null,
+    "mean_B": 0.24514514872165935,
+    "mean_C": 0.07599084829564028,
+    "win_A": null,
+    "win_B": 0.5406091370558376,
+    "A_minus_B": null,
+    "t_AB": null,
+    "A_minus_C": null,
+    "t_AC": null,
+    "half1": null,
+    "half2": null
+   },
+   "grade": "NONE",
+   "why": "too few index signals at this extreme"
+  },
+  {
+   "pattern": "Orderly trend (continuation)",
+   "context": "Any of the three",
+   "index": {
+    "n_A": 0,
+    "n_B": 31,
+    "mean_A": null,
+    "mean_B": -0.2696364896822519,
+    "mean_C": 0.07434079762670238,
+    "win_A": null,
+    "win_B": 0.6451612903225806,
+    "A_minus_B": null,
+    "t_AB": null,
+    "A_minus_C": null,
+    "t_AC": null,
+    "half1": null,
+    "half2": null
+   },
+   "broad": {
+    "n_A": 52,
+    "n_B": 736,
+    "mean_A": 0.14454853771909476,
+    "mean_B": 0.2522525179772753,
+    "mean_C": 0.031577291671574866,
+    "win_A": 0.5192307692307693,
+    "win_B": 0.5421195652173914,
+    "A_minus_B": -0.10770398025818056,
+    "t_AB": -0.3856090853476072,
+    "A_minus_C": 0.1129712460475199,
+    "t_AC": 0.4288080276507754,
+    "half1": 0.5966132407461077,
+    "half2": -0.7910872492051599
+   },
+   "grade": "NONE",
+   "why": "too few index signals at this extreme"
+  },
+  {
+   "pattern": "Absorbed move (reversal)",
+   "context": "RSI extreme",
+   "index": {
+    "n_A": 6,
+    "n_B": 14,
+    "mean_A": -0.5049434884562783,
+    "mean_B": 0.21979740718126095,
+    "mean_C": 0.2155881087782843,
+    "win_A": 0.5,
+    "win_B": 0.5,
+    "A_minus_B": -0.7247408956375393,
+    "t_AB": -0.9123030141665583,
+    "A_minus_C": -0.7205315972345626,
+    "t_AC": -1.0874759530389038,
+    "half1": null,
+    "half2": -0.1806168128364601
+   },
+   "broad": {
+    "n_A": 290,
+    "n_B": 214,
+    "mean_A": -0.07854503590248164,
+    "mean_B": -0.3610431924268216,
+    "mean_C": 0.0491671692212251,
+    "win_A": 0.503448275862069,
+    "win_B": 0.4439252336448598,
+    "A_minus_B": 0.28249815652433996,
+    "t_AB": 1.4150070987611845,
+    "A_minus_C": -0.12771220512370673,
+    "t_AC": -0.8774606860040233,
+    "half1": 0.45128482958630867,
+    "half2": 0.13978108745883389
+   },
+   "grade": "NONE",
+   "why": "too few index signals at this extreme"
+  },
+  {
+   "pattern": "Absorbed move (reversal)",
+   "context": "Put/call extreme",
+   "index": {
+    "n_A": 4,
+    "n_B": 16,
+    "mean_A": -0.9573434109109088,
+    "mean_B": 0.24230477584022606,
+    "mean_C": -0.031143034517384205,
+    "win_A": 0.25,
+    "win_B": 0.5625,
+    "A_minus_B": null,
+    "t_AB": null,
+    "A_minus_C": null,
+    "t_AC": null,
+    "half1": null,
+    "half2": null
+   },
+   "broad": {
+    "n_A": 118,
+    "n_B": 386,
+    "mean_A": -0.4692188912381561,
+    "mean_B": -0.11573438970196138,
+    "mean_C": -0.03887701669480784,
+    "win_A": 0.4576271186440678,
+    "win_B": 0.4844559585492228,
+    "A_minus_B": -0.3534845015361947,
+    "t_AB": -1.3702954465238775,
+    "A_minus_C": -0.43034187454334827,
+    "t_AC": -1.8283848774779794,
+    "half1": 0.12331542078918334,
+    "half2": -0.7006636680755304
+   },
+   "grade": "NONE",
+   "why": "too few index signals at this extreme"
+  },
+  {
+   "pattern": "Absorbed move (reversal)",
+   "context": "RSI divergence",
+   "index": {
+    "n_A": 0,
+    "n_B": 20,
+    "mean_A": null,
+    "mean_B": 0.0023751384899990844,
+    "mean_C": -0.06068020090092069,
+    "win_A": null,
+    "win_B": 0.5,
+    "A_minus_B": null,
+    "t_AB": null,
+    "A_minus_C": null,
+    "t_AC": null,
+    "half1": null,
+    "half2": null
+   },
+   "broad": {
+    "n_A": 33,
+    "n_B": 471,
+    "mean_A": 0.3153128737546998,
+    "mean_B": -0.23449390323771674,
+    "mean_C": 0.07599084829564028,
+    "win_A": 0.5757575757575758,
+    "win_B": 0.4713375796178344,
+    "A_minus_B": 0.5498067769924165,
+    "t_AB": 1.2942470585413088,
+    "A_minus_C": 0.2393220254590595,
+    "t_AC": 0.5780015686682004,
+    "half1": -0.29339945693004915,
+    "half2": 1.2606045223708526
+   },
+   "grade": "NONE",
+   "why": "too few index signals at this extreme"
+  },
+  {
+   "pattern": "Absorbed move (reversal)",
+   "context": "Any of the three",
+   "index": {
+    "n_A": 9,
+    "n_B": 11,
+    "mean_A": -0.42127928908570034,
+    "mean_B": 0.3490014883246622,
+    "mean_C": 0.07434079762670238,
+    "win_A": 0.4444444444444444,
+    "win_B": 0.5454545454545454,
+    "A_minus_B": -0.7702807774103626,
+    "t_AB": -0.9935935815959214,
+    "A_minus_C": -0.4956200867124027,
+    "t_AC": -0.85886776926601,
+    "half1": null,
+    "half2": -1.0822936590128212
+   },
+   "broad": {
+    "n_A": 347,
+    "n_B": 157,
+    "mean_A": -0.15574488648228255,
+    "mean_B": -0.29297979606183094,
+    "mean_C": 0.031577291671574866,
+    "win_A": 0.4956772334293948,
+    "win_B": 0.4394904458598726,
+    "A_minus_B": 0.1372349095795484,
+    "t_AB": 0.6763360428091337,
+    "A_minus_C": -0.1873221781538574,
+    "t_AC": -1.4443374210218998,
+    "half1": 0.2864364245790451,
+    "half2": -0.025676414947931103
+   },
+   "grade": "NONE",
+   "why": "too few index signals at this extreme"
+  },
+  {
+   "pattern": "Breakout from contraction",
+   "context": "RSI extreme",
+   "index": {
+    "n_A": 0,
+    "n_B": 115,
+    "mean_A": null,
+    "mean_B": 0.054369435957691004,
+    "mean_C": 0.2155881087782843,
+    "win_A": null,
+    "win_B": 0.5304347826086957,
+    "A_minus_B": null,
+    "t_AB": null,
+    "A_minus_C": null,
+    "t_AC": null,
+    "half1": null,
+    "half2": null
+   },
+   "broad": {
+    "n_A": 0,
+    "n_B": 2339,
+    "mean_A": null,
+    "mean_B": -0.0794250325809733,
+    "mean_C": 0.0491671692212251,
+    "win_A": null,
+    "win_B": 0.4946558358272766,
+    "A_minus_B": null,
+    "t_AB": null,
+    "A_minus_C": null,
+    "t_AC": null,
+    "half1": null,
+    "half2": null
+   },
+   "grade": "NONE",
+   "why": "too few index signals at this extreme"
+  },
+  {
+   "pattern": "Breakout from contraction",
+   "context": "Put/call extreme",
+   "index": {
+    "n_A": 0,
+    "n_B": 115,
+    "mean_A": null,
+    "mean_B": 0.054369435957691004,
+    "mean_C": -0.031143034517384205,
+    "win_A": null,
+    "win_B": 0.5304347826086957,
+    "A_minus_B": null,
+    "t_AB": null,
+    "A_minus_C": null,
+    "t_AC": null,
+    "half1": null,
+    "half2": null
+   },
+   "broad": {
+    "n_A": 186,
+    "n_B": 2153,
+    "mean_A": -0.2205372674989295,
+    "mean_B": -0.06723419389321675,
+    "mean_C": -0.03887701669480784,
+    "win_A": 0.46236559139784944,
+    "win_B": 0.4974454249883883,
+    "A_minus_B": -0.15330307360571274,
+    "t_AB": -0.7790487044936131,
+    "A_minus_C": -0.18166025080412165,
+    "t_AC": -0.946241220188396,
+    "half1": -0.12218350378701923,
+    "half2": -0.19446551509204146
+   },
+   "grade": "NONE",
+   "why": "too few index signals at this extreme"
+  },
+  {
+   "pattern": "Breakout from contraction",
+   "context": "RSI divergence",
+   "index": {
+    "n_A": 3,
+    "n_B": 112,
+    "mean_A": 1.6264751270089362,
+    "mean_B": 0.01225946209024688,
+    "mean_C": -0.06068020090092069,
+    "win_A": 1.0,
+    "win_B": 0.5178571428571429,
+    "A_minus_B": null,
+    "t_AB": null,
+    "A_minus_C": null,
+    "t_AC": null,
+    "half1": null,
+    "half2": null
+   },
+   "broad": {
+    "n_A": 73,
+    "n_B": 2266,
+    "mean_A": -0.19250088187559314,
+    "mean_B": -0.0757822536760716,
+    "mean_C": 0.07599084829564028,
+    "win_A": 0.4794520547945205,
+    "win_B": 0.49514563106796117,
+    "A_minus_B": -0.11671862819952154,
+    "t_AB": -0.46358916280817086,
+    "A_minus_C": -0.2684917301712334,
+    "t_AC": -1.075159312308875,
+    "half1": -0.2726099241447438,
+    "half2": 0.05672258055447268
+   },
+   "grade": "NONE",
+   "why": "too few index signals at this extreme"
+  },
+  {
+   "pattern": "Breakout from contraction",
+   "context": "Any of the three",
+   "index": {
+    "n_A": 3,
+    "n_B": 112,
+    "mean_A": 1.6264751270089362,
+    "mean_B": 0.01225946209024688,
+    "mean_C": 0.07434079762670238,
+    "win_A": 1.0,
+    "win_B": 0.5178571428571429,
+    "A_minus_B": null,
+    "t_AB": null,
+    "A_minus_C": null,
+    "t_AC": null,
+    "half1": null,
+    "half2": null
+   },
+   "broad": {
+    "n_A": 254,
+    "n_B": 2085,
+    "mean_A": -0.20140002589569955,
+    "mean_B": -0.06456572883903544,
+    "mean_C": 0.031577291671574866,
+    "win_A": 0.4645669291338583,
+    "win_B": 0.4983213429256595,
+    "A_minus_B": -0.1368342970566641,
+    "t_AB": -0.8438231931456848,
+    "A_minus_C": -0.2329773175672744,
+    "t_AC": -1.5046354479881299,
+    "half1": -0.16953888080877655,
+    "half2": -0.09736937985493482
+   },
+   "grade": "NONE",
+   "why": "too few index signals at this extreme"
+  },
+  {
+   "pattern": "Extended move (fade)",
+   "context": "RSI extreme",
+   "index": {
+    "n_A": 69,
+    "n_B": 49,
+    "mean_A": 0.1600924355237301,
+    "mean_B": -0.05178977895402498,
+    "mean_C": 0.2155881087782843,
+    "win_A": 0.4927536231884058,
+    "win_B": 0.4897959183673469,
+    "A_minus_B": 0.21188221447775507,
+    "t_AB": 0.564324291284358,
+    "A_minus_C": -0.055495673254554206,
+    "t_AC": -0.1768058357482898,
+    "half1": 0.632709995333375,
+    "half2": -0.12677278529591002
+   },
+   "broad": {
+    "n_A": 1860,
+    "n_B": 881,
+    "mean_A": 0.040952136725986854,
+    "mean_B": -0.06696868666784069,
+    "mean_C": 0.0491671692212251,
+    "win_A": 0.5166666666666667,
+    "win_B": 0.48127128263337116,
+    "A_minus_B": 0.10792082339382754,
+    "t_AB": 1.1496216771993357,
+    "A_minus_C": -0.008215032495238243,
+    "t_AC": -0.11317968138012555,
+    "half1": 0.1352095074026708,
+    "half2": 0.09719871536561367
+   },
+   "grade": "NONE",
+   "why": "no reliable improvement at the extreme"
+  },
+  {
+   "pattern": "Extended move (fade)",
+   "context": "Put/call extreme",
+   "index": {
+    "n_A": 42,
+    "n_B": 76,
+    "mean_A": -0.0916926347606917,
+    "mean_B": 0.16262854660972637,
+    "mean_C": -0.031143034517384205,
+    "win_A": 0.47619047619047616,
+    "win_B": 0.5,
+    "A_minus_B": -0.25432118137041804,
+    "t_AB": -0.7092282067522645,
+    "A_minus_C": -0.060549600243307494,
+    "t_AC": -0.20278589608493014,
+    "half1": -0.26612437673098577,
+    "half2": -0.17860580213306324
+   },
+   "broad": {
+    "n_A": 592,
+    "n_B": 2149,
+    "mean_A": 0.2239417615676155,
+    "mean_B": -0.05370030781389506,
+    "mean_C": -0.03887701669480784,
+    "win_A": 0.5287162162162162,
+    "win_B": 0.4988366682177757,
+    "A_minus_B": 0.27764206938151054,
+    "t_AB": 2.533793414699035,
+    "A_minus_C": 0.26281877826242334,
+    "t_AC": 2.590742361257988,
+    "half1": 0.039614157126837496,
+    "half2": 0.5988986450687377
+   },
+   "grade": "NONE",
+   "why": "no reliable improvement at the extreme"
+  },
+  {
+   "pattern": "Extended move (fade)",
+   "context": "RSI divergence",
+   "index": {
+    "n_A": 10,
+    "n_B": 108,
+    "mean_A": 0.533074377056568,
+    "mean_B": 0.029425325109485864,
+    "mean_C": -0.06068020090092069,
+    "win_A": 0.6,
+    "win_B": 0.48148148148148145,
+    "A_minus_B": 0.5036490519470822,
+    "t_AB": 0.6204357151707774,
+    "A_minus_C": 0.5937545779574886,
+    "t_AC": 0.7276921876920402,
+    "half1": null,
+    "half2": 0.21512029656605797
+   },
+   "broad": {
+    "n_A": 177,
+    "n_B": 2564,
+    "mean_A": 0.22777372607166974,
+    "mean_B": -0.009026672448797833,
+    "mean_C": 0.07599084829564028,
+    "win_A": 0.559322033898305,
+    "win_B": 0.5015600624024961,
+    "A_minus_B": 0.23680039852046758,
+    "t_AB": 1.1949309193764999,
+    "A_minus_C": 0.15178287777602945,
+    "t_AC": 0.770901595231078,
+    "half1": 0.30058228144171195,
+    "half2": 0.21389502299341068
+   },
+   "grade": "NONE",
+   "why": "too few index signals at this extreme"
+  },
+  {
+   "pattern": "Extended move (fade)",
+   "context": "Any of the three",
+   "index": {
+    "n_A": 90,
+    "n_B": 28,
+    "mean_A": -0.007579334953653702,
+    "mean_B": 0.3282435367221065,
+    "mean_C": 0.07434079762670238,
+    "win_A": 0.4666666666666667,
+    "win_B": 0.5714285714285714,
+    "A_minus_B": -0.3358228716757602,
+    "t_AB": -0.7110825226219727,
+    "A_minus_C": -0.08192013258035609,
+    "t_AC": -0.34835668031564426,
+    "half1": 0.014106756094902091,
+    "half2": -0.49958512038499675
+   },
+   "broad": {
+    "n_A": 2107,
+    "n_B": 634,
+    "mean_A": 0.02810777108292586,
+    "mean_B": -0.06632730649173021,
+    "mean_C": 0.031577291671574866,
+    "win_A": 0.5135263407688657,
+    "win_B": 0.47791798107255523,
+    "A_minus_B": 0.09443507757465608,
+    "t_AB": 0.9143479438376212,
+    "A_minus_C": -0.0034695205886490048,
+    "t_AC": -0.05943142706235494,
+    "half1": -0.01015115819059622,
+    "half2": 0.18247321555831758
+   },
+   "grade": "NONE",
+   "why": "no reliable improvement at the extreme"
+  },
+  {
+   "pattern": "Stop sweep and reclaim",
+   "context": "RSI extreme",
+   "index": {
+    "n_A": 4,
+    "n_B": 235,
+    "mean_A": 1.3819289080735182,
+    "mean_B": -0.15791930296115922,
+    "mean_C": 0.2155881087782843,
+    "win_A": 1.0,
+    "win_B": 0.4851063829787234,
+    "A_minus_B": null,
+    "t_AB": null,
+    "A_minus_C": null,
+    "t_AC": null,
+    "half1": null,
+    "half2": null
+   },
+   "broad": {
+    "n_A": 220,
+    "n_B": 6117,
+    "mean_A": 0.07643829559550043,
+    "mean_B": 0.06154358604158043,
+    "mean_C": 0.0491671692212251,
+    "win_A": 0.5,
+    "win_B": 0.5030243583455942,
+    "A_minus_B": 0.01489470955392,
+    "t_AB": 0.08772837200651053,
+    "A_minus_C": 0.027271126374275333,
+    "t_AC": 0.15779806324614204,
+    "half1": -0.007173093801937085,
+    "half2": 0.02812359898934101
+   },
+   "grade": "NONE",
+   "why": "too few index signals at this extreme"
+  },
+  {
+   "pattern": "Stop sweep and reclaim",
+   "context": "Put/call extreme",
+   "index": {
+    "n_A": 46,
+    "n_B": 193,
+    "mean_A": -0.11634383649134639,
+    "mean_B": -0.13591452893770162,
+    "mean_C": -0.031143034517384205,
+    "win_A": 0.5434782608695652,
+    "win_B": 0.48186528497409326,
+    "A_minus_B": 0.01957069244635523,
+    "t_AB": 0.05539526121103287,
+    "A_minus_C": -0.08520080197396218,
+    "t_AC": -0.24659695813204216,
+    "half1": -0.532789755959088,
+    "half2": 0.7856433520422504
+   },
+   "broad": {
+    "n_A": 1111,
+    "n_B": 5226,
+    "mean_A": -0.026006113425480273,
+    "mean_B": 0.08078288037946156,
+    "mean_C": -0.03887701669480784,
+    "win_A": 0.48604860486048607,
+    "win_B": 0.5065059318790662,
+    "A_minus_B": -0.10678899380494183,
+    "t_AB": -1.3569035873808133,
+    "A_minus_C": 0.012870903269327563,
+    "t_AC": 0.1664115048796518,
+    "half1": -0.3156018170289969,
+    "half2": 0.2327375895422727
+   },
+   "grade": "NONE",
+   "why": "no reliable improvement at the extreme"
+  },
+  {
+   "pattern": "Stop sweep and reclaim",
+   "context": "RSI divergence",
+   "index": {
+    "n_A": 40,
+    "n_B": 199,
+    "mean_A": 0.1096075037980021,
+    "mean_B": -0.18074181264069558,
+    "mean_C": -0.06068020090092069,
+    "win_A": 0.575,
+    "win_B": 0.47738693467336685,
+    "A_minus_B": 0.29034931643869766,
+    "t_AB": 0.7886529184273723,
+    "A_minus_C": 0.1702877046989228,
+    "t_AC": 0.43659234563491506,
+    "half1": 0.9810898930047925,
+    "half2": -0.09868530870126041
+   },
+   "broad": {
+    "n_A": 815,
+    "n_B": 5522,
+    "mean_A": 0.14771957565759078,
+    "mean_B": 0.04941816129779447,
+    "mean_C": 0.07599084829564028,
+    "win_A": 0.5214723926380368,
+    "win_B": 0.5001810938065918,
+    "A_minus_B": 0.09830141435979631,
+    "t_AB": 1.075826139085429,
+    "A_minus_C": 0.0717287273619505,
+    "t_AC": 0.7578984188922674,
+    "half1": 0.2598827532693039,
+    "half2": -0.06977228988325522
+   },
+   "grade": "NONE",
+   "why": "no reliable improvement at the extreme"
+  },
+  {
+   "pattern": "Stop sweep and reclaim",
+   "context": "Any of the three",
+   "index": {
+    "n_A": 79,
+    "n_B": 160,
+    "mean_A": 0.00039787277232100556,
+    "mean_B": -0.19759220320369816,
+    "mean_C": 0.07434079762670238,
+    "win_A": 0.569620253164557,
+    "win_B": 0.45625,
+    "A_minus_B": 0.19799007597601917,
+    "t_AB": 0.6577872367365679,
+    "A_minus_C": -0.07394292485438138,
+    "t_AC": -0.2705827205873491,
+    "half1": -0.047088556775489614,
+    "half2": 0.4329401525153166
+   },
+   "broad": {
+    "n_A": 1887,
+    "n_B": 4450,
+    "mean_A": 0.03236113990520697,
+    "mean_B": 0.07465462243735549,
+    "mean_C": 0.031577291671574866,
+    "win_A": 0.5002649708532061,
+    "win_B": 0.5040449438202247,
+    "A_minus_B": -0.04229348253214852,
+    "t_AB": -0.6364986090633024,
+    "A_minus_C": 0.0007838482336321034,
+    "t_AC": 0.012932825668329154,
+    "half1": -0.1117754972141988,
+    "half2": 0.04611304074495948
+   },
+   "grade": "NONE",
+   "why": "no reliable improvement at the extreme"
+  }
+ ],
+ "indicator_alone": {
+  "INDEX": {
+   "rsi": {
+    "label": "RSI extreme",
+    "mean": 0.2155881087782843,
+    "t": 1.0314507296073314,
+    "n": 103,
+    "win": 0.5048543689320388
+   },
+   "pcr": {
+    "label": "Put/call extreme",
+    "mean": -0.031143034517384205,
+    "t": -0.2180708661791557,
+    "n": 246,
+    "win": 0.5284552845528455
+   },
+   "div": {
+    "label": "RSI divergence",
+    "mean": -0.06068020090092069,
+    "t": -0.29736248083889494,
+    "n": 142,
+    "win": 0.4647887323943662
+   },
+   "any": {
+    "label": "Any of the three",
+    "mean": 0.07434079762670238,
+    "t": 0.6009225879627142,
+    "n": 339,
+    "win": 0.5132743362831859
+   }
+  },
+  "BROAD": {
+   "rsi": {
+    "label": "RSI extreme",
+    "mean": 0.0491671692212251,
+    "t": 1.0956821359904745,
+    "n": 2839,
+    "win": 0.5174357168016908
+   },
+   "pcr": {
+    "label": "Put/call extreme",
+    "mean": -0.03887701669480784,
+    "t": -1.2674223445193604,
+    "n": 6150,
+    "win": 0.514959349593496
+   },
+   "div": {
+    "label": "RSI divergence",
+    "mean": 0.07599084829564028,
+    "t": 1.8505921909543077,
+    "n": 3225,
+    "win": 0.5175193798449612
+   },
+   "any": {
+    "label": "Any of the three",
+    "mean": 0.031577291671574866,
+    "t": 1.276387188566911,
+    "n": 9289,
+    "win": 0.517709118311982
+   }
+  }
+ },
+ "era_pattern_grades": [
+  {
+   "test": "Zone touch count",
+   "lesson": "5 (Law 1)",
+   "claim": "First touch of a support/resistance zone holds more often than the 3rd+",
+   "metric": "hold rate, 1st touch minus 3rd+",
+   "index": {
+    "effect": 0.009532001322918593,
+    "t": 0.11016413085394011,
+    "n": 294,
+    "raw": 0.04675324675324671,
+    "placebo": 0.03722124543032812,
+    "half1": {
+     "effect": 0.02799010697642663,
+     "t": 0.16435792568514576,
+     "n": 157,
+     "raw": 0.03942978465271463,
+     "placebo": 0.011439677676287997
+    },
+    "half2": {
+     "effect": -0.030202325847977537,
+     "t": -0.2122409991082841,
+     "n": 137,
+     "raw": 0.0556032632030915,
+     "placebo": 0.08580558905106904
+    }
+   },
+   "broad": {
+    "effect": -0.00028288159967119163,
+    "t": -0.01944604354202277,
+    "n": 7885,
+    "raw": 0.007225535591619814,
+    "placebo": 0.0075084171912910055,
+    "half1": {
+     "effect": -0.002090816518705252,
+     "t": -0.10592606359174118,
+     "n": 4595,
+     "raw": 0.005120370136059593,
+     "placebo": 0.007211186654764845
+    },
+    "half2": {
+     "effect": 0.002974803330997933,
+     "t": 0.12220528660352768,
+     "n": 3290,
+     "raw": 0.010244623539037379,
+     "placebo": 0.007269820208039446
+    }
+   },
+   "grade": "NONE",
+   "why": "no reliable effect on the indices",
+   "raw_index": {
+    "effect": 0.04675324675324671,
+    "t": 0.6479266402819248,
+    "n": 294,
+    "n_ref": 55,
+    "mean_a": 0.42857142857142855,
+    "mean_b": 0.38181818181818183,
+    "half1": {
+     "effect": 0.03942978465271463,
+     "t": 0.3412163990366403,
+     "n": 157,
+     "n_ref": 21,
+     "mean_a": 0.42038216560509556,
+     "mean_b": 0.38095238095238093
+    },
+    "half2": {
+     "effect": 0.0556032632030915,
+     "t": 0.5872112874497268,
+     "n": 137,
+     "n_ref": 34,
+     "mean_a": 0.43795620437956206,
+     "mean_b": 0.38235294117647056
+    }
+   },
+   "raw_broad": {
+    "effect": 0.007225535591619814,
+    "t": 0.5540323683042274,
+    "n": 7885,
+    "n_ref": 1801,
+    "mean_a": 0.47863031071655043,
+    "mean_b": 0.4714047751249306,
+    "half1": {
+     "effect": 0.005120370136059593,
+     "t": 0.2976700415122932,
+     "n": 4595,
+     "n_ref": 1032,
+     "mean_a": 0.4750816104461371,
+     "mean_b": 0.4699612403100775
+    },
+    "half2": {
+     "effect": 0.010244623539037379,
+     "t": 0.5118956459794902,
+     "n": 3290,
+     "n_ref": 769,
+     "mean_a": 0.4835866261398176,
+     "mean_b": 0.47334200260078024
+    }
+   }
+  },
+  {
+   "test": "Gap breakout vs grind",
+   "lesson": "5 (Law 2)",
+   "claim": "Breaking a 20-day level on a gap continues better than grinding through",
+   "metric": "10-day continuation (ATR), gap minus grind",
+   "index": {
+    "effect": -0.24401127690354993,
+    "t": -0.46535856917007057,
+    "n": 98,
+    "raw": -0.10420050601824812,
+    "placebo": 0.1398107708853018,
+    "half1": {
+     "effect": -0.5811572280589596,
+     "t": -0.7409474159742108,
+     "n": 56,
+     "raw": -0.5566414891428868,
+     "placebo": 0.024515738916072803
+    },
+    "half2": {
+     "effect": 0.22787120977411812,
+     "t": 0.2621722580374379,
+     "n": 42,
+     "raw": 0.5201481870954985,
+     "placebo": 0.29227697732138036
+    }
+   },
+   "broad": {
+    "effect": -0.02116287931074544,
+    "t": -0.2215890297214109,
+    "n": 1899,
+    "raw": 0.0835974344796349,
+    "placebo": 0.10476031379038034,
+    "half1": {
+     "effect": -0.034299436494964176,
+     "t": -0.33716412140536844,
+     "n": 1114,
+     "raw": 0.0445478746013754,
+     "placebo": 0.07884731109633958
+    },
+    "half2": {
+     "effect": -0.00283962440541069,
+     "t": -0.020048353203422006,
+     "n": 785,
+     "raw": 0.1357497322601529,
+     "placebo": 0.1385893566655636
+    }
+   },
+   "grade": "NONE",
+   "why": "no reliable effect on the indices",
+   "raw_index": {
+    "effect": -0.10420050601824812,
+    "t": -0.3836994544684667,
+    "n": 98,
+    "n_ref": 207,
+    "mean_a": 0.029900812180203486,
+    "mean_b": 0.1341013181984516,
+    "half1": {
+     "effect": -0.5566414891428868,
+     "t": -1.4668613355543236,
+     "n": 56,
+     "n_ref": 121,
+     "mean_a": -0.1361051904985993,
+     "mean_b": 0.42053629864428754
+    },
+    "half2": {
+     "effect": 0.5201481870954985,
+     "t": 1.3739431746244772,
+     "n": 42,
+     "n_ref": 86,
+     "mean_a": 0.2512421490852739,
+     "mean_b": -0.2689060380102246
+    }
+   },
+   "raw_broad": {
+    "effect": 0.0835974344796349,
+    "t": 1.2459760486795957,
+    "n": 1899,
+    "n_ref": 5009,
+    "mean_a": 0.043866511806554605,
+    "mean_b": -0.039730922673080295,
+    "half1": {
+     "effect": 0.0445478746013754,
+     "t": 0.49336928243310035,
+     "n": 1114,
+     "n_ref": 2824,
+     "mean_a": 0.03058090241613739,
+     "mean_b": -0.013966972185238012
+    },
+    "half2": {
+     "effect": 0.1357497322601529,
+     "t": 1.3632320866598575,
+     "n": 785,
+     "n_ref": 2185,
+     "mean_a": 0.0627202301007263,
+     "mean_b": -0.0730295021594266
+    }
+   }
+  },
+  {
+   "test": "Move character: orderly",
+   "lesson": "5 (Law 3)",
+   "claim": "Steep, orderly moves continue",
+   "metric": "10-day continuation (ATR), orderly minus ordinary trends",
+   "index": {
+    "effect": null,
+    "t": null,
+    "n": 38,
+    "raw": null,
+    "placebo": null,
+    "half1": {
+     "effect": null,
+     "t": null,
+     "n": 21,
+     "raw": null,
+     "placebo": null
+    },
+    "half2": {
+     "effect": null,
+     "t": null,
+     "n": 17,
+     "raw": null,
+     "placebo": null
+    }
+   },
+   "broad": {
+    "effect": -0.15958201577345557,
+    "t": -0.5755883366411955,
+    "n": 888,
+    "raw": -0.12598807588694616,
+    "placebo": 0.03359393988650941,
+    "half1": {
+     "effect": -0.37949944281332343,
+     "t": -0.9524979524223958,
+     "n": 433,
+     "raw": -0.39951514106668096,
+     "placebo": -0.020015698253357517
+    },
+    "half2": {
+     "effect": 0.01484916252476387,
+     "t": 0.0339710209665839,
+     "n": 455,
+     "raw": 0.11915646344097197,
+     "placebo": 0.1043073009162081
+    }
+   },
+   "grade": "NONE",
+   "why": "too few index events",
+   "raw_index": {
+    "effect": null,
+    "t": null,
+    "n": 38,
+    "n_ref": 2,
+    "mean_a": -0.48352222688765123,
+    "mean_b": -1.0058139806197461,
+    "half1": {
+     "effect": null,
+     "t": null,
+     "n": 21,
+     "n_ref": 1,
+     "mean_a": -1.0168361406162747,
+     "mean_b": -1.2845735527106608
+    },
+    "half2": {
+     "effect": null,
+     "t": null,
+     "n": 17,
+     "n_ref": 1,
+     "mean_a": 0.17527731360064808,
+     "mean_b": -0.7270544085288313
+    }
+   },
+   "raw_broad": {
+    "effect": -0.12598807588694616,
+    "t": -0.583913124633961,
+    "n": 888,
+    "n_ref": 216,
+    "mean_a": 0.2587953432110453,
+    "mean_b": 0.38478341909799146,
+    "half1": {
+     "effect": -0.39951514106668096,
+     "t": -1.074074233143695,
+     "n": 433,
+     "n_ref": 100,
+     "mean_a": 0.1544706139281384,
+     "mean_b": 0.5539857549948194
+    },
+    "half2": {
+     "effect": 0.11915646344097197,
+     "t": 0.49219988519169533,
+     "n": 455,
+     "n_ref": 116,
+     "mean_a": 0.3580757998692842,
+     "mean_b": 0.2389193364283122
+    }
+   }
+  },
+  {
+   "test": "Move character: absorbed",
+   "lesson": "5 (Law 3)",
+   "claim": "Steep-then-stalling moves reverse",
+   "metric": "10-day continuation (ATR), ordinary minus absorbed",
+   "index": {
+    "effect": null,
+    "t": null,
+    "n": 2,
+    "raw": null,
+    "placebo": null,
+    "half1": {
+     "effect": null,
+     "t": null,
+     "n": 1,
+     "raw": null,
+     "placebo": null
+    },
+    "half2": {
+     "effect": null,
+     "t": null,
+     "n": 1,
+     "raw": null,
+     "placebo": null
+    }
+   },
+   "broad": {
+    "effect": 0.2650265308822237,
+    "t": 0.9970715797949534,
+    "n": 216,
+    "raw": 0.17464869947256526,
+    "placebo": -0.09037783140965844,
+    "half1": {
+     "effect": 0.2986530506595362,
+     "t": 0.6444534480784367,
+     "n": 100,
+     "raw": 0.2261499470200929,
+     "placebo": -0.07250310363944326
+    },
+    "half2": {
+     "effect": 0.2504982272285487,
+     "t": 0.5693578244365496,
+     "n": 116,
+     "raw": 0.12414244770282755,
+     "placebo": -0.12635577952572113
+    }
+   },
+   "grade": "NONE",
+   "why": "too few index events",
+   "raw_index": {
+    "effect": null,
+    "t": null,
+    "n": 2,
+    "n_ref": 21,
+    "mean_a": -1.0058139806197461,
+    "mean_b": -0.4794668410390474,
+    "half1": {
+     "effect": null,
+     "t": null,
+     "n": 1,
+     "n_ref": 9,
+     "mean_a": -1.2845735527106608,
+     "mean_b": -1.4955891603893454
+    },
+    "half2": {
+     "effect": null,
+     "t": null,
+     "n": 1,
+     "n_ref": 12,
+     "mean_a": -0.7270544085288313,
+     "mean_b": 0.2826248984736761
+    }
+   },
+   "raw_broad": {
+    "effect": 0.17464869947256526,
+    "t": 0.7972772819139328,
+    "n": 216,
+    "n_ref": 534,
+    "mean_a": 0.38478341909799146,
+    "mean_b": 0.2101347196254262,
+    "half1": {
+     "effect": 0.2261499470200929,
+     "t": 0.605096579493646,
+     "n": 100,
+     "n_ref": 239,
+     "mean_a": 0.5539857549948194,
+     "mean_b": 0.3278358079747265
+    },
+    "half2": {
+     "effect": 0.12414244770282755,
+     "t": 0.4957081565628494,
+     "n": 116,
+     "n_ref": 295,
+     "mean_a": 0.2389193364283122,
+     "mean_b": 0.11477688872548465
+    }
+   }
+  },
+  {
+   "test": "Move character: violent",
+   "lesson": "5 (Law 3)",
+   "claim": "Wide, violent moves have no trend (stand aside)",
+   "metric": "10-day continuation (ATR), ordinary minus violent",
+   "index": {
+    "effect": null,
+    "t": null,
+    "n": 2,
+    "raw": null,
+    "placebo": null,
+    "half1": {
+     "effect": null,
+     "t": null,
+     "n": 1,
+     "raw": null,
+     "placebo": null
+    },
+    "half2": {
+     "effect": null,
+     "t": null,
+     "n": 1,
+     "raw": null,
+     "placebo": null
+    }
+   },
+   "broad": {
+    "effect": -0.0708192916020455,
+    "t": -0.18046887130591543,
+    "n": 216,
+    "raw": -0.13879756294418594,
+    "placebo": -0.06797827134214043,
+    "half1": {
+     "effect": -0.8376057017527112,
+     "t": -1.086070216546241,
+     "n": 100,
+     "raw": -0.9100463285515784,
+     "placebo": -0.07244062679886726
+    },
+    "half2": {
+     "effect": 0.5408535963085753,
+     "t": 1.0451172554878239,
+     "n": 116,
+     "raw": 0.4647603258973104,
+     "placebo": -0.07609327041126486
+    }
+   },
+   "grade": "NONE",
+   "why": "too few index events",
+   "raw_index": {
+    "effect": null,
+    "t": null,
+    "n": 2,
+    "n_ref": 2,
+    "mean_a": -1.0058139806197461,
+    "mean_b": 9.181516248163593,
+    "half1": {
+     "effect": null,
+     "t": null,
+     "n": 1,
+     "n_ref": 2,
+     "mean_a": -1.2845735527106608,
+     "mean_b": 9.181516248163593
+    },
+    "half2": {
+     "effect": null,
+     "t": null,
+     "n": 1,
+     "n_ref": 0,
+     "mean_a": -0.7270544085288313,
+     "mean_b": null
+    }
+   },
+   "raw_broad": {
+    "effect": -0.13879756294418594,
+    "t": -0.37329441100971855,
+    "n": 216,
+    "n_ref": 115,
+    "mean_a": 0.38478341909799146,
+    "mean_b": 0.5235809820421774,
+    "half1": {
+     "effect": -0.9100463285515784,
+     "t": -1.2753427253347287,
+     "n": 100,
+     "n_ref": 51,
+     "mean_a": 0.5539857549948194,
+     "mean_b": 1.4640320835463978
+    },
+    "half2": {
+     "effect": 0.4647603258973104,
+     "t": 1.4504489786993413,
+     "n": 116,
+     "n_ref": 64,
+     "mean_a": 0.2389193364283122,
+     "mean_b": -0.2258409894689982
+    }
+   }
+  },
+  {
+   "test": "Close strength vs Fibonacci",
+   "lesson": "5 (Law 4)",
+   "claim": "Moves that hold above the 23.6% retracement continue better than those that lose 50%",
+   "metric": "10-day continuation (ATR), strong minus weak",
+   "index": {
+    "effect": 0.23355775697116132,
+    "t": 0.6893757042484187,
+    "n": 151,
+    "raw": 0.15902782594635628,
+    "placebo": -0.07452993102480503,
+    "half1": {
+     "effect": 0.32956303360560113,
+     "t": 0.6790659450811057,
+     "n": 81,
+     "raw": 0.32960990668524914,
+     "placebo": 4.6873079648029894e-05
+    },
+    "half2": {
+     "effect": 0.1116920809493876,
+     "t": 0.18578690507611056,
+     "n": 70,
+     "raw": -0.04962056531230233,
+     "placebo": -0.16131264626168992
+    }
+   },
+   "broad": {
+    "effect": 0.24701707591037164,
+    "t": 3.0300384407017114,
+    "n": 2859,
+    "raw": 0.15228474543502468,
+    "placebo": -0.09473233047534696,
+    "half1": {
+     "effect": 0.2992659617943633,
+     "t": 3.1158229931126544,
+     "n": 1589,
+     "raw": 0.19596042485584242,
+     "placebo": -0.10330553693852089
+    },
+    "half2": {
+     "effect": 0.17994819379418253,
+     "t": 1.5151478538970378,
+     "n": 1270,
+     "raw": 0.09608496673564654,
+     "placebo": -0.083863227058536
+    }
+   },
+   "grade": "SLIGHT",
+   "why": "clear on stocks, weak on the indices",
+   "raw_index": {
+    "effect": 0.15902782594635628,
+    "t": 0.5280730757308475,
+    "n": 151,
+    "n_ref": 139,
+    "mean_a": 0.041784536390380114,
+    "mean_b": -0.11724328955597618,
+    "half1": {
+     "effect": 0.32960990668524914,
+     "t": 0.7321555669370645,
+     "n": 81,
+     "n_ref": 82,
+     "mean_a": 0.1723580558197628,
+     "mean_b": -0.15725185086548635
+    },
+    "half2": {
+     "effect": -0.04962056531230233,
+     "t": -0.1245169069144861,
+     "n": 70,
+     "n_ref": 57,
+     "mean_a": -0.10930767894933413,
+     "mean_b": -0.0596871136370318
+    }
+   },
+   "raw_broad": {
+    "effect": 0.15228474543502468,
+    "t": 2.406932910553508,
+    "n": 2859,
+    "n_ref": 3563,
+    "mean_a": 0.07975511825747705,
+    "mean_b": -0.07252962717754764,
+    "half1": {
+     "effect": 0.19596042485584242,
+     "t": 2.28740504681173,
+     "n": 1589,
+     "n_ref": 2004,
+     "mean_a": 0.07808135541378287,
+     "mean_b": -0.11787906944205956
+    },
+    "half2": {
+     "effect": 0.09608496673564654,
+     "t": 1.023889153172935,
+     "n": 1270,
+     "n_ref": 1559,
+     "mean_a": 0.08184929869734323,
+     "mean_b": -0.014235668038303314
+    }
+   }
+  },
+  {
+   "test": "Breakout from contraction",
+   "lesson": "1 (Master Pattern)",
+   "claim": "Breakouts out of a volatility contraction continue better than other breakouts",
+   "metric": "10-day continuation (ATR), squeeze minus other",
+   "index": {
+    "effect": 0.2953291779665992,
+    "t": 0.8006315437657738,
+    "n": 115,
+    "raw": 0.019125320288205024,
+    "placebo": -0.27620385767839417,
+    "half1": {
+     "effect": 0.5076389193661205,
+     "t": 0.908610200967093,
+     "n": 61,
+     "raw": 0.4182519610189147,
+     "placebo": -0.08938695834720574
+    },
+    "half2": {
+     "effect": 0.04880251846146677,
+     "t": 0.09122572759449855,
+     "n": 54,
+     "raw": -0.4215654706452271,
+     "placebo": -0.47036798910669386
+    }
+   },
+   "broad": {
+    "effect": -0.055521304205188644,
+    "t": -0.4807053327395151,
+    "n": 2339,
+    "raw": -0.019117591063364817,
+    "placebo": 0.03640371314182383,
+    "half1": {
+     "effect": 0.03501693797581994,
+     "t": 0.2686452212192831,
+     "n": 1280,
+     "raw": 0.08308465951609456,
+     "placebo": 0.048067721540274624
+    },
+    "half2": {
+     "effect": -0.14333896608526953,
+     "t": -0.9670954160897184,
+     "n": 1059,
+     "raw": -0.11920009927743719,
+     "placebo": 0.024138866807832348
+    }
+   },
+   "grade": "NONE",
+   "why": "no reliable effect on the indices",
+   "raw_index": {
+    "effect": 0.019125320288205024,
+    "t": 0.07730237961234464,
+    "n": 115,
+    "n_ref": 142,
+    "mean_a": 0.054369435957691004,
+    "mean_b": 0.03524411566948598,
+    "half1": {
+     "effect": 0.4182519610189147,
+     "t": 1.2394251209132472,
+     "n": 61,
+     "n_ref": 68,
+     "mean_a": 0.4052095497425231,
+     "mean_b": -0.013042411276391608
+    },
+    "half2": {
+     "effect": -0.4215654706452271,
+     "t": -1.1542276290890923,
+     "n": 54,
+     "n_ref": 74,
+     "mean_a": -0.34194995183628607,
+     "mean_b": 0.07961551880894105
+    }
+   },
+   "raw_broad": {
+    "effect": -0.019117591063364817,
+    "t": -0.2977525973505236,
+    "n": 2339,
+    "n_ref": 3613,
+    "mean_a": -0.0794250325809733,
+    "mean_b": -0.06030744151760849,
+    "half1": {
+     "effect": 0.08308465951609456,
+     "t": 0.9817869857061275,
+     "n": 1280,
+     "n_ref": 1702,
+     "mean_a": -0.050946266037674735,
+     "mean_b": -0.1340309255537693
+    },
+    "half2": {
+     "effect": -0.11920009927743719,
+     "t": -1.2120863462570324,
+     "n": 1059,
+     "n_ref": 1911,
+     "mean_a": -0.11384696003651833,
+     "mean_b": 0.00535313924091886
+    }
+   }
+  },
+  {
+   "test": "Late entry (extended)",
+   "lesson": "1-2 (entries)",
+   "claim": "Entering > 2.5 ATR from the 20-day EMA does worse than entering 0.5-1.5 ATR away",
+   "metric": "10-day continuation (ATR), normal minus extended",
+   "index": {
+    "effect": -0.08245752389684144,
+    "t": -0.3577496213304566,
+    "n": 369,
+    "raw": 0.02355298475372166,
+    "placebo": 0.10601050865056309,
+    "half1": {
+     "effect": -0.3451177393336482,
+     "t": -0.6178355074511375,
+     "n": 186,
+     "raw": -0.1428526592446844,
+     "placebo": 0.20226508008896382
+    },
+    "half2": {
+     "effect": 0.10195811202177295,
+     "t": 0.22772930259914353,
+     "n": 183,
+     "raw": 0.17288636991889691,
+     "placebo": 0.07092825789712397
+    }
+   },
+   "broad": {
+    "effect": -0.1057074225873945,
+    "t": -1.379536041749028,
+    "n": 9183,
+    "raw": -0.029878203587286056,
+    "placebo": 0.07582921900010844,
+    "half1": {
+     "effect": -0.08599418190697003,
+     "t": -0.721291206266469,
+     "n": 4660,
+     "raw": -0.006972276293822084,
+     "placebo": 0.07902190561314795
+    },
+    "half2": {
+     "effect": -0.11818768933525363,
+     "t": -1.4613565391443177,
+     "n": 4523,
+     "raw": -0.044466947058378156,
+     "placebo": 0.07372074227687547
+    }
+   },
+   "grade": "NONE",
+   "why": "no reliable effect on the indices",
+   "raw_index": {
+    "effect": 0.02355298475372166,
+    "t": 0.10750961460890199,
+    "n": 369,
+    "n_ref": 118,
+    "mean_a": -0.04855446340212712,
+    "mean_b": -0.07210744815584878,
+    "half1": {
+     "effect": -0.1428526592446844,
+     "t": -0.48160686307589207,
+     "n": 186,
+     "n_ref": 52,
+     "mean_a": -0.1283126220021835,
+     "mean_b": 0.014540037242500923
+    },
+    "half2": {
+     "effect": 0.17288636991889691,
+     "t": 0.5472554049950925,
+     "n": 183,
+     "n_ref": 66,
+     "mean_a": 0.03251120599465147,
+     "mean_b": -0.14037516392424546
+    }
+   },
+   "raw_broad": {
+    "effect": -0.029878203587286056,
+    "t": -0.5745339491904901,
+    "n": 9183,
+    "n_ref": 2741,
+    "mean_a": -0.036142910393549416,
+    "mean_b": -0.006264706806263359,
+    "half1": {
+     "effect": -0.006972276293822084,
+     "t": -0.09716529137793153,
+     "n": 4660,
+     "n_ref": 1257,
+     "mean_a": -0.06240898957326944,
+     "mean_b": -0.05543671327944735
+    },
+    "half2": {
+     "effect": -0.044466947058378156,
+     "t": -0.5955995771839718,
+     "n": 4523,
+     "n_ref": 1484,
+     "mean_a": -0.009081241373541608,
+     "mean_b": 0.03538570568483655
+    }
+   }
+  },
+  {
+   "test": "Stop sweep and reclaim",
+   "lesson": "6",
+   "claim": "A reclaimed sweep of a swing low/high reverses",
+   "metric": "10-day move in the signal direction (ATR)",
+   "index": {
+    "effect": -0.027778354320002592,
+    "t": -0.1337407555906412,
+    "n": 267,
+    "raw": -0.07486573098190036,
+    "placebo": -0.047087376661897766,
+    "half1": {
+     "effect": 0.04201075832269791,
+     "t": 0.11934181330813225,
+     "n": 147,
+     "raw": 0.07424552301431178,
+     "placebo": 0.03223476469161387
+    },
+    "half2": {
+     "effect": -0.10072032915689777,
+     "t": -0.33081067521358065,
+     "n": 120,
+     "raw": -0.25752701712726017,
+     "placebo": -0.1568066879703624
+    }
+   },
+   "broad": {
+    "effect": 0.03254310608672119,
+    "t": 0.7008479338019591,
+    "n": 7237,
+    "raw": 0.017447692685823687,
+    "placebo": -0.015095413400897501,
+    "half1": {
+     "effect": -0.042225066246127006,
+     "t": -0.4963840818735572,
+     "n": 4160,
+     "raw": -0.031185930531984405,
+     "placebo": 0.011039135714142601
+    },
+    "half2": {
+     "effect": 0.132612049387516,
+     "t": 2.148058051374116,
+     "n": 3077,
+     "raw": 0.08319870750092986,
+     "placebo": -0.049413341886586144
+    }
+   },
+   "grade": "NONE",
+   "why": "no reliable effect on the indices",
+   "raw_index": {
+    "effect": -0.07486573098190036,
+    "t": -0.5299522793859545,
+    "n": 267,
+    "half1": {
+     "effect": 0.07424552301431178,
+     "t": 0.3782639359137112,
+     "n": 147
+    },
+    "half2": {
+     "effect": -0.25752701712726017,
+     "t": -1.2742464688474051,
+     "n": 120
+    }
+   },
+   "raw_broad": {
+    "effect": 0.017447692685823687,
+    "t": 0.5979787110126497,
+    "n": 7237,
+    "half1": {
+     "effect": -0.031185930531984405,
+     "t": -0.8245188699336262,
+     "n": 4160
+    },
+    "half2": {
+     "effect": 0.08319870750092986,
+     "t": 1.8186783326575202,
+     "n": 3077
+    }
+   }
+  },
+  {
+   "test": "Sweep vs clean breakdown",
+   "lesson": "6",
+   "claim": "Reclaimed sweeps beat breakdowns that hold",
+   "metric": "signal-direction move (ATR), sweep minus breakdown",
+   "index": {
+    "effect": -0.2525325246767085,
+    "t": -0.8735935915360259,
+    "n": 267,
+    "raw": -0.1724241872877065,
+    "placebo": 0.08010833738900199,
+    "half1": {
+     "effect": -0.12058433791019718,
+     "t": -0.23095668228764943,
+     "n": 147,
+     "raw": -0.07655402700442526,
+     "placebo": 0.044030310905771926
+    },
+    "half2": {
+     "effect": -0.38864228139314305,
+     "t": -1.0612660130491354,
+     "n": 120,
+     "raw": -0.28279481407972895,
+     "placebo": 0.10584746731341413
+    }
+   },
+   "broad": {
+    "effect": -0.04830773473306627,
+    "t": -0.6200157916404031,
+    "n": 7237,
+    "raw": -6.522335749069991e-05,
+    "placebo": 0.04824251137557557,
+    "half1": {
+     "effect": -0.12400142742175627,
+     "t": -0.9316710627089441,
+     "n": 4160,
+     "raw": -0.05951930026414706,
+     "placebo": 0.0644821271576092
+    },
+    "half2": {
+     "effect": 0.053308912415209166,
+     "t": 0.6100603959557078,
+     "n": 3077,
+     "raw": 0.07992753837032046,
+     "placebo": 0.026618625955111296
+    }
+   },
+   "grade": "NONE",
+   "why": "no reliable effect on the indices",
+   "raw_index": {
+    "effect": -0.1724241872877065,
+    "t": -0.8484556381343565,
+    "n": 267,
+    "n_ref": 257,
+    "mean_a": -0.07486573098190036,
+    "mean_b": 0.09755845630580615,
+    "half1": {
+     "effect": -0.07655402700442526,
+     "t": -0.2637064758301874,
+     "n": 147,
+     "n_ref": 148,
+     "mean_a": 0.07424552301431178,
+     "mean_b": 0.15079955001873704
+    },
+    "half2": {
+     "effect": -0.28279481407972895,
+     "t": -1.0292649922689252,
+     "n": 120,
+     "n_ref": 109,
+     "mean_a": -0.25752701712726017,
+     "mean_b": 0.025267796952468783
+    }
+   },
+   "raw_broad": {
+    "effect": -6.522335749069991e-05,
+    "t": -0.0015167657098365992,
+    "n": 7237,
+    "n_ref": 6124,
+    "mean_a": 0.017447692685823687,
+    "mean_b": 0.017512916043314387,
+    "half1": {
+     "effect": -0.05951930026414706,
+     "t": -1.0508421128039322,
+     "n": 4160,
+     "n_ref": 3480,
+     "mean_a": -0.031185930531984405,
+     "mean_b": 0.02833336973216266
+    },
+    "half2": {
+     "effect": 0.07992753837032046,
+     "t": 1.2094653337174017,
+     "n": 3077,
+     "n_ref": 2644,
+     "mean_a": 0.08319870750092986,
+     "mean_b": 0.0032711691306094035
+    }
+   }
+  },
+  {
+   "test": "Pin window (monthly OPEX)",
+   "lesson": "8",
+   "claim": "Price compresses in the 1-4 days before monthly expiration",
+   "metric": "daily |move| / ATR, other days minus pin window",
+   "index": {
+    "effect": 0.09111763421621284,
+    "t": 2.020675425286291,
+    "n": 2205,
+    "raw": 0.06750581621147667,
+    "placebo": -0.023611818004736173,
+    "half1": {
+     "effect": 0.11036168432705794,
+     "t": 1.6827725704885244,
+     "n": 1287,
+     "raw": 0.0892264456417759,
+     "placebo": -0.021135238685282044
+    },
+    "half2": {
+     "effect": 0.06701941653595525,
+     "t": 1.288801664974107,
+     "n": 918,
+     "raw": 0.04072296189047753,
+     "placebo": -0.026296454645477717
+    }
+   },
+   "broad": {
+    "effect": 0.03447265885653603,
+    "t": 5.970985791197263,
+    "n": 55125,
+    "raw": 0.03064634884872075,
+    "placebo": -0.0038263100078152813,
+    "half1": {
+     "effect": 0.05798618316223991,
+     "t": 4.308069269907751,
+     "n": 32175,
+     "raw": 0.054004479587682064,
+     "placebo": -0.003981703574557849
+    },
+    "half2": {
+     "effect": 0.004699295794770087,
+     "t": 0.37652222285787085,
+     "n": 22950,
+     "raw": 0.0014051501538857591,
+     "placebo": -0.0032941456408843274
+    }
+   },
+   "grade": "SLIGHT",
+   "why": "right direction on the indices but not strong or stable enough",
+   "raw_index": {
+    "effect": 0.06750581621147667,
+    "t": 3.5322578706881735,
+    "n": 2205,
+    "n_ref": 663,
+    "mean_a": NaN,
+    "mean_b": NaN,
+    "half1": {
+     "effect": 0.0892264456417759,
+     "t": 4.023656209627434,
+     "n": 1287,
+     "n_ref": 372,
+     "mean_a": NaN,
+     "mean_b": NaN
+    },
+    "half2": {
+     "effect": 0.04072296189047753,
+     "t": 1.232603000787082,
+     "n": 918,
+     "n_ref": 291,
+     "mean_a": 0.5839443209373214,
+     "mean_b": 0.5432213590468439
+    }
+   },
+   "raw_broad": {
+    "effect": 0.03064634884872075,
+    "t": 6.889498270641479,
+    "n": 55125,
+    "n_ref": 16575,
+    "mean_a": NaN,
+    "mean_b": NaN,
+    "half1": {
+     "effect": 0.054004479587682064,
+     "t": 9.914440076433335,
+     "n": 32175,
+     "n_ref": 9300,
+     "mean_a": NaN,
+     "mean_b": NaN
+    },
+    "half2": {
+     "effect": 0.0014051501538857591,
+     "t": 0.19077434905426555,
+     "n": 22950,
+     "n_ref": 7275,
+     "mean_a": 0.5598418026406788,
+     "mean_b": 0.5584366524867931
+    }
+   }
+  },
+  {
+   "test": "Shakeout window (monthly OPEX)",
+   "lesson": "8",
+   "claim": "Breakouts ~2 weeks before monthly expiration fail more often",
+   "metric": "false-breakout rate, shakeout minus other days",
+   "index": {
+    "effect": -0.0992004505225773,
+    "t": -0.9722957037820565,
+    "n": 168,
+    "raw": -0.07658321060382917,
+    "placebo": 0.022617239918748134,
+    "half1": {
+     "effect": -0.17382291435301464,
+     "t": -2.0133357059088928,
+     "n": 85,
+     "raw": -0.11843929490988314,
+     "placebo": 0.055383619443131506
+    },
+    "half2": {
+     "effect": -0.03706272950113339,
+     "t": -0.21064563120650215,
+     "n": 83,
+     "raw": -0.052486541912330154,
+     "placebo": -0.01542381241119677
+    }
+   },
+   "broad": {
+    "effect": -0.0076649352559326365,
+    "t": -0.5316265582409357,
+    "n": 3215,
+    "raw": -0.010642366418175231,
+    "placebo": -0.0029774311622425944,
+    "half1": {
+     "effect": -0.029305881817215062,
+     "t": -1.8623268085668625,
+     "n": 1656,
+     "raw": -0.039204242655762944,
+     "placebo": -0.009898360838547882
+    },
+    "half2": {
+     "effect": 0.017827766423654336,
+     "t": 0.7648029662530056,
+     "n": 1559,
+     "raw": 0.023795385674121206,
+     "placebo": 0.005967619250466872
+    }
+   },
+   "grade": "NONE",
+   "why": "no reliable effect on the indices",
+   "raw_index": {
+    "effect": -0.07658321060382917,
+    "t": -1.7198081434174302,
+    "n": 168,
+    "n_ref": 485,
+    "mean_a": 0.42857142857142855,
+    "mean_b": 0.5051546391752577,
+    "half1": {
+     "effect": -0.11843929490988314,
+     "t": -1.9848904281022348,
+     "n": 85,
+     "n_ref": 297,
+     "mean_a": 0.35294117647058826,
+     "mean_b": 0.4713804713804714
+    },
+    "half2": {
+     "effect": -0.052486541912330154,
+     "t": -0.7942548971597834,
+     "n": 83,
+     "n_ref": 188,
+     "mean_a": 0.5060240963855421,
+     "mean_b": 0.5585106382978723
+    }
+   },
+   "raw_broad": {
+    "effect": -0.010642366418175231,
+    "t": -1.056202063490872,
+    "n": 3215,
+    "n_ref": 10455,
+    "mean_a": 0.4774494556765163,
+    "mean_b": 0.48809182209469154,
+    "half1": {
+     "effect": -0.039204242655762944,
+     "t": -2.8383468230619635,
+     "n": 1656,
+     "n_ref": 6146,
+     "mean_a": 0.4601449275362319,
+     "mean_b": 0.4993491701919948
+    },
+    "half2": {
+     "effect": 0.023795385674121206,
+     "t": 1.6105153624865185,
+     "n": 1559,
+     "n_ref": 4309,
+     "mean_a": 0.49583066067992304,
+     "mean_b": 0.47203527500580184
+    }
+   }
+  },
+  {
+   "test": "Pin window (quad witching)",
+   "lesson": "8",
+   "claim": "Price compresses ~2 weeks before quad witching",
+   "metric": "daily |move| / ATR, other days minus pin window",
+   "index": {
+    "effect": 0.0031744268438651073,
+    "t": 0.07752442065219452,
+    "n": 1176,
+    "raw": -0.00942845782383106,
+    "placebo": -0.012602884667696167,
+    "half1": {
+     "effect": -0.006144662676520408,
+     "t": -0.10623323012622136,
+     "n": 672,
+     "raw": -0.014410559677761503,
+     "placebo": -0.008265897001241095
+    },
+    "half2": {
+     "effect": 0.015599879537712403,
+     "t": 0.2280236806579651,
+     "n": 504,
+     "raw": -0.002785655351923877,
+     "placebo": -0.01838553488963628
+    }
+   },
+   "broad": {
+    "effect": -0.02313971668042487,
+    "t": -2.1022197881259657,
+    "n": 29400,
+    "raw": -0.01969973572151118,
+    "placebo": 0.003439980958913691,
+    "half1": {
+     "effect": -0.010560282476319727,
+     "t": -0.6172963923538122,
+     "n": 16800,
+     "raw": -0.009467148108318613,
+     "placebo": 0.0010931343680011141
+    },
+    "half2": {
+     "effect": -0.03991229561923202,
+     "t": -2.9678100621789287,
+     "n": 12600,
+     "raw": -0.0333431858724349,
+     "placebo": 0.006569109746797119
+    }
+   },
+   "grade": "NONE",
+   "why": "no reliable effect on the indices",
+   "raw_index": {
+    "effect": -0.00942845782383106,
+    "t": -0.2688368012735153,
+    "n": 1176,
+    "n_ref": 336,
+    "mean_a": 0.6081152236689092,
+    "mean_b": 0.6175436814927403,
+    "half1": {
+     "effect": -0.014410559677761503,
+     "t": -0.297841374233125,
+     "n": 672,
+     "n_ref": 192,
+     "mean_a": 0.6509358838402937,
+     "mean_b": 0.6653464435180552
+    },
+    "half2": {
+     "effect": -0.002785655351923877,
+     "t": -0.05581467890809026,
+     "n": 504,
+     "n_ref": 144,
+     "mean_a": 0.5510210101070634,
+     "mean_b": 0.5538066654589873
+    }
+   },
+   "raw_broad": {
+    "effect": -0.01969973572151118,
+    "t": -3.064792172618975,
+    "n": 29400,
+    "n_ref": 8400,
+    "mean_a": 0.5646241812312054,
+    "mean_b": 0.5843239169527166,
+    "half1": {
+     "effect": -0.009467148108318613,
+     "t": -1.0815006199725392,
+     "n": 16800,
+     "n_ref": 4800,
+     "mean_a": 0.5926532643952734,
+     "mean_b": 0.602120412503592
+    },
+    "half2": {
+     "effect": -0.0333431858724349,
+     "t": -3.548949494442731,
+     "n": 12600,
+     "n_ref": 3600,
+     "mean_a": 0.5272520703457813,
+     "mean_b": 0.5605952562182162
+    }
+   }
+  },
+  {
+   "test": "Shakeout window (quad witching)",
+   "lesson": "8",
+   "claim": "Breakouts ~1 month before quad witching fail more often",
+   "metric": "false-breakout rate, shakeout minus other days",
+   "index": {
+    "effect": -0.04098719380426262,
+    "t": -0.25795911332532484,
+    "n": 54,
+    "raw": -0.009768009768009789,
+    "placebo": 0.031219184036252835,
+    "half1": {
+     "effect": -0.11876690681156085,
+     "t": -0.7016457235240621,
+     "n": 32,
+     "raw": -0.06327160493827161,
+     "placebo": 0.05549530187328925
+    },
+    "half2": {
+     "effect": 0.06102855629851993,
+     "t": 0.2730523048918377,
+     "n": 22,
+     "raw": 0.06797706797706793,
+     "placebo": 0.006948511678547997
+    }
+   },
+   "broad": {
+    "effect": -0.04522286728855338,
+    "t": -1.6878660027168189,
+    "n": 1120,
+    "raw": -0.05175691244239633,
+    "placebo": -0.006534045153842949,
+    "half1": {
+     "effect": -0.13759409513088355,
+     "t": -3.5703804892700237,
+     "n": 544,
+     "raw": -0.14489417262231996,
+     "placebo": -0.007300077491436419
+    },
+    "half2": {
+     "effect": 0.04337496315947327,
+     "t": 1.4293211995948414,
+     "n": 576,
+     "raw": 0.03727294786466995,
+     "placebo": -0.00610201529480332
+    }
+   },
+   "grade": "NONE",
+   "why": "no reliable effect on the indices",
+   "raw_index": {
+    "effect": -0.009768009768009789,
+    "t": -0.13087972618819152,
+    "n": 54,
+    "n_ref": 273,
+    "mean_a": 0.4444444444444444,
+    "mean_b": 0.4542124542124542,
+    "half1": {
+     "effect": -0.06327160493827161,
+     "t": -0.6636455424688953,
+     "n": 32,
+     "n_ref": 162,
+     "mean_a": 0.375,
+     "mean_b": 0.4382716049382716
+    },
+    "half2": {
+     "effect": 0.06797706797706793,
+     "t": 0.5729887248993323,
+     "n": 22,
+     "n_ref": 111,
+     "mean_a": 0.5454545454545454,
+     "mean_b": 0.4774774774774775
+    }
+   },
+   "raw_broad": {
+    "effect": -0.05175691244239633,
+    "t": -3.1908111140079582,
+    "n": 1120,
+    "n_ref": 5828,
+    "mean_a": 0.4401785714285714,
+    "mean_b": 0.49193548387096775,
+    "half1": {
+     "effect": -0.14489417262231996,
+     "t": -6.535078306595629,
+     "n": 544,
+     "n_ref": 3424,
+     "mean_a": 0.3492647058823529,
+     "mean_b": 0.4941588785046729
+    },
+    "half2": {
+     "effect": 0.03727294786466995,
+     "t": 1.6075675701137124,
+     "n": 576,
+     "n_ref": 2404,
+     "mean_a": 0.5260416666666666,
+     "mean_b": 0.4887687188019967
+    }
+   }
+  },
+  {
+   "test": "Open-interest wall shapes",
+   "lesson": "7",
+   "claim": "One-sided walls V-reverse; stacked walls chop; sloping walls give an ABC path",
+   "metric": "needs daily open-interest history",
+   "index": {},
+   "broad": {},
+   "grade": "UNTESTED",
+   "why": "only 35 sessions of stored chains (2 monthly expirations): too few to test"
+  }
+ ],
+ "options_volume_by_year": {
+  "2019": 4283000,
+  "2020": 5335000,
+  "2021": 6015000,
+  "2022": 6770000,
+  "2023": 8097000,
+  "2024": 8650000,
+  "2025": 10771000,
+  "2026": 13554000
+ },
+ "pcr_days": 1767
+}
