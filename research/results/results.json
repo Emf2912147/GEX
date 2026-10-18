@@ -1,0 +1,760 @@
+{
+ "counts": {
+  "INDEX": 4,
+  "BROAD": 75
+ },
+ "results": [
+  {
+   "test": "Zone touch count",
+   "lesson": "5 (Law 1)",
+   "claim": "First touch of a support/resistance zone holds more often than the 3rd+",
+   "metric": "hold rate, 1st touch minus 3rd+ touch",
+   "index": {
+    "effect": 0.08835532119073702,
+    "t": 2.8284077218830537,
+    "n": 1453,
+    "n_ref": 284,
+    "mean_a": 0.440467997247075,
+    "mean_b": 0.352112676056338,
+    "half1": {
+     "effect": 0.13341547192353642,
+     "t": 3.30361731891419,
+     "n": 837,
+     "n_ref": 160,
+     "mean_a": 0.43966547192353644,
+     "mean_b": 0.30625
+    },
+    "half2": {
+     "effect": 0.030268118977796354,
+     "t": 0.6218101595098724,
+     "n": 616,
+     "n_ref": 124,
+     "mean_a": 0.44155844155844154,
+     "mean_b": 0.4112903225806452
+    }
+   },
+   "broad": {
+    "effect": 0.02312156297373613,
+    "t": 3.203869324621588,
+    "n": 25088,
+    "n_ref": 5883,
+    "mean_a": 0.4768016581632653,
+    "mean_b": 0.4536800951895292,
+    "half1": {
+     "effect": 0.043636546367330165,
+     "t": 3.7327121952979554,
+     "n": 9370,
+     "n_ref": 2230,
+     "mean_a": 0.47502668089647815,
+     "mean_b": 0.431390134529148
+    },
+    "half2": {
+     "effect": 0.010572617360446845,
+     "t": 1.153307868011558,
+     "n": 15718,
+     "n_ref": 3653,
+     "mean_a": 0.477859778597786,
+     "mean_b": 0.46728716123733915
+    }
+   },
+   "grade": "CREDIBLE",
+   "why": "significant on the indices, stable across both halves, confirmed on stocks",
+   "hold_rates": {
+    "INDEX": {
+     "1": 0.44,
+     "2": 0.392,
+     "3": 0.352
+    },
+    "BROAD": {
+     "1": 0.477,
+     "2": 0.456,
+     "3": 0.454
+    }
+   }
+  },
+  {
+   "test": "Gap breakout vs grind",
+   "lesson": "5 (Law 2)",
+   "claim": "Breaking a 20-day level on a gap continues better than grinding through",
+   "metric": "10-day continuation (ATR), gap minus grind",
+   "index": {
+    "effect": 0.16189659103057302,
+    "t": 1.2066061400096066,
+    "n": 333,
+    "n_ref": 1038,
+    "mean_a": 0.02514819751344077,
+    "mean_b": -0.13674839351713225,
+    "half1": {
+     "effect": 0.06875019266576117,
+     "t": 0.3556552405030342,
+     "n": 151,
+     "n_ref": 613,
+     "mean_a": -0.08106793539740371,
+     "mean_b": -0.14981812806316488
+    },
+    "half2": {
+     "effect": 0.23116979497615486,
+     "t": 1.2181536501865085,
+     "n": 182,
+     "n_ref": 425,
+     "mean_a": 0.11327257152188866,
+     "mean_b": -0.11789722345426619
+    }
+   },
+   "broad": {
+    "effect": 0.10100688580442316,
+    "t": 2.630055560765899,
+    "n": 5108,
+    "n_ref": 15720,
+    "mean_a": 0.01778651830355718,
+    "mean_b": -0.08322036750086598,
+    "half1": {
+     "effect": 0.07454592765079487,
+     "t": 1.167760911225346,
+     "n": 1498,
+     "n_ref": 5690,
+     "mean_a": 0.02033779748038002,
+     "mean_b": -0.05420813017041485
+    },
+    "half2": {
+     "effect": 0.11640679823406085,
+     "t": 2.433187444243984,
+     "n": 3610,
+     "n_ref": 10030,
+     "mean_a": 0.016727843454005752,
+     "mean_b": -0.09967895478005509
+    }
+   },
+   "grade": "NONE",
+   "why": "no reliable effect on the indices"
+  },
+  {
+   "test": "Move character: orderly",
+   "lesson": "5 (Law 3)",
+   "claim": "Steep, orderly moves continue",
+   "metric": "10-day continuation (ATR) vs ordinary trends",
+   "index": {
+    "effect": -0.08589430334015447,
+    "t": -0.13059191671389836,
+    "n": 151,
+    "n_ref": 13,
+    "mean_a": -0.10031931867981513,
+    "mean_b": -0.014425015339660653,
+    "half1": {
+     "effect": 0.2688492399732516,
+     "t": 0.430839927948085,
+     "n": 69,
+     "n_ref": 6,
+     "mean_a": 0.029211396527324518,
+     "mean_b": -0.23963784344592706
+    },
+    "half2": {
+     "effect": -0.3879292282065855,
+     "t": -0.3398357720528919,
+     "n": 82,
+     "n_ref": 7,
+     "mean_a": -0.20931467659801792,
+     "mean_b": 0.17861455160856754
+    }
+   },
+   "broad": {
+    "effect": -0.06752063361716563,
+    "t": -0.5730980357969518,
+    "n": 2327,
+    "n_ref": 545,
+    "mean_a": 0.08958349289430854,
+    "mean_b": 0.15710412651147418,
+    "half1": {
+     "effect": 0.1764675488456062,
+     "t": 0.9055714802282383,
+     "n": 585,
+     "n_ref": 130,
+     "mean_a": 0.058432371600637655,
+     "mean_b": -0.11803517724496855
+    },
+    "half2": {
+     "effect": -0.14324765180234683,
+     "t": -1.007820040503603,
+     "n": 1742,
+     "n_ref": 415,
+     "mean_a": 0.10004469034367566,
+     "mean_b": 0.2432923421460225
+    }
+   },
+   "grade": "NONE",
+   "why": "no reliable effect on the indices"
+  },
+  {
+   "test": "Move character: absorbed",
+   "lesson": "5 (Law 3)",
+   "claim": "Steep-then-stalling moves reverse",
+   "metric": "10-day continuation (ATR) vs ordinary trends (sign flipped: reversal)",
+   "index": {
+    "effect": 0.10063050901007506,
+    "t": 0.15118982384125457,
+    "n": 13,
+    "n_ref": 89,
+    "mean_a": -0.014425015339660653,
+    "mean_b": -0.11505552434973572,
+    "half1": {
+     "effect": -0.1992997126504195,
+     "t": -0.3114570156860387,
+     "n": 6,
+     "n_ref": 36,
+     "mean_a": -0.23963784344592706,
+     "mean_b": -0.04033813079550756
+    },
+    "half2": {
+     "effect": 0.34442151308947716,
+     "t": 0.30042028850549085,
+     "n": 7,
+     "n_ref": 53,
+     "mean_a": 0.17861455160856754,
+     "mean_b": -0.16580696148090962
+    }
+   },
+   "broad": {
+    "effect": -0.0096206029681552,
+    "t": -0.0789958273643672,
+    "n": 545,
+    "n_ref": 1499,
+    "mean_a": 0.15710412651147418,
+    "mean_b": 0.16672472947962938,
+    "half1": {
+     "effect": -0.3495637848887462,
+     "t": -1.6510275281283802,
+     "n": 130,
+     "n_ref": 361,
+     "mean_a": -0.11803517724496855,
+     "mean_b": 0.2315286076437776
+    },
+    "half2": {
+     "effect": 0.0971249061789217,
+     "t": 0.6680906216693883,
+     "n": 415,
+     "n_ref": 1138,
+     "mean_a": 0.2432923421460225,
+     "mean_b": 0.1461674359671008
+    }
+   },
+   "grade": "NONE",
+   "why": "no reliable effect on the indices"
+  },
+  {
+   "test": "Move character: violent",
+   "lesson": "5 (Law 3)",
+   "claim": "Wide, violent moves have no trend: stand aside",
+   "metric": "mean continuation ~0 and wider dispersion than ordinary trends",
+   "index": {
+    "mean": 5.04013418869674,
+    "t": 2.619450775092949,
+    "n": 5,
+    "dispersion_ratio": null
+   },
+   "broad": {
+    "mean": 0.4155447408911192,
+    "t": 2.608620999110914,
+    "n": 278,
+    "dispersion_ratio": 1.0731520497698146
+   },
+   "grade": "NONE",
+   "why": "not supported"
+  },
+  {
+   "test": "Close strength vs Fibonacci",
+   "lesson": "5 (Law 4)",
+   "claim": "Moves that hold above the 23.6% retracement continue better than those that lose 50%",
+   "metric": "10-day continuation (ATR), strong minus weak",
+   "index": {
+    "effect": 0.12893639887213587,
+    "t": 0.9397310155708694,
+    "n": 573,
+    "n_ref": 675,
+    "mean_a": 0.14253945526411654,
+    "mean_b": 0.013603056391980669,
+    "half1": {
+     "effect": 0.03157570353554198,
+     "t": 0.18033838185622492,
+     "n": 284,
+     "n_ref": 391,
+     "mean_a": 0.2667725013973047,
+     "mean_b": 0.2351967978617627
+    },
+    "half2": {
+     "effect": 0.311934237746173,
+     "t": 1.487696608496114,
+     "n": 289,
+     "n_ref": 284,
+     "mean_a": 0.020455769790672113,
+     "mean_b": -0.2914784679555009
+    }
+   },
+   "broad": {
+    "effect": 0.08757193330227811,
+    "t": 2.5432519302223677,
+    "n": 8408,
+    "n_ref": 10934,
+    "mean_a": 0.05739012309188061,
+    "mean_b": -0.03018181021039751,
+    "half1": {
+     "effect": 0.08898231003935311,
+     "t": 1.6265757480717127,
+     "n": 2679,
+     "n_ref": 3782,
+     "mean_a": 0.08705033995719293,
+     "mean_b": -0.0019319700821601874
+    },
+    "half2": {
+     "effect": 0.08864080064020177,
+     "t": 2.0276547904681186,
+     "n": 5729,
+     "n_ref": 7152,
+     "mean_a": 0.04352038649174588,
+     "mean_b": -0.04512041414845589
+    }
+   },
+   "grade": "NONE",
+   "why": "no reliable effect on the indices"
+  },
+  {
+   "test": "Breakout from contraction",
+   "lesson": "1 (Master Pattern)",
+   "claim": "Breakouts out of a volatility contraction continue better than other breakouts",
+   "metric": "10-day continuation (ATR), squeeze minus other",
+   "index": {
+    "effect": -0.11542695556176058,
+    "t": -0.9235421647650572,
+    "n": 541,
+    "n_ref": 777,
+    "mean_a": -0.17379909303222504,
+    "mean_b": -0.05837213747046446,
+    "half1": {
+     "effect": -0.04858308024680155,
+     "t": -0.2841887916399276,
+     "n": 303,
+     "n_ref": 408,
+     "mean_a": -0.1824355062371312,
+     "mean_b": -0.13385242599032965
+    },
+    "half2": {
+     "effect": -0.18788973806764797,
+     "t": -1.0312396601750997,
+     "n": 238,
+     "n_ref": 369,
+     "mean_a": -0.16280399554866803,
+     "mean_b": 0.025085742518979926
+    }
+   },
+   "broad": {
+    "effect": 0.011663503728557255,
+    "t": 0.3328561514332835,
+    "n": 7766,
+    "n_ref": 12149,
+    "mean_a": -0.05147703776191003,
+    "mean_b": -0.06314054149046729,
+    "half1": {
+     "effect": 0.08246311065825249,
+     "t": 1.4547970056352304,
+     "n": 2539,
+     "n_ref": 3762,
+     "mean_a": 0.011552738161382177,
+     "mean_b": -0.07091037249687031
+    },
+    "half2": {
+     "effect": -0.0224381940615013,
+     "t": -0.5087105824075563,
+     "n": 5227,
+     "n_ref": 8387,
+     "mean_a": -0.08209356752453467,
+     "mean_b": -0.05965537346303337
+    }
+   },
+   "grade": "NONE",
+   "why": "no reliable effect on the indices"
+  },
+  {
+   "test": "Late entry (extended)",
+   "lesson": "1-2 (entries)",
+   "claim": "Entering > 2.5 ATR from the 20-day EMA does worse than entering 0.5-1.5 ATR away",
+   "metric": "10-day continuation (ATR), normal minus extended",
+   "index": {
+    "effect": -0.03649632653186377,
+    "t": -0.3249258767465054,
+    "n": 1903,
+    "n_ref": 518,
+    "mean_a": -0.026422970145666778,
+    "mean_b": 0.010073356386196997,
+    "half1": {
+     "effect": -0.03634190676768848,
+     "t": -0.2423709789333236,
+     "n": 1062,
+     "n_ref": 256,
+     "mean_a": 0.0018985874368324148,
+     "mean_b": 0.0382404942045209
+    },
+    "half2": {
+     "effect": -0.04473820218085965,
+     "t": -0.26566541580457964,
+     "n": 841,
+     "n_ref": 262,
+     "mean_a": -0.06218693465531499,
+     "mean_b": -0.01744873247445534
+    }
+   },
+   "broad": {
+    "effect": -0.0031992209546476257,
+    "t": -0.1089467300229203,
+    "n": 31356,
+    "n_ref": 8622,
+    "mean_a": -0.015826976877464958,
+    "mean_b": -0.012627755922817332,
+    "half1": {
+     "effect": 0.04178277760621641,
+     "t": 0.8432694889799728,
+     "n": 10262,
+     "n_ref": 2351,
+     "mean_a": 0.028834398367789386,
+     "mean_b": -0.012948379238427026
+    },
+    "half2": {
+     "effect": -0.025046692713968505,
+     "t": -0.6953531055839091,
+     "n": 21094,
+     "n_ref": 6271,
+     "mean_a": -0.03755424684839508,
+     "mean_b": -0.01250755413442658
+    }
+   },
+   "grade": "NONE",
+   "why": "no reliable effect on the indices"
+  },
+  {
+   "test": "Stop sweep and reclaim",
+   "lesson": "6",
+   "claim": "A sweep below a swing low that is reclaimed leads to a move the other way",
+   "metric": "10-day move in the signal direction (ATR)",
+   "index": {
+    "effect": -0.01209137924857589,
+    "t": -0.19185316964276508,
+    "n": 1300,
+    "half1": {
+     "effect": 0.03611533400268406,
+     "t": 0.43912878096676733,
+     "n": 761
+    },
+    "half2": {
+     "effect": -0.08015317662187608,
+     "t": -0.8169596813884538,
+     "n": 539
+    }
+   },
+   "broad": {
+    "effect": -0.011893564017588537,
+    "t": -0.7545483313914212,
+    "n": 22465,
+    "half1": {
+     "effect": -0.04656293342263124,
+     "t": -1.9167017149946397,
+     "n": 8025
+    },
+    "half2": {
+     "effect": 0.007373866001488184,
+     "t": 0.3602243048914202,
+     "n": 14440
+    }
+   },
+   "grade": "NONE",
+   "why": "no reliable effect on the indices"
+  },
+  {
+   "test": "Sweep vs clean breakdown",
+   "lesson": "6",
+   "claim": "Reclaimed sweeps beat breakdowns that hold",
+   "metric": "10-day move in the signal direction (ATR), sweep minus breakdown",
+   "index": {
+    "effect": -0.0012208861866910524,
+    "t": -0.013141446519309838,
+    "n": 1300,
+    "n_ref": 1161,
+    "mean_a": -0.01209137924857589,
+    "mean_b": -0.010870493061884838,
+    "half1": {
+     "effect": 0.11421018038011474,
+     "t": 0.9179425005902688,
+     "n": 761,
+     "n_ref": 651,
+     "mean_a": 0.03611533400268406,
+     "mean_b": -0.07809484637743068
+    },
+    "half2": {
+     "effect": -0.15509259338042322,
+     "t": -1.1088532529335977,
+     "n": 539,
+     "n_ref": 510,
+     "mean_a": -0.08015317662187608,
+     "mean_b": 0.07493941675854714
+    }
+   },
+   "broad": {
+    "effect": 0.03801165302465277,
+    "t": 1.6373320876646298,
+    "n": 22465,
+    "n_ref": 18851,
+    "mean_a": -0.011893564017588537,
+    "mean_b": -0.04990521704224131,
+    "half1": {
+     "effect": 0.045079572646521716,
+     "t": 1.2417891641529386,
+     "n": 8025,
+     "n_ref": 6671,
+     "mean_a": -0.04656293342263124,
+     "mean_b": -0.09164250606915296
+    },
+    "half2": {
+     "effect": 0.03441952186979455,
+     "t": 1.149533876378576,
+     "n": 14440,
+     "n_ref": 12180,
+     "mean_a": 0.007373866001488184,
+     "mean_b": -0.027045655868306363
+    }
+   },
+   "grade": "NONE",
+   "why": "no reliable effect on the indices"
+  },
+  {
+   "test": "Pin window (monthly OPEX)",
+   "lesson": "8",
+   "claim": "Price compresses (pins) in the days before expiration",
+   "metric": "daily |move| / ATR, other days minus pin window",
+   "index": {
+    "effect": 0.01929937458631603,
+    "t": 2.0062141442028225,
+    "n": 10058,
+    "n_ref": 3047,
+    "mean_a": NaN,
+    "mean_b": NaN,
+    "half1": {
+     "effect": 0.009250905586154268,
+     "t": 0.7342142008341923,
+     "n": 5732,
+     "n_ref": 1724,
+     "mean_a": NaN,
+     "mean_b": NaN
+    },
+    "half2": {
+     "effect": 0.03243859037379504,
+     "t": 2.180755071232382,
+     "n": 4326,
+     "n_ref": 1323,
+     "mean_a": 0.5712422547059778,
+     "mean_b": 0.5388036643321827
+    }
+   },
+   "broad": {
+    "effect": 0.013696485746255371,
+    "t": 5.287854333215876,
+    "n": 167591,
+    "n_ref": 50775,
+    "mean_a": NaN,
+    "mean_b": NaN,
+    "half1": {
+     "effect": 0.004835767314503858,
+     "t": 1.1866914248494995,
+     "n": 59447,
+     "n_ref": 17704,
+     "mean_a": NaN,
+     "mean_b": NaN
+    },
+    "half2": {
+     "effect": 0.01862652736729742,
+     "t": 5.599945857883709,
+     "n": 108144,
+     "n_ref": 33071,
+     "mean_a": NaN,
+     "mean_b": NaN
+    }
+   },
+   "grade": "SLIGHT",
+   "why": "right direction on the indices but not strong or stable enough"
+  },
+  {
+   "test": "Shakeout window (monthly OPEX)",
+   "lesson": "8",
+   "claim": "Breakouts in the shakeout window fail more often",
+   "metric": "false-breakout rate, shakeout minus other days",
+   "index": {
+    "effect": -0.05020261810746535,
+    "t": -2.3912895539358936,
+    "n": 778,
+    "n_ref": 2082,
+    "mean_a": 0.47429305912596403,
+    "mean_b": 0.5244956772334294,
+    "half1": {
+     "effect": -0.015998180606960788,
+     "t": -0.5683334144441656,
+     "n": 437,
+     "n_ref": 1137,
+     "mean_a": 0.5125858123569794,
+     "mean_b": 0.5285839929639402
+    },
+    "half2": {
+     "effect": -0.09435677822774596,
+     "t": -3.00909844667376,
+     "n": 341,
+     "n_ref": 945,
+     "mean_a": 0.4252199413489736,
+     "mean_b": 0.5195767195767196
+    }
+   },
+   "broad": {
+    "effect": -0.019991458710472754,
+    "t": -3.4859051768970835,
+    "n": 10044,
+    "n_ref": 31095,
+    "mean_a": 0.47909199522102747,
+    "mean_b": 0.4990834539315002,
+    "half1": {
+     "effect": -0.014398714621184028,
+     "t": -1.4962393029940835,
+     "n": 3627,
+     "n_ref": 10556,
+     "mean_a": 0.5015164047422112,
+     "mean_b": 0.5159151193633952
+    },
+    "half2": {
+     "effect": -0.024015506124287378,
+     "t": -3.3642485197569165,
+     "n": 6417,
+     "n_ref": 20539,
+     "mean_a": 0.46641732896992366,
+     "mean_b": 0.49043283509421104
+    }
+   },
+   "grade": "CONTRADICTED",
+   "why": "index shows the opposite of the course rule"
+  },
+  {
+   "test": "Pin window (quad witching)",
+   "lesson": "8",
+   "claim": "Price compresses (pins) in the days before expiration",
+   "metric": "daily |move| / ATR, other days minus pin window",
+   "index": {
+    "effect": -0.00944577294127913,
+    "t": -0.6807997094771274,
+    "n": 5352,
+    "n_ref": 1528,
+    "mean_a": NaN,
+    "mean_b": 0.5694333200642098,
+    "half1": {
+     "effect": -0.019727723295723587,
+     "t": -1.1276008762246887,
+     "n": 3042,
+     "n_ref": 868,
+     "mean_a": NaN,
+     "mean_b": 0.5645817700498786
+    },
+    "half2": {
+     "effect": 0.004102754841525003,
+     "t": 0.18300813823828757,
+     "n": 2310,
+     "n_ref": 660,
+     "mean_a": 0.5799165982579156,
+     "mean_b": 0.5758138434163906
+    }
+   },
+   "broad": {
+    "effect": -0.011044837510650773,
+    "t": -3.239931044322238,
+    "n": 89243,
+    "n_ref": 25496,
+    "mean_a": NaN,
+    "mean_b": NaN,
+    "half1": {
+     "effect": -0.017139822051984055,
+     "t": -3.2111820871889556,
+     "n": 31493,
+     "n_ref": 8996,
+     "mean_a": NaN,
+     "mean_b": NaN
+    },
+    "half2": {
+     "effect": -0.007718908878402431,
+     "t": -1.7590324373943613,
+     "n": 57750,
+     "n_ref": 16500,
+     "mean_a": 0.5494559986268923,
+     "mean_b": 0.5571749075052947
+    }
+   },
+   "grade": "NONE",
+   "why": "no reliable effect on the indices"
+  },
+  {
+   "test": "Shakeout window (quad witching)",
+   "lesson": "8",
+   "claim": "Breakouts in the shakeout window fail more often",
+   "metric": "false-breakout rate, shakeout minus other days",
+   "index": {
+    "effect": 0.0017251293847038163,
+    "t": 0.047965230862820785,
+    "n": 235,
+    "n_ref": 1110,
+    "mean_a": 0.49361702127659574,
+    "mean_b": 0.4918918918918919,
+    "half1": {
+     "effect": 0.09907149633730972,
+     "t": 1.9447755720569833,
+     "n": 113,
+     "n_ref": 569,
+     "mean_a": 0.5929203539823009,
+     "mean_b": 0.4938488576449912
+    },
+    "half2": {
+     "effect": -0.08819429714251081,
+     "t": -1.7821830541461496,
+     "n": 122,
+     "n_ref": 541,
+     "mean_a": 0.4016393442622951,
+     "mean_b": 0.4898336414048059
+    }
+   },
+   "broad": {
+    "effect": -0.021061866255867756,
+    "t": -2.1400813850136036,
+    "n": 3053,
+    "n_ref": 16563,
+    "mean_a": 0.4785456927612185,
+    "mean_b": 0.49960755901708626,
+    "half1": {
+     "effect": 0.03458113816099073,
+     "t": 1.8008607539947588,
+     "n": 771,
+     "n_ref": 5424,
+     "mean_a": 0.5395590142671854,
+     "mean_b": 0.5049778761061947
+    },
+    "half2": {
+     "effect": -0.03906090978952209,
+     "t": -3.4092552465711985,
+     "n": 2282,
+     "n_ref": 11139,
+     "mean_a": 0.457931638913234,
+     "mean_b": 0.4969925487027561
+    }
+   },
+   "grade": "NONE",
+   "why": "no reliable effect on the indices"
+  },
+  {
+   "test": "Open-interest wall shapes",
+   "lesson": "7",
+   "claim": "One-sided walls V-reverse; stacked walls chop; sloping walls give an ABC path",
+   "metric": "needs daily open-interest history",
+   "index": {},
+   "broad": {},
+   "grade": "UNTESTED",
+   "why": "only 35 sessions of stored chains (2 monthly expirations): too few to test"
+  }
+ ]
+}
