@@ -22,11 +22,11 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install yfinance pandas numpy requests
-      - run: cd research && python pattern_backtest_v2.py --out results
+      - run: cd research && python buy_underlying_backtest.py --out results
       - name: Commit results only
         run: |
           git config user.name "gex-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add research/results/
-          git commit -m "research: pattern backtest results [skip ci]" || echo "no change"
+          git commit -m "research: backtest results [skip ci]" || echo "no change"
           git push
