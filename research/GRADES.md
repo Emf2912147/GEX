@@ -22,3 +22,23 @@ same volatility), because several rules produce an "edge" on random prices.
 
 No pattern reached CREDIBLE (index t >= 2.5, stable in both halves, confirmed
 on stocks, beyond placebo), so none changes the app's trade scoring.
+
+## Options-era challenge (v2, Oct 2020 - Oct 2026)
+
+`research/pattern_backtest_v2.py`, results in `research/results/results_v2.md`.
+Hypothesis: options volume has grown (Cboe exchanges: 5.3M contracts/day in
+2020 -> 13.6M in 2026), so the patterns are options-driven, should show up in
+the recent era, and be more reliable at put/call, RSI or divergence extremes.
+
+| Finding | Evidence |
+|---|---|
+| OPEX pin window got STRONGER | daily moves 1-4 days before monthly OPEX ~9% of an ATR smaller on the indices (t 2.0, both halves), stocks t 6.0; ~5x the full-history effect. Still SLIGHT on the index bar. |
+| Zone touch count faded | index excess +0.01 (t 0.1) since 2020 (was +0.07 over 1994-2026) |
+| Gap breakout faded | index -0.24 (t -0.5) since 2020 |
+| Fibonacci close strength | stocks t 3.0, indices t 0.7: SLIGHT, stocks only |
+| Indicators alone | RSI extreme +0.22 ATR (t 1.0), put/call extreme -0.03, divergence -0.06 on the indices: no edge |
+| Pattern x extreme (40 cells) | none SLIGHT or better; only 10 cells had 15+ index signals; extremes did not make any pattern more reliable |
+
+Conclusion: the options-mechanics effect (expiration pinning) did grow with
+options volume; the chart patterns did not, and coincident extremes did not
+rescue them. Statistical power at extremes on 3 indices x 6 years is low.
