@@ -14572,3 +14572,4 @@ StaleFeedError: feed_ts 2026-10-19 20:22:22 is 29.7 min behind the capture (limi
 2026-10-19T20:52:38+00:00  RV TLT: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
 2026-10-19T20:52:38+00:00  --- intraday done  ok=7  skipped=1  failed=1
 2026-10-19T20:52:44+00:00  --- runner: capture at 20:52 UTC exited 1
+2026-10-19T20:52:46+00:00  --- runner: session complete, 19 capture(s) by this link
