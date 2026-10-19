@@ -25,6 +25,7 @@ import numpy as np
 import pandas as pd
 
 import gamma_exposure as gx
+import market_calendar as cal
 import vol_metrics as vm
 import dealer_flows as dfl
 import support_resistance as sr
@@ -102,6 +103,22 @@ def strike_view(raw, row, max_dte=30, plot_window=0.10, grid_window=0.15,
                 bin_size=bin_size)
 
 
+def et_label(ts):
+    """UTC time (aware, or naive UTC) -> '2026-10-19 4:52 PM ET'.
+
+    Eastern wall clock, so EDT or EST by date. Anything unparseable is
+    shown as given rather than dropped.
+    """
+    try:
+        t = pd.Timestamp(ts)
+        if t.tzinfo is None:
+            t = t.tz_localize("UTC")
+        local = cal.et_wall_clock(t.to_pydatetime())
+    except Exception:
+        return str(ts)
+    return f"{local:%Y-%m-%d} {local:%I:%M %p}".replace(" 0", " ") + " ET"
+
+
 def render_chart(raw, row, outpath, max_dte=30, plot_window=0.10,
                  grid_window=0.15, wall_exclude=0.004, bin_size=None):
     v = strike_view(raw, row, max_dte, plot_window, grid_window, wall_exclude,
@@ -113,7 +130,7 @@ def render_chart(raw, row, outpath, max_dte=30, plot_window=0.10,
     cw, pw, bin_size = v["call_wall"], v["put_wall"], v["bin_size"]
 
     os.makedirs(os.path.dirname(outpath), exist_ok=True)
-    gx.plot(row["symbol"], row["feed_ts"], spot, calls, puts, grid, net, flip,
+    gx.plot(row["symbol"], et_label(row["feed_ts"]), spot, calls, puts, grid, net, flip,
             outpath, "open interest (prior close)", bin_size, cw, pw)
     return True
 
@@ -445,7 +462,7 @@ def intraday_block(sym, live, settled_spot):
     return (
         f"<div class='live'>"
         f"<div class='live-h'>Last intraday capture "
-        f"<span class='live-ts'>{ts:%Y-%m-%d %H:%M} UTC</span></div>"
+        f"<span class='live-ts'>{et_label(ts)}</span></div>"
         f"<div class='live-row'>"
         f"<span><b>{fmt(spot)}</b> spot <small>({drift:+.2%} vs settled)</small></span>"
         f"<span class='{'pos' if pos else 'neg'}'>{'positive' if pos else 'negative'}</span>"
@@ -596,7 +613,7 @@ def card(row, hist, has_chart, bars="", live=None, levels=""):
 def build(histdir, docsdir, charts=True):
     metrics = load_metrics(histdir)
     os.makedirs(docsdir, exist_ok=True)
-    built = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    built = et_label(datetime.now(timezone.utc))
 
     if metrics.empty:
         body = ("<div class='empty'>No captures yet. The dashboard fills in "
