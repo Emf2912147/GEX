@@ -13702,3 +13702,40 @@ StaleFeedError: feed_ts 2026-10-19 15:18:27 is 18.6 min behind the capture (limi
 2026-10-19T15:37:37+00:00  RV TLT: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
 2026-10-19T15:37:37+00:00  --- intraday done  ok=8  skipped=0  failed=1  vix=written
 2026-10-19T15:37:40+00:00  --- runner: capture at 15:37 UTC exited 1
+2026-10-19T15:52:00+00:00  --- intraday capture  symbols=SPX SPY QQQ IWM XLK SMH XLF GLD TLT
+2026-10-19T15:52:02+00:00  SPX: greek fill gamma 76.9% / iv 89.3%
+2026-10-19T15:52:02+00:00  SPX: 11,188 contracts -> SPX__155123.parquet
+2026-10-19T15:52:02+00:00  SPX: spot 7,728.40  netGEX(win) -17.76Bn  flip 7747.3803  walls 7900.0/7650.0  negative  RR25 -0.0472 (STEEP)  P/C 1.1246
+2026-10-19T15:52:02+00:00  SPY: greek fill gamma 82.2% / iv 89.6%
+2026-10-19T15:52:02+00:00  SPY: 3,926 contracts -> SPY__155130.parquet
+2026-10-19T15:52:02+00:00  SPY: spot 770.08  netGEX(win) -0.17Bn  flip 770.3277  walls 780.0/760.0  negative  RR25 -0.0501 (STEEP)  P/C 1.0733
+2026-10-19T15:52:03+00:00  QQQ: greek fill gamma 85.8% / iv 84.4%
+2026-10-19T15:52:03+00:00  QQQ: 3,950 contracts -> QQQ__155122.parquet
+2026-10-19T15:52:03+00:00  QQQ: spot 724.21  netGEX(win) -1.27Bn  flip 727.2684  walls 735.0/700.0  negative  RR25 -0.0664 (STEEP)  P/C 1.0313
+2026-10-19T15:52:03+00:00  IWM: greek fill gamma 78.8% / iv 96.4%
+2026-10-19T15:52:03+00:00  IWM: 1,922 contracts -> IWM__155125.parquet
+2026-10-19T15:52:03+00:00  IWM: spot 272.47  netGEX(win) -1.32Bn  flip 275.1066  walls 274.0/270.0  negative  RR25 -0.045 (STEEP)  P/C 1.6791
+2026-10-19T15:52:04+00:00  XLK: greek fill gamma 95.7% / iv 85.6%
+2026-10-19T15:52:04+00:00  XLK: 482 contracts -> XLK__155017.parquet
+2026-10-19T15:52:04+00:00  XLK: spot 187.77  netGEX(win) -0.00Bn  flip 188.0496  walls 195.0/185.0  negative  RR25 -0.0816 (STEEP)  P/C 0.935
+2026-10-19T15:52:05+00:00  SMH: greek fill gamma 82.2% / iv 91.0%
+2026-10-19T15:52:05+00:00  SMH: 1,146 contracts -> SMH__155131.parquet
+2026-10-19T15:52:05+00:00  SMH: spot 558.12  netGEX(win) -0.36Bn  flip 597.1405  walls 562.5/530.0  negative  RR25 -0.0546 (STEEP)  P/C 2.1687
+2026-10-19T15:52:05+00:00  XLF: greek fill gamma 84.5% / iv 94.3%
+2026-10-19T15:52:05+00:00  XLF: 624 contracts -> XLF__155126.parquet
+2026-10-19T15:52:05+00:00  XLF: spot 55.27  netGEX(win) -0.05Bn  flip 55.8683  walls 56.0/55.0  negative  RR25 -0.0265 (STEEP)  P/C 1.3701
+2026-10-19T15:52:06+00:00  GLD: greek fill gamma 74.3% / iv 75.3%
+2026-10-19T15:52:06+00:00  GLD: 2,158 contracts -> GLD__155131.parquet
+2026-10-19T15:52:06+00:00  GLD: spot 379.92  netGEX(win) 0.07Bn  flip 379.125  walls 390.0/377.0  positive  RR25 -0.0042 (FLAT)  P/C 0.7394
+2026-10-19T15:52:06+00:00  TLT: greek fill gamma 89.7% / iv 82.0%
+2026-10-19T15:52:06+00:00  TLT: 838 contracts -> TLT__155127.parquet
+2026-10-19T15:52:06+00:00  TLT: spot 79.59  netGEX(win) 0.40Bn  flip 77.7433  walls 81.0/79.0  positive  RR25 0.0026 (FLAT)  P/C 0.7103
+2026-10-19T15:52:06+00:00  appended 9 state row(s)
+2026-10-19T15:52:07+00:00  VIX: 17.51 (-12.4% 1d, +17.8% 20d)  VIX9D: 16.71  term contango(short-cheap) -> vix_state.csv
+2026-10-19T15:52:07+00:00  RV QQQ: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
+2026-10-19T15:52:07+00:00  RV XLK: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
+2026-10-19T15:52:07+00:00  RV SMH: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
+2026-10-19T15:52:07+00:00  RV XLF: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
+2026-10-19T15:52:07+00:00  RV GLD: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
+2026-10-19T15:52:07+00:00  RV TLT: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
+2026-10-19T15:52:07+00:00  --- intraday done  ok=9  skipped=0  failed=0  vix=written
