@@ -1273,6 +1273,9 @@ def main():
                    help="seconds to wait before a refetch (default 30; a "
                         "starting guess -- read the logged RECOVERED/REFUSED "
                         "outcomes to calibrate it)")
+    p.add_argument("--late-retry-wait", type=float, default=60.0,
+                   help="seconds to wait before the one late retry of a "
+                        "symbol whose feed was stale")
     p.add_argument("--min-greek-fill", type=float, default=0.10,
                    help="minimum share of in-window contracts carrying a "
                         "non-zero gamma before a chain is accepted (default "
@@ -1359,20 +1362,43 @@ def main():
 
     states, failures, refusals, skipped, refused = [], [], [], 0, 0
     attempted = len(args.symbols)
-    for sym in args.symbols:
-        sym = sym.upper()
+    late = []
+
+    def one(sym, last_try):
+        nonlocal skipped, refused
         try:
             _, state = capture_symbol(sym, args, logpath, now)
             if state is None:
                 skipped += 1
-                continue
+                return
             states.append(state)
+            if last_try:
+                log(logpath, f"{sym}: RECOVERED on the late retry")
             log(logpath,
                 f"{sym}: spot {state['spot']:,.2f}  netGEX(win) "
                 f"{state['net_gex_window']/1e9:,.2f}Bn  flip {state['flip']}  "
                 f"walls {state['call_wall']}/{state['put_wall']}  "
                 f"{state['regime']}  RR25 {state['rr25']} "
                 f"({state['skew_state']})  P/C {state['session_pc_volume']}")
+        except StaleFeedError as e:
+            # One symbol's chain served late by Cboe while the others in the
+            # same cycle are current (XLK from 2026-10-16: 15 to 240 min
+            # behind, about half its cycles). The 15-minute guard is right to
+            # refuse it -- a late chain is never written as current -- but it
+            # is a per-symbol feed condition, not a pipeline failure, so it is
+            # handled like a Greek-less chain (below): a refusal, counted and
+            # logged, not a red run. Before refusing, the symbol gets one more
+            # try after the others are done (so they keep their grid timing)
+            # and late_retry_wait seconds; the 30 s in-place refetch recovered
+            # 5 of 38 such cases, so a later look is worth one extra fetch.
+            if not last_try:
+                log(logpath, f"{sym}: stale -- {e}; one more try after the "
+                             f"other symbols")
+                late.append(sym)
+                return
+            refused += 1
+            refusals.append(f"{sym}: {e}")
+            log(logpath, f"{sym}: REFUSED -- still stale on the late retry: {e}")
         except ChainIntegrityError as e:
             # A refusal, not a crash: the payload was structurally sound and
             # empty of Greeks, and a refetch did not rescue it.
@@ -1399,6 +1425,15 @@ def main():
         except Exception as e:
             failures.append(f"{sym}: {e}")
             log(logpath, f"{sym}: FAILED -- {e}\n{traceback.format_exc()}")
+
+    for sym in args.symbols:
+        one(sym.upper(), last_try=False)
+    if late:
+        log(logpath, f"late retry for {' '.join(late)} in "
+                     f"{args.late_retry_wait:.0f}s")
+        time.sleep(args.late_retry_wait)
+        for sym in late:
+            one(sym, last_try=True)
 
     if states and not args.dry_run:
         append_state(os.path.join(args.outdir, "intraday_state.csv"), states)
