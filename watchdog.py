@@ -61,6 +61,13 @@ MIN_FRACTION = 0.60
 DAILY_SYMBOLS = 9
 # Longest acceptable silence mid-session. Four consecutive missed cycles.
 MAX_SILENCE_MIN = 60
+# Per-symbol coverage. A cycle can succeed while one symbol is refused (stale
+# or Greek-less chain), which the cycle count above cannot see. XLK from
+# 2026-10-16 landed in about half the day's cycles while every other symbol
+# landed in all of them. Flag a symbol present in under two thirds of today's
+# cycles, once enough cycles exist for the fraction to mean something.
+MIN_SYMBOL_FRACTION = 2 / 3
+MIN_CYCLES_FOR_SYMBOL_CHECK = 8
 
 problems = []
 
@@ -72,6 +79,25 @@ def fail(msg):
 
 def ok(msg):
     print(f"ok    {msg}")
+
+
+def symbol_gaps(today_rows, cycles, expected=()):
+    """Symbols captured in under MIN_SYMBOL_FRACTION of today's cycles.
+
+    `expected` (symbols seen in recent sessions) catches a symbol missing from
+    every cycle today; a symbol retired from the capture list drops out of it
+    within a few sessions, so it does not alarm forever."""
+    if cycles < MIN_CYCLES_FOR_SYMBOL_CHECK:
+        return []
+    counts = today_rows.groupby("symbol")["capture_ts"].nunique().to_dict()
+    out = []
+    for sym in sorted(set(counts) | set(expected)):
+        n = counts.get(sym, 0)
+        if n < cycles * MIN_SYMBOL_FRACTION:
+            out.append(f"{sym} captured in only {n} of {cycles} cycles today "
+                       f"(Cboe serving its chain late or empty -- see "
+                       f"history/intraday.log)")
+    return out
 
 
 def main():
@@ -119,6 +145,11 @@ def main():
                  f"{expected} by now (floor {floor})")
         else:
             ok(f"{cycles} intraday cycles today (expected ~{expected})")
+
+        recent = sorted(d for d in s["et_date"].unique() if d < et_today)[-3:]
+        expected = set(s.loc[s["et_date"].isin(recent), "symbol"])
+        for msg in symbol_gaps(today_rows, cycles, expected):
+            fail(msg)
 
         # A stall mid-session is the 2026-10-05 signature: plenty of cycles
         # banked, then silence. The count check alone would pass that.
