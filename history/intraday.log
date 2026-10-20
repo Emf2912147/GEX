@@ -14740,3 +14740,41 @@ StaleFeedError: feed_ts 2026-10-20 12:19:01 is 78.0 min behind the capture (limi
 2026-10-20T13:37:36+00:00  --- intraday done  ok=8  skipped=0  failed=1
 2026-10-20T13:37:42+00:00  --- runner: capture at 13:37 UTC exited 1
 2026-10-20T13:42:01+00:00  --- runner handoff before the 2026-10-20 13:52 UTC slot: successor dispatched
+2026-10-20T13:52:00+00:00  --- runner start  run=39432665636 event=workflow_dispatch  29 of 32 slots ahead  must hand off by 19:12 UTC
+2026-10-20T13:52:01+00:00  --- intraday capture  symbols=SPX SPY QQQ IWM XLK SMH XLF GLD TLT
+2026-10-20T13:52:02+00:00  SPX: greek fill gamma 77.5% / iv 94.1%
+2026-10-20T13:52:03+00:00  SPX: 11,074 contracts -> SPX__134924.parquet
+2026-10-20T13:52:03+00:00  SPX: spot 7,678.85  netGEX(win) -55.47Bn  flip 7732.762  walls 7900.0/7600.0  negative  RR25 -0.056 (STEEP)  P/C 1.388
+2026-10-20T13:52:03+00:00  SPY: greek fill gamma 80.0% / iv 87.2%
+2026-10-20T13:52:03+00:00  SPY: 3,908 contracts -> SPY__134937.parquet
+2026-10-20T13:52:03+00:00  SPY: spot 765.71  netGEX(win) -9.14Bn  flip 770.9451  walls 780.0/760.0  negative  RR25 -0.0552 (STEEP)  P/C 1.1381
+2026-10-20T13:52:04+00:00  QQQ: greek fill gamma 85.3% / iv 91.6%
+2026-10-20T13:52:04+00:00  QQQ: 3,956 contracts -> QQQ__134933.parquet
+2026-10-20T13:52:04+00:00  QQQ: spot 713.84  netGEX(win) -6.67Bn  flip 728.1832  walls 740.0/710.0  negative  RR25 -0.0752 (STEEP)  P/C 1.5949
+2026-10-20T13:52:05+00:00  IWM: greek fill gamma 81.5% / iv 91.0%
+2026-10-20T13:52:05+00:00  IWM: 1,902 contracts -> IWM__134936.parquet
+2026-10-20T13:52:05+00:00  IWM: spot 271.93  netGEX(win) -0.98Bn  flip 276.0982  walls 275.0/270.0  negative  RR25 -0.0483 (STEEP)  P/C 0.5968
+2026-10-20T13:52:05+00:00  XLK: XLK: chain carries no usable Greeks (gamma fill 0.0%, IV fill 0.0% over 532 contracts) -- refusing to write
+2026-10-20T13:52:05+00:00  XLK: waiting 30.0s and refetching (attempt 1 of 1) -- Greeks are usually late, not missing
+2026-10-20T13:52:35+00:00  REFUSED -- XLK: chain carries no usable Greeks (gamma fill 0.0%, IV fill 0.0% over 532 contracts) -- refusing to write
+2026-10-20T13:52:36+00:00  SMH: greek fill gamma 89.6% / iv 96.1%
+2026-10-20T13:52:36+00:00  SMH: 1,096 contracts -> SMH__134930.parquet
+2026-10-20T13:52:36+00:00  SMH: spot 540.14  netGEX(win) -0.63Bn  flip 603.4421  walls 580.0/530.0  negative  RR25 -0.0571 (STEEP)  P/C 3.846
+2026-10-20T13:52:37+00:00  XLF: greek fill gamma 99.7% / iv 80.4%
+2026-10-20T13:52:37+00:00  XLF: 602 contracts -> XLF__134936.parquet
+2026-10-20T13:52:37+00:00  XLF: spot 55.35  netGEX(win) 0.00Bn  flip 55.2062  walls 56.0/55.0  positive  RR25 -0.0331 (STEEP)  P/C 0.6439
+2026-10-20T13:52:37+00:00  GLD: greek fill gamma 73.9% / iv 77.1%
+2026-10-20T13:52:37+00:00  GLD: 2,184 contracts -> GLD__134932.parquet
+2026-10-20T13:52:37+00:00  GLD: spot 377.63  netGEX(win) -0.06Bn  flip 378.4315  walls 385.0/375.0  negative  RR25 -0.0053 (FLAT)  P/C 0.313
+2026-10-20T13:52:38+00:00  TLT: greek fill gamma 89.3% / iv 89.0%
+2026-10-20T13:52:38+00:00  TLT: 834 contracts -> TLT__134931.parquet
+2026-10-20T13:52:38+00:00  TLT: spot 80.11  netGEX(win) 0.51Bn  flip 78.0827  walls 81.0/79.0  positive  RR25 0.0007 (FLAT)  P/C 0.527
+2026-10-20T13:52:38+00:00  appended 8 state row(s)
+2026-10-20T13:52:39+00:00  VIX: 18.62 (+1.0% 1d, +31.0% 20d)  VIX9D: 18.15  term contango(short-cheap) -> vix_state.csv
+2026-10-20T13:52:39+00:00  RV QQQ: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
+2026-10-20T13:52:39+00:00  RV XLK: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
+2026-10-20T13:52:39+00:00  RV SMH: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
+2026-10-20T13:52:39+00:00  RV XLF: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
+2026-10-20T13:52:39+00:00  RV GLD: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
+2026-10-20T13:52:39+00:00  RV TLT: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
+2026-10-20T13:52:39+00:00  --- intraday done  ok=8  skipped=0  failed=0  REFUSED=1  vix=written
