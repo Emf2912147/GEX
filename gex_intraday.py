@@ -461,6 +461,21 @@ def check_feed_freshness(symbol, feed_ts, now, max_lag_s, max_skew_s):
     return lag
 
 
+# Per-symbol freshness limits, in seconds, for symbols whose Cboe chain is
+# routinely served late. XLK (captured from 2026-10-16) arrived 15-30 min
+# behind in about two thirds of its misses and was refused in roughly a third
+# of all cycles under the 15-minute limit; on 2026-10-21 Eugenio chose to
+# accept XLK up to 30 min old rather than lose those cycles. Every row still
+# records its feed_ts, so the age of each reading stays visible. Nothing
+# older than this is ever written.
+SYMBOL_MAX_FEED_LAG = {"XLK": 1800}
+
+
+def feed_lag_limit(symbol, default):
+    """Freshness limit for a symbol: its override, or the global default."""
+    return max(default, SYMBOL_MAX_FEED_LAG.get(symbol.upper(), 0))
+
+
 def check_chain_integrity(symbol, chain, min_fill):
     """Refuse a chain whose Greeks came back empty. Raises ChainIntegrityError.
 
@@ -1104,7 +1119,8 @@ def fetch_valid_chain(symbol, args, logpath, now):
 
         try:
             lag = check_feed_freshness(symbol, feed_ts, now,
-                                       args.max_feed_lag, args.max_feed_skew)
+                                       feed_lag_limit(symbol, args.max_feed_lag),
+                                       args.max_feed_skew)
             if lag is None:
                 log(logpath, f"{symbol}: WARNING feed_ts {feed_ts!r} "
                              f"unparseable -- staleness unchecked this cycle")

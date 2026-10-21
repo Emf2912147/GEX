@@ -23,6 +23,8 @@ from market_calendar import et_wall_clock, is_trading_day
 HERE = os.path.dirname(os.path.abspath(__file__))
 HIST = os.path.join(HERE, "history")
 FEED_LAG_LIMIT_MIN = 15
+# Must match gex_intraday.SYMBOL_MAX_FEED_LAG (seconds there, minutes here).
+SYMBOL_FEED_LAG_LIMIT_MIN = {"XLK": 30}
 
 # Sessions with no data that are permanent and understood. Cboe serves no
 # history, so these can never be filled. Listing them here keeps the check
@@ -88,8 +90,12 @@ def main():
     # 2026-09-23: a chain 9.6 HOURS stale passed every other guard.
     lag = ((pd.to_datetime(s.capture_ts, utc=True).dt.tz_localize(None)
             - pd.to_datetime(s.feed_ts, errors="coerce")).dt.total_seconds() / 60)
-    stale = int((lag > FEED_LAG_LIMIT_MIN).sum())
-    check(f"no chain staler than {FEED_LAG_LIMIT_MIN} min", stale == 0,
+    # Per-symbol limits mirror gex_intraday.SYMBOL_MAX_FEED_LAG (XLK 30 min).
+    limit = s.symbol.map(lambda x: max(FEED_LAG_LIMIT_MIN,
+                                       SYMBOL_FEED_LAG_LIMIT_MIN.get(x, 0)))
+    stale = int((lag > limit).sum())
+    check(f"no chain staler than its limit ({FEED_LAG_LIMIT_MIN} min, "
+          f"XLK {SYMBOL_FEED_LAG_LIMIT_MIN['XLK']})", stale == 0,
           f"{stale} rows, max {lag.max():.1f} min")
     check("regime agrees with net_gex sign",
           len(s[((s.net_gex_window > 0) & (s.regime != "positive"))
