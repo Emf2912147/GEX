@@ -643,3 +643,14 @@
 2026-10-21T11:53:00+00:00  TLT: spot 80.12  netGEX 0.53Bn  flip 78.4165  walls 81.0/79.0  positive
 2026-10-21T11:53:00+00:00  appended 9 metric row(s)
 2026-10-21T11:53:00+00:00  === capture done  ok=9  failed=0
+2026-10-21T16:01:49+00:00  === capture start  symbols=SPX SPY QQQ IWM XLK SMH XLF GLD TLT
+2026-10-21T16:01:51+00:00  SPX: session 2026-10-20 already captured, skipping
+2026-10-21T16:01:52+00:00  SPY: session 2026-10-20 already captured, skipping
+2026-10-21T16:01:53+00:00  QQQ: session 2026-10-20 already captured, skipping
+2026-10-21T16:01:53+00:00  IWM: session 2026-10-20 already captured, skipping
+2026-10-21T16:01:54+00:00  XLK: session 2026-10-20 already captured, skipping
+2026-10-21T16:01:54+00:00  SMH: session 2026-10-20 already captured, skipping
+2026-10-21T16:01:55+00:00  XLF: session 2026-10-20 already captured, skipping
+2026-10-21T16:01:55+00:00  GLD: session 2026-10-20 already captured, skipping
+2026-10-21T16:01:56+00:00  TLT: session 2026-10-20 already captured, skipping
+2026-10-21T16:01:56+00:00  === capture done  ok=0  failed=0
