@@ -16,6 +16,8 @@ connector, and passed in as JSON files.
     python sector_support_agent.py bear-indices --bars-dir bars/
     python sector_support_agent.py bear-check --ticker T --bars b.json --price P --resistance R --target X
     python sector_support_agent.py bear-score --ticker T --chain puts.json --resistance R --target X
+    python sector_support_agent.py quality --side bear|bull --ticker T --daily d.json --hourly h.json
+                                   --level L --target X [--index-daily i.json --index-hourly ih.json]
 
 `etfs` lists the ETFs whose daily bars the run must supply in --bars-dir as
 <ETF>.json (a list of Robinhood daily bars, the live price appended as the
@@ -98,6 +100,16 @@ BEAR MODE (index scan, negative gamma -- sell the rip)
     took the level -- never traded). bear-score ranks bear put verticals:
     long put from ~ATM up to the resistance, short put at or above the
     target, 14-60 DTE, same weights as the bull score.
+
+QUALITY (the phase of the move -- setup_quality.py)
+    Run on every setup that reaches at_support / at_resistance, before any
+    recommendation. Scores trend (swing structure), extension WITH hourly RSI
+    divergence, room in ATRs, valuation against peers (from this repo's
+    sector_fundamentals) and the index's condition, 0-100. Two vetoes: never
+    a bear setup when oversold (never a bull setup when overbought), and never
+    trade an overextended run that has no divergence. RSI levels are each
+    symbol's own (10th/90th percentile of its daily RSI history). See
+    setup_quality.py for the full rules.
 
 SCORE (the trade)
     Bull call verticals, long strike from the wall up to ~ATM, short strike
@@ -186,6 +198,14 @@ def industry_of(sector, ticker):
         if ticker in names:
             return etf
     return sector
+
+
+def industry_sector(ticker):
+    """The sector whose INDUSTRY map lists this constituent, else None."""
+    for sec, m in INDUSTRY.items():
+        if any(ticker in names for names in m.values()):
+            return sec
+    return None
 
 
 def needed_etfs(sector):
@@ -828,7 +848,7 @@ def _load(path):
 def main():
     p = argparse.ArgumentParser(description="Sector support agent arithmetic.")
     p.add_argument("mode", choices=["etfs", "indices", "rank", "check", "score",
-                                   "bear-indices", "bear-check", "bear-score"])
+                                   "bear-indices", "bear-check", "bear-score", "quality"])
     p.add_argument("--sector", default="XLK", choices=SECTORS)
     p.add_argument("--bars-dir", help="folder of <ETF>.json daily bars (rank)")
     p.add_argument("--short", help='JSON {"TICKER": short_float_fraction} (rank)')
@@ -839,8 +859,31 @@ def main():
     p.add_argument("--put-wall", type=float)
     p.add_argument("--call-wall", type=float)
     p.add_argument("--resistance", type=float, help="bear modes: resistance level")
-    p.add_argument("--target", type=float, help="bear modes: downside target")
+    p.add_argument("--target", type=float, help="bear modes: downside target; quality: target")
+    p.add_argument("--side", choices=["bear", "bull"], help="quality: trade direction")
+    p.add_argument("--level", type=float, help="quality: support (bull) or resistance (bear)")
+    p.add_argument("--daily", help="quality: JSON daily bars, ~3 years, live price appended")
+    p.add_argument("--hourly", help="quality: JSON hourly bars, ~60 sessions")
+    p.add_argument("--index-daily", help="quality: index daily bars (QQQ for tech, else SPY)")
+    p.add_argument("--index-hourly", help="quality: index hourly bars")
     a = p.parse_args()
+
+    if a.mode == "quality":
+        import setup_quality as sq
+        if not (a.side and a.ticker and a.daily and a.hourly
+                and a.level is not None and a.target is not None):
+            out({"error": "quality needs --side --ticker --daily --hourly --level --target"})
+            return 1
+        sector_of_industry = {etf: sec for sec, m in INDUSTRY.items() for etf in m}
+        vz, note = sq.peer_valuation(a.ticker, INDUSTRY, sector_of_industry)
+        if a.ticker in INDEX_UNIVERSE:
+            idx = INDEX_PROXY.get(a.ticker, "SPY")
+        else:
+            idx = BROAD_PROXY.get(industry_sector(a.ticker) or a.sector, "SPY")
+        out(sq.quality(a.side, a.ticker, _load(a.daily), _load(a.hourly), a.level, a.target,
+                       idx if a.index_daily else None, _load(a.index_daily),
+                       _load(a.index_hourly), vz, note))
+        return 0
 
     if a.mode == "bear-indices":
         out(bear_setups(a.bars_dir))
