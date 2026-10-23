@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-10-23T15:37:09.969823+00:00",
+  "generated_utc": "2026-10-23T15:48:57.999863+00:00",
   "TLT": {
     "spot": 81.84,
     "flip": 78.5997,
@@ -1586,12 +1586,12 @@
     "flip_pct_vs_spot": 0.007488,
     "vol": {
       "atm_iv_7d": 0.1636,
-      "atm_iv_30d": 0.1495,
-      "term_ratio": 1.0943,
+      "atm_iv_30d": 0.1496,
+      "term_ratio": 1.0937,
       "skew_25d": 0.0566,
       "vol_trigger": 7747.6466,
       "rv_20d": 0.0998,
-      "iv_rv_ratio": 1.498,
+      "iv_rv_ratio": 1.499,
       "iv_extrapolated": 0,
       "rv_source": "cboe_history:SPX",
       "rv_proxy": false,
