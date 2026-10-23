@@ -13,6 +13,9 @@ connector, and passed in as JSON files.
     python sector_support_agent.py rank   --sector XLK --bars-dir bars/ [--short si.json]
     python sector_support_agent.py check  --sector XLK --ticker T --bars b.json --price P
     python sector_support_agent.py score  --sector XLK --ticker T --chain chain.json
+    python sector_support_agent.py bear-indices --bars-dir bars/
+    python sector_support_agent.py bear-check --ticker T --bars b.json --price P --resistance R --target X
+    python sector_support_agent.py bear-score --ticker T --chain puts.json --resistance R --target X
 
 `etfs` lists the ETFs whose daily bars the run must supply in --bars-dir as
 <ETF>.json (a list of Robinhood daily bars, the live price appended as the
@@ -74,6 +77,27 @@ INDICES (the index scan -- runs beside the sector scan)
     A setup is eligible when regime is favorable and room >= 2%. The same
     check and score modes then run with --put-wall = support and
     --call-wall = target.
+
+BEAR MODE (index scan, negative gamma -- sell the rip)
+    When an index ETF is in a BEARISH regime the agent looks for a bear put
+    vertical at RESISTANCE instead of a bull call vertical at support.
+      regime     falling (last price below its 20-day average AND 20d change
+                 < 0) and dealer gamma negative or spot below the flip (same
+                 proxy fallback as the bullish scan). VIX is not a gate here:
+                 backwardation is consistent with the bear case.
+      resistance the nearer of the nearest A/B-graded resistance above the
+                 price inside +/-1 sigma and the gamma flip when it sits above
+                 the price
+      target     the nearest A/B-graded support below the resistance; it
+                 must be >= MIN_ROOM (2%) below the resistance, or "no room"
+    Score 0-100: resistance quality 35 (S/R grade score; the flip counts as
+    60), downtrend 25, room to target 15, closeness to resistance 15 (best
+    inside 1.5%), volatility 10. bear-check fires "at_resistance" when a
+    5-minute bar's high reached the band (0.25%) and the price is still at
+    or below resistance + band; a price above the band is "broken" (the rally
+    took the level -- never traded). bear-score ranks bear put verticals:
+    long put from ~ATM up to the resistance, short put at or above the
+    target, 14-60 DTE, same weights as the bull score.
 
 SCORE (the trade)
     Bull call verticals, long strike from the wall up to ~ATM, short strike
@@ -463,6 +487,232 @@ def check(ticker, bars, put_wall, call_wall=None, price=None):
 
 
 # --------------------------------------------------------------------------
+# bear mode (index scan): bear put verticals at resistance in negative gamma
+# --------------------------------------------------------------------------
+
+def downtrend(etf, bars_dir):
+    """(ok, detail, chg) -- last price below the 20-day average, 20d change < 0."""
+    path = os.path.join(bars_dir or "", f"{etf}.json")
+    if not bars_dir or not os.path.exists(path):
+        return False, f"no {etf} bars supplied", None
+    with open(path, encoding="utf-8") as fh:
+        bars = json.load(fh)
+    closes = [float(b["close_price"]) for b in bars if not b.get("interpolated")]
+    if len(closes) < 21:
+        return False, f"only {len(closes)} {etf} closes", None
+    sma = sum(closes[-20:]) / 20
+    chg = closes[-1] / closes[-21] - 1
+    ok = closes[-1] < sma and chg < 0
+    return ok, f"{etf} {closes[-1]:.2f} vs 20d avg {sma:.2f}, 20d {chg:+.2%}", chg
+
+
+def gamma_bearish(symbol, s):
+    """(ok, detail, used, flip, spot) -- negative gamma or spot below flip."""
+    rows = s[s["symbol"] == symbol]
+    if len(rows) < MIN_GEX_ROWS:
+        return None, f"{symbol}: only {len(rows)} captures", symbol, None, None
+    r = rows.iloc[-1]
+    spot, flip = float(r["spot"]), float(r["flip"])
+    ok = r["regime"] == "negative" or spot < flip
+    return ok, (f"{symbol} {r['regime']} gamma, spot {spot:.2f} vs flip "
+                f"{flip:.2f} ({spot / flip - 1:+.2%}) at {r['capture_ts']}"), symbol, flip, spot
+
+
+def bear_setups(bars_dir):
+    import build_dashboard as bd
+    import support_resistance as sr
+    metrics = bd.load_metrics(HIST)
+    s = pd.read_csv(os.path.join(HIST, "intraday_state.csv")).sort_values("capture_ts")
+    out_rows = []
+    for sym in INDEX_UNIVERSE:
+        sub = metrics[metrics["symbol"] == sym]
+        row = {"symbol": sym, "side": "bear", "eligible": False, "excluded_because": []}
+        if sub.empty:
+            row["excluded_because"].append("not captured by the GEX Monitor yet")
+            out_rows.append(row)
+            continue
+        try:
+            L = sr.levels(HIST, metrics, sym, bd.BIN_SIZE.get(sym, bd.DEFAULT_BIN),
+                          sub.iloc[-1])
+        except Exception as e:
+            L = None
+            row["excluded_because"].append(f"levels failed: {e}")
+        if not L:
+            row["excluded_because"].append("no graded levels inside 1 sigma")
+            out_rows.append(row)
+            continue
+        live = s[s["symbol"] == sym]
+        price = float(live.iloc[-1]["spot"]) if len(live) else float(L["spot"])
+
+        checks = []
+        ok, d, chg = downtrend(sym, bars_dir)
+        checks.append({"check": f"{sym} falling", "ok": ok, "detail": d})
+        g_ok, g_d, used, flip, _ = gamma_bearish(sym, s)
+        if g_ok is None:
+            g_ok, g_d, used, flip, _ = gamma_bearish(INDEX_PROXY.get(sym, "SPY"), s)
+            g_ok = bool(g_ok)
+            if used != sym:
+                flip = None          # proxy's flip is not this ETF's level
+        checks.append({"check": f"{used} gamma negative or below flip",
+                       "ok": bool(g_ok), "detail": g_d})
+        favorable = all(c["ok"] for c in checks)
+
+        # resistance: nearest A/B graded level above price, or the flip if nearer
+        cands = [{"strike": x["strike"], "grade": x["grade"], "label": x["label"],
+                  "score": x["score"], "strength": x.get("strength")}
+                 for x in L["resistance"] if x["grade"] in ("A", "B") and x["strike"] > price]
+        if flip and flip > price:
+            cands.append({"strike": round(flip, 2), "grade": "B", "label": "gamma flip",
+                          "score": 60.0, "strength": None})
+        res = min(cands, key=lambda x: x["strike"]) if cands else None
+        tgt = None
+        if res:
+            below = [x for x in L["support"] if x["grade"] in ("A", "B")
+                     and x["strike"] < res["strike"]]
+            tgt = max(below, key=lambda x: x["strike"]) if below else None
+
+        reasons = []
+        if not res:
+            reasons.append("no A/B-graded resistance or flip above the price inside 1 sigma")
+        room = (1 - tgt["strike"] / res["strike"]) if (res and tgt) else None
+        if res and (room is None or room < MIN_ROOM):
+            reasons.append(f"no room to fall: next strong support {room:.1%} below resistance"
+                           if room is not None else "no strong support target below resistance")
+        if not favorable:
+            reasons.append("regime not bearish")
+
+        dist = (res["strike"] / price - 1) if res else None   # how far price is below resistance
+        p_res = (res["score"] / 100) if res else 0.0
+        p_trend = 0.5 * (1.0 if ok else 0.0) + 0.5 * clamp(0.5 - (chg or 0) / 0.10)
+        p_room = clamp((room or 0) / 0.05)
+        p_near = clamp(1 - dist / INDEX_NEAR) if (dist is not None and dist >= 0) else 0.0
+        iv = L.get("iv")
+        p_vol = clamp(1 - (iv or 0.35) / 0.35) if iv else 0.5
+        total = round(35 * p_res + 25 * p_trend + 15 * p_room + 15 * p_near + 10 * p_vol, 1)
+        row.update({
+            "score": total, "grade": next(g for c, g in GRADE_CUTS if total >= c),
+            "price": round(price, 2), "regime_bearish": favorable, "checks": checks,
+            "resistance": res["strike"] if res else None,
+            "resistance_grade": f"{res['grade']} {res['label']}" if res else None,
+            "target": tgt["strike"] if tgt else None,
+            "target_grade": f"{tgt['grade']} {tgt['label']}" if tgt else None,
+            "room_from_resistance": round(room, 4) if room is not None else None,
+            "to_resistance": round(dist, 4) if dist is not None else None,
+            "band": [round(res["strike"] * (1 - BAND), 2), round(res["strike"] * (1 + BAND), 2)] if res else None,
+            "iv30": round(iv, 4) if iv else None,
+            "eligible": not reasons, "excluded_because": reasons,
+        })
+        out_rows.append(row)
+    out_rows.sort(key=lambda x: (not x["eligible"], -(x.get("score") or 0)))
+    best = next((x for x in out_rows if x["eligible"]), None)
+    return {"best": best, "setups": out_rows}
+
+
+def bear_check(ticker, bars, resistance, target=None, price=None):
+    lo_band, hi_band = resistance * (1 - BAND), resistance * (1 + BAND)
+    real = [b for b in bars if not b.get("interpolated")]
+    if not real:
+        return {"ticker": ticker, "state": "no_data"}
+    high = max(float(b["high_price"]) for b in real)
+    last = float(price) if price else float(real[-1]["close_price"])
+    touched = high >= lo_band
+    if touched and last > hi_band:
+        state = "broken"          # rally took the level -- never trade
+    elif touched:
+        state = "at_resistance"
+    else:
+        state = "waiting"
+    room = (1 - target / last) if target else None
+    if state == "at_resistance" and (room is None or room < MIN_ROOM):
+        state = "no_room"
+    return {"ticker": ticker, "side": "bear", "state": state, "resistance": resistance,
+            "target": target, "room_to_target": round(room, 4) if room is not None else None,
+            "band": [round(lo_band, 2), round(hi_band, 2)],
+            "high_since_check": high, "last": last,
+            "distance_now": round(last / resistance - 1, 4)}
+
+
+def put_value(S, K, T, vol):
+    """Undiscounted lognormal put value, zero drift (put-call parity)."""
+    return call_value(S, K, T, vol) - (S - K)
+
+
+def bear_score(ticker, chain, resistance, target, today=None):
+    """chain legs are PUTS. Bear put verticals: buy K1 (higher), sell K2 (lower)."""
+    today = today or date.today()
+    S = float(chain["spot"])
+    legs = [l for l in chain["legs"] if num(l.get("bid")) is not None and num(l.get("ask"))]
+    by_exp = {}
+    for l in legs:
+        by_exp.setdefault(l["expiration"], []).append(l)
+    out_rows, skipped = [], {"illiquid": 0, "dte": 0}
+    for exp, ls in by_exp.items():
+        dte = (date.fromisoformat(exp) - today).days
+        if not (DTE_MIN <= dte <= DTE_MAX):
+            skipped["dte"] += len(ls)
+            continue
+        T = dte / 365.0
+        longs = [l for l in ls if S * 0.99 <= float(l["strike"]) <= resistance]
+        shorts = [l for l in ls if target <= float(l["strike"]) < S]
+        for a in longs:
+            for b in shorts:
+                K1, K2 = float(a["strike"]), float(b["strike"])
+                if K2 >= K1:
+                    continue
+                oi_min = min(int(a.get("open_interest") or 0), int(b.get("open_interest") or 0))
+                if oi_min < LEG_MIN_OI:
+                    skipped["illiquid"] += 1
+                    continue
+                ma = (float(a["bid"]) + float(a["ask"])) / 2
+                mb = (float(b["bid"]) + float(b["ask"])) / 2
+                debit, width = ma - mb, K1 - K2
+                if debit <= 0.05 or debit >= width:
+                    continue
+                natural = float(a["ask"]) - float(b["bid"])
+                vol = num(a.get("implied_volatility")) or num(b.get("implied_volatility"))
+                if not vol:
+                    continue
+                fair = put_value(S, K1, T, vol) - put_value(S, K2, T, vol)
+                edge = (fair - debit) / debit
+                rr = (width - debit) / debit
+                be = K1 - debit
+                pop = 1 - prob_above(S, be, T, vol)
+                spr = max((float(a["ask"]) - float(a["bid"])) / max(ma, 0.01),
+                          (float(b["ask"]) - float(b["bid"])) / max(mb, 0.01))
+                p_rr = clamp(rr / 2.0)
+                p_edge = clamp(0.5 + edge / 0.30)
+                p_liq = 0.6 * clamp((0.15 - spr) / 0.13) + \
+                        0.4 * clamp(math.log10(oi_min / LEG_MIN_OI) / math.log10(50))
+                p_dte = 1.0 if 21 <= dte <= 45 else 0.6
+                total = 30 * p_rr + 30 * p_edge + 25 * p_liq + 15 * p_dte
+                out_rows.append({
+                    "ticker": ticker, "side": "bear put vertical", "expiration": exp, "dte": dte,
+                    "long": K1, "short": K2, "width": width,
+                    "debit_mid": round(debit, 2), "debit_natural": round(natural, 2),
+                    "max_profit": round(width - debit, 2), "risk_reward": round(rr, 2),
+                    "breakeven": round(be, 2), "prob_below_breakeven": round(pop, 3),
+                    "fair_value": round(fair, 2), "price_edge": round(edge, 3),
+                    "edge_per_day": round(edge / dte, 4),
+                    "worst_leg_spread": round(spr, 3), "min_leg_oi": oi_min,
+                    "iv": round(vol, 3), "score": round(total, 1),
+                })
+    out_rows.sort(key=lambda x: (-x["score"], -x["edge_per_day"]))
+    best = out_rows[0] if out_rows else None
+    note = None
+    if S <= target:
+        note = "spot is at or below the target -- no room for a vertical"
+    elif best is None:
+        note = "no liquid put spread between ATM/resistance and the target"
+    elif best["score"] < MIN_SPREAD_SCORE:
+        note = f"best spread scores {best['score']} (< {MIN_SPREAD_SCORE}) -- no edge"
+    return {"ticker": ticker, "side": "bear", "spot": S, "resistance": resistance,
+            "target": target,
+            "tradeable": bool(best and best["score"] >= MIN_SPREAD_SCORE and S > target),
+            "note": note, "candidates": len(out_rows), "skipped": skipped,
+            "best": best, "top": out_rows[:5]}
+
+
+# --------------------------------------------------------------------------
 # score
 # --------------------------------------------------------------------------
 
@@ -577,7 +827,8 @@ def _load(path):
 
 def main():
     p = argparse.ArgumentParser(description="Sector support agent arithmetic.")
-    p.add_argument("mode", choices=["etfs", "indices", "rank", "check", "score"])
+    p.add_argument("mode", choices=["etfs", "indices", "rank", "check", "score",
+                                   "bear-indices", "bear-check", "bear-score"])
     p.add_argument("--sector", default="XLK", choices=SECTORS)
     p.add_argument("--bars-dir", help="folder of <ETF>.json daily bars (rank)")
     p.add_argument("--short", help='JSON {"TICKER": short_float_fraction} (rank)')
@@ -587,7 +838,22 @@ def main():
     p.add_argument("--chain", help="JSON chain for the ticker (score)")
     p.add_argument("--put-wall", type=float)
     p.add_argument("--call-wall", type=float)
+    p.add_argument("--resistance", type=float, help="bear modes: resistance level")
+    p.add_argument("--target", type=float, help="bear modes: downside target")
     a = p.parse_args()
+
+    if a.mode == "bear-indices":
+        out(bear_setups(a.bars_dir))
+        return 0
+    if a.mode in ("bear-check", "bear-score"):
+        if a.resistance is None or a.target is None:
+            out({"error": "bear modes need --resistance and --target"})
+            return 1
+        if a.mode == "bear-check":
+            out(bear_check(a.ticker, _load(a.bars), a.resistance, a.target, a.price))
+        else:
+            out(bear_score(a.ticker, _load(a.chain), a.resistance, a.target))
+        return 0
 
     if a.mode == "etfs":
         out({"sector": a.sector, "bars_needed": needed_etfs(a.sector),
