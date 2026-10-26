@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-10-25T15:00:34.085868+00:00",
+  "generated_utc": "2026-10-26T13:09:16.952436+00:00",
   "XLK": {
     "spot": 183.42,
     "flip": 192.1682,
@@ -621,8 +621,8 @@
       "term_ratio": 1.0341,
       "skew_25d": 0.0578,
       "vol_trigger": 777.6264,
-      "rv_20d": 0.0998,
-      "iv_rv_ratio": 1.524,
+      "rv_20d": 0.0992,
+      "iv_rv_ratio": 1.534,
       "iv_extrapolated": 0,
       "rv_source": "cboe_history:SPX",
       "rv_proxy": true,
@@ -1213,8 +1213,8 @@
       "term_ratio": 1.0493,
       "skew_25d": 0.0558,
       "vol_trigger": 7769.1838,
-      "rv_20d": 0.0998,
-      "iv_rv_ratio": 1.506,
+      "rv_20d": 0.0992,
+      "iv_rv_ratio": 1.515,
       "iv_extrapolated": 0,
       "rv_source": "cboe_history:SPX",
       "rv_proxy": false,
