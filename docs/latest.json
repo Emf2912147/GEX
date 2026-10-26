@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-10-26T19:22:11.678830+00:00",
+  "generated_utc": "2026-10-26T19:37:11.050134+00:00",
   "XLK": {
     "spot": 183.42,
     "flip": 192.1682,
@@ -2345,13 +2345,13 @@
   },
   "market": {
     "vix": {
-      "asof": "2026-10-26T15:06:31",
-      "vix": 18.52,
-      "vix9d": 18.02,
-      "term_spread_9d_vs_30d": -0.5,
+      "asof": "2026-10-26T15:21:31",
+      "vix": 18.31,
+      "vix9d": 17.8,
+      "term_spread_9d_vs_30d": -0.51,
       "term_state": "contango(short-cheap)",
-      "vix_chg_1d_pct": -0.047815,
-      "vix_20d_change_pct": 0.152458
+      "vix_chg_1d_pct": -0.058612,
+      "vix_20d_change_pct": 0.13939
     }
   }
 }
