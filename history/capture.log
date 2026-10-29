@@ -846,3 +846,31 @@
 2026-10-28T17:15:33+00:00  GLD: session 2026-10-27 already captured, skipping
 2026-10-28T17:15:34+00:00  TLT: session 2026-10-27 already captured, skipping
 2026-10-28T17:15:34+00:00  === capture done  ok=0  failed=0
+2026-10-29T11:50:46+00:00  === capture start  symbols=SPX SPY QQQ IWM XLK SMH XLF GLD TLT
+2026-10-29T11:50:48+00:00  SPX: 28,872 contracts -> SPX.parquet
+2026-10-29T11:50:48+00:00  SPX: spot 7,743.98  netGEX -14.19Bn  flip 7740.7911  walls 7800.0/7700.0  negative
+2026-10-29T11:50:49+00:00  SPY: 12,170 contracts -> SPY.parquet
+2026-10-29T11:50:49+00:00  SPY: spot 770.44  netGEX -3.09Bn  flip 773.7481  walls 780.0/765.0  negative
+2026-10-29T11:50:49+00:00  QQQ: spot 719.1300 from the feed is -0.22% off the 2026-10-28 close 720.7400 (session_close) -- using the close
+2026-10-29T11:50:49+00:00  QQQ: 9,838 contracts -> QQQ.parquet
+2026-10-29T11:50:49+00:00  QQQ: spot 720.74  netGEX -2.06Bn  flip 727.2811  walls 740.0/700.0  negative
+2026-10-29T11:50:50+00:00  IWM: spot 282.6300 from the feed is +0.27% off the 2026-10-28 close 281.8700 (session_close) -- using the close
+2026-10-29T11:50:50+00:00  IWM: 5,130 contracts -> IWM.parquet
+2026-10-29T11:50:50+00:00  IWM: spot 281.87  netGEX -0.01Bn  flip 281.2565  walls 284.0/270.0  negative
+2026-10-29T11:50:51+00:00  XLK: spot 188.7300 from the feed is -1.41% off the 2026-10-28 close 191.4301 (session_close) -- using the close
+2026-10-29T11:50:51+00:00  XLK: 2,474 contracts -> XLK.parquet
+2026-10-29T11:50:51+00:00  XLK: spot 191.43  netGEX 0.00Bn  flip 191.5432  walls 195.0/185.0  positive
+2026-10-29T11:50:51+00:00  SMH: spot 556.4000 from the feed is -1.03% off the 2026-10-28 close 562.2000 (session_close) -- using the close
+2026-10-29T11:50:51+00:00  SMH: 6,318 contracts -> SMH.parquet
+2026-10-29T11:50:51+00:00  SMH: spot 562.20  netGEX 0.12Bn  flip 561.4787  walls 580.0/555.0  positive
+2026-10-29T11:50:52+00:00  XLF: spot 56.7400 from the feed is +0.87% off the 2026-10-28 close 56.2500 (session_close) -- using the close
+2026-10-29T11:50:52+00:00  XLF: 1,768 contracts -> XLF.parquet
+2026-10-29T11:50:52+00:00  XLF: spot 56.25  netGEX -0.07Bn  flip 56.9905  walls 57.0/54.0  negative
+2026-10-29T11:50:52+00:00  GLD: spot 369.0100 from the feed is -0.88% off the 2026-10-28 close 372.2700 (session_close) -- using the close
+2026-10-29T11:50:52+00:00  GLD: 7,084 contracts -> GLD.parquet
+2026-10-29T11:50:52+00:00  GLD: spot 372.27  netGEX -0.09Bn  flip 373.8223  walls 380.0/345.0  negative
+2026-10-29T11:50:53+00:00  TLT: spot 81.3700 from the feed is +0.19% off the 2026-10-28 close 81.2169 (session_close) -- using the close
+2026-10-29T11:50:53+00:00  TLT: 2,846 contracts -> TLT.parquet
+2026-10-29T11:50:53+00:00  TLT: spot 81.22  netGEX 0.46Bn  flip 79.8616  walls 82.0/77.0  positive
+2026-10-29T11:50:53+00:00  appended 9 metric row(s)
+2026-10-29T11:50:53+00:00  === capture done  ok=9  failed=0
