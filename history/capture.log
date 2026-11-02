@@ -964,3 +964,4 @@
 2026-10-31T16:14:20+00:00  TLT: session 2026-10-30 already captured, skipping
 2026-10-31T16:14:20+00:00  === capture done  ok=0  failed=0
 2026-11-01T17:12:45+00:00  === capture skipped  2026-11-01 Sun: 2026-10-31 was not a trading session
+2026-11-02T20:51:52+00:00  === capture skipped  2026-11-02 Mon: 2026-11-01 was not a trading session
