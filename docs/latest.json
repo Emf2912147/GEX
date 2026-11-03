@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-11-03T19:54:25.371369+00:00",
+  "generated_utc": "2026-11-03T20:07:25.164702+00:00",
   "QQQ": {
     "spot": 681.09,
     "flip": 712.657,
@@ -1418,13 +1418,13 @@
   },
   "market": {
     "vix": {
-      "asof": "2026-11-03T14:38:31",
-      "vix": 20.74,
-      "vix9d": 21.78,
-      "term_spread_9d_vs_30d": 1.04,
+      "asof": "2026-11-03T14:51:31",
+      "vix": 20.78,
+      "vix9d": 21.81,
+      "term_spread_9d_vs_30d": 1.03,
       "term_state": "backwardation(short-rich)",
-      "vix_chg_1d_pct": -0.019385,
-      "vix_20d_change_pct": 0.381746
+      "vix_chg_1d_pct": -0.017494,
+      "vix_20d_change_pct": 0.38441
     }
   }
 }
