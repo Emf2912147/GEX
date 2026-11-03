@@ -26903,3 +26903,49 @@ StaleFeedError: feed_ts 2026-10-20 20:18:49 is 33.2 min behind the capture (limi
 2026-11-02T21:54:10+00:00  RV TLT: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
 2026-11-02T21:54:10+00:00  --- intraday done  ok=8  skipped=0  failed=0  REFUSED=1
 2026-11-02T21:54:19+00:00  --- runner: session complete, 11 capture(s) by this link
+2026-11-03T14:07:00+00:00  --- runner start  run=41627548433 event=workflow_dispatch  32 of 32 slots ahead  must hand off by 16:57 UTC
+2026-11-03T14:07:01+00:00  --- intraday capture  symbols=SPX SPY QQQ IWM XLK SMH XLF GLD TLT
+2026-11-03T14:07:03+00:00  SPX: greek fill gamma 77.2% / iv 97.5%
+2026-11-03T14:07:03+00:00  SPX: 10,692 contracts -> SPX__140619.parquet
+2026-11-03T14:07:03+00:00  SPX: spot 7,541.40  netGEX(win) -64.06Bn  flip 7659.8907  walls 7800.0/7500.0  negative  RR25 -0.0607 (STEEP)  P/C 1.3568
+2026-11-03T14:07:04+00:00  SPY: greek fill gamma 82.1% / iv 92.4%
+2026-11-03T14:07:04+00:00  SPY: 3,788 contracts -> SPY__140624.parquet
+2026-11-03T14:07:04+00:00  SPY: spot 753.75  netGEX(win) -11.17Bn  flip 767.6397  walls 800.0/740.0  negative  RR25 -0.0592 (STEEP)  P/C 1.5616
+2026-11-03T14:07:05+00:00  QQQ: greek fill gamma 89.8% / iv 88.8%
+2026-11-03T14:07:05+00:00  QQQ: 3,482 contracts -> QQQ__140614.parquet
+2026-11-03T14:07:05+00:00  QQQ: spot 686.29  netGEX(win) -4.66Bn  flip 713.2101  walls 715.0/680.0  negative  RR25 -0.0735 (STEEP)  P/C 1.1031
+2026-11-03T14:07:05+00:00  IWM: greek fill gamma 91.1% / iv 94.5%
+2026-11-03T14:07:05+00:00  IWM: 1,838 contracts -> IWM__140607.parquet
+2026-11-03T14:07:05+00:00  IWM: spot 280.80  netGEX(win) -1.12Bn  flip 285.2613  walls 285.0/270.0  negative  RR25 -0.0526 (STEEP)  P/C 2.1677
+2026-11-03T14:07:06+00:00  XLK: feed_ts 2026-11-03 11:03:50 is 183.2 min behind the capture (limit 30 min) -- serving a stale chain
+2026-11-03T14:07:06+00:00  XLK: waiting 30.0s and refetching (attempt 1 of 1) -- Greeks are usually late, not missing
+2026-11-03T14:07:36+00:00  XLK: stale -- feed_ts 2026-11-03 11:03:50 is 183.2 min behind the capture (limit 30 min) -- serving a stale chain; one more try after the other symbols
+2026-11-03T14:07:37+00:00  SMH: greek fill gamma 74.9% / iv 79.1%
+2026-11-03T14:07:37+00:00  SMH: 1,080 contracts -> SMH__140716.parquet
+2026-11-03T14:07:37+00:00  SMH: spot 525.04  netGEX(win) -0.33Bn  flip 538.0042  walls 532.5/500.0  negative  RR25 -0.0933 (STEEP)  P/C 2.8253
+2026-11-03T14:07:37+00:00  XLF: greek fill gamma 98.8% / iv 94.2%
+2026-11-03T14:07:37+00:00  XLF: 548 contracts -> XLF__140711.parquet
+2026-11-03T14:07:37+00:00  XLF: spot 57.37  netGEX(win) -0.03Bn  flip 64.6947  walls 60.0/54.0  negative  RR25 -0.0641 (STEEP)  P/C 2.1979
+2026-11-03T14:07:38+00:00  GLD: greek fill gamma 85.6% / iv 81.9%
+2026-11-03T14:07:38+00:00  GLD: 2,146 contracts -> GLD__140703.parquet
+2026-11-03T14:07:38+00:00  GLD: spot 363.23  netGEX(win) -0.36Bn  flip 370.0774  walls 375.0/345.0  negative  RR25 -0.0171 (FLAT)  P/C 0.5382
+2026-11-03T14:07:38+00:00  TLT: greek fill gamma 75.2% / iv 72.6%
+2026-11-03T14:07:38+00:00  TLT: 812 contracts -> TLT__140716.parquet
+2026-11-03T14:07:38+00:00  TLT: spot 81.54  netGEX(win) 0.96Bn  flip 79.3914  walls 83.0/79.0  positive  RR25 0.0094 (FLAT)  P/C 0.646
+2026-11-03T14:07:38+00:00  late retry for XLK in 60s
+2026-11-03T14:08:39+00:00  XLK: feed_ts 2026-11-03 11:03:50 is 183.2 min behind the capture (limit 30 min) -- serving a stale chain
+2026-11-03T14:08:39+00:00  XLK: waiting 30.0s and refetching (attempt 1 of 1) -- Greeks are usually late, not missing
+2026-11-03T14:09:09+00:00  XLK: REFUSED -- still stale on the late retry: feed_ts 2026-11-03 11:03:50 is 183.2 min behind the capture (limit 30 min) -- serving a stale chain
+2026-11-03T14:09:09+00:00  appended 8 state row(s)
+2026-11-03T14:09:09+00:00  VIX: VIX9D has not printed this session yet (last 2026-11-02T16:15:01), row deferred (VIX 20.81)
+2026-11-03T14:09:10+00:00  RV SPX: HV20 11.52%  down/up 0.86x  through 2026-11-02  (13,068 closes)
+2026-11-03T14:09:10+00:00  RV SPY (via SPX): HV20 11.52%  down/up 0.86x  through 2026-11-02  (13,068 closes)
+2026-11-03T14:09:10+00:00  RV QQQ: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
+2026-11-03T14:09:10+00:00  RV IWM (via RUT): HV20 16.08%  down/up 1.47x  through 2026-11-02  (1,489 closes)
+2026-11-03T14:09:10+00:00  RV XLK: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
+2026-11-03T14:09:10+00:00  RV SMH: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
+2026-11-03T14:09:10+00:00  RV XLF: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
+2026-11-03T14:09:10+00:00  RV GLD: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
+2026-11-03T14:09:10+00:00  RV TLT: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
+2026-11-03T14:09:10+00:00  appended 3 realized-vol row(s) -> realized_vol.csv
+2026-11-03T14:09:10+00:00  --- intraday done  ok=8  skipped=0  failed=0  REFUSED=1  rv=3
