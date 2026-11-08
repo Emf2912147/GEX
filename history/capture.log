@@ -1162,3 +1162,4 @@
 2026-11-07T16:56:39+00:00  GLD: session 2026-11-06 already captured, skipping
 2026-11-07T16:56:39+00:00  TLT: session 2026-11-06 already captured, skipping
 2026-11-07T16:56:39+00:00  === capture done  ok=0  failed=0
+2026-11-08T17:10:29+00:00  === capture skipped  2026-11-08 Sun: 2026-11-07 was not a trading session
