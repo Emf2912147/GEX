@@ -13,6 +13,7 @@ connector, and passed in as JSON files.
     python sector_support_agent.py rank   --sector XLK --bars-dir bars/ [--short si.json]
     python sector_support_agent.py check  --sector XLK --ticker T --bars b.json --price P
     python sector_support_agent.py score  --sector XLK --ticker T --chain chain.json
+    python sector_support_agent.py bear-rank --sector XLK --bars-dir bars/ [--short si.json]
     python sector_support_agent.py bear-indices --bars-dir bars/
     python sector_support_agent.py bear-check --ticker T --bars b.json --price P --resistance R --target X
     python sector_support_agent.py bear-score --ticker T --chain puts.json --resistance R --target X
@@ -100,6 +101,28 @@ BEAR MODE (index scan, negative gamma -- sell the rip)
     took the level -- never traded). bear-score ranks bear put verticals:
     long put from ~ATM up to the resistance, short put at or above the
     target, 14-60 DTE, same weights as the bull score.
+
+BEAR RANK (single stocks -- sell the rip; added 2026-11-10 at Eugenio's request)
+    The mirror of RANK for bear put verticals at a constituent's call wall:
+      resistance the name's call wall, above the price, tested (a wall that
+                 MOVED last session or is NEW is excluded)
+      target     its put wall, below the price, >= MIN_ROOM (2%) below the
+                 resistance
+      regime     the name's industry ETF falling (below its 20-day average,
+                 20d change < 0) and in negative gamma or below the flip
+                 (industry ETF if captured, else the broad proxy). VIX is not
+                 a gate for bears.
+      never      CPB; a stock below SHORT_MIN_PB times book, or a deep-value
+                 name that is improving (sector_candidates.shortable)
+    Score 0-100: location 35 (closeness to the call wall, wall strength, spot
+    below the flip, relative weakness), valuation 25 (rich vs the sector, no
+    improvement), liquidity 15, short interest 15 (LOW short interest scores
+    high: a crowded short is squeeze risk), event 10. The watch name is the
+    best-scoring eligible name already within NEAR_WALL (3%) of its
+    resistance, else the best-scoring eligible name. The ATM spread is scored,
+    not gated (the capture runs off-hours, when quoted spreads are wide); the
+    live legs are judged by bear-score. bear-check and bear-score then run on
+    the watch name with --resistance = call_wall and --target = put_wall.
 
 QUALITY (the phase of the move -- setup_quality.py)
     Run on every setup that reaches at_support / at_resistance, before any
@@ -652,6 +675,125 @@ def bear_check(ticker, bars, resistance, target=None, price=None):
             "distance_now": round(last / resistance - 1, 4)}
 
 
+# --------------------------------------------------------------------------
+# bear rank (single stocks): bear put verticals at a constituent's call wall
+# --------------------------------------------------------------------------
+
+def bear_regimes(sector, bars_dir, s):
+    """{etf: {favorable, checks, blocks}} -- falling + gamma negative/below flip."""
+    res = {}
+    for etf in needed_etfs(sector):
+        ok, d, _ = downtrend(etf, bars_dir)
+        checks = [{"check": f"{etf} falling", "ok": bool(ok), "detail": d}]
+        g_ok, g_d, used, _, _ = gamma_bearish(etf, s)
+        if g_ok is None:                       # not captured: broad proxy
+            g_ok, g_d, used, _, _ = gamma_bearish(BROAD_PROXY[sector], s)
+            g_ok = bool(g_ok)
+        checks.append({"check": f"{used} gamma negative or below flip", "ok": bool(g_ok), "detail": g_d})
+        blocks = [f"{c['check']}: {c['detail']}" for c in checks if not c["ok"]]
+        res[etf] = {"favorable": not blocks, "checks": checks, "blocks": blocks}
+    return res
+
+
+def bear_rank(sector, bars_dir=None, short=None):
+    tech_csv = os.path.join(SECT, "sector_technicals.csv")
+    tech = sc.latest_rows(tech_csv)
+    fund = sc.latest_rows(os.path.join(SECT, "sector_fundamentals.csv"))
+    if tech is None:
+        return {"error": "no sector technicals"}
+    tech = tech[tech["sector_etf"] == sector]
+    if tech.empty:
+        return {"error": f"no {sector} rows -- the sector pipeline covers {SECTORS}"}
+    m = (tech.merge(fund.drop(columns=["capture_ts", "sector_etf"]), on="ticker",
+                    how="left", suffixes=("", "_f")) if fund is not None else tech)
+    m = sc.add_value_z(m)
+    sc.WALL_HIST.update(sc.wall_history(tech_csv))
+    s = pd.read_csv(os.path.join(HIST, "intraday_state.csv")).sort_values("capture_ts")
+    reg = bear_regimes(sector, bars_dir, s)
+    short = short or {}
+    now = datetime.now(timezone.utc)
+
+    rows = []
+    for _, r in m.iterrows():
+        t = r["ticker"]
+        ind = industry_of(sector, t)
+        spot, pw, cw = num(r["spot"]), num(r["put_wall"]), num(r["call_wall"])
+        spread, oi = num(r.get("atm_spread_pct")), num(r.get("atm_oi"))
+        reasons = []
+        if t in NEVER_TRADE:
+            reasons.append("never traded (employer)")
+        if oi is None or oi < MIN_ATM_OI:
+            reasons.append("options open interest too thin for a vertical")
+        if not (spot and cw and cw > spot):
+            reasons.append("no call wall above spot")
+        if not (spot and pw and pw < spot):
+            reasons.append("no put wall below spot (no downside target)")
+        st = sc.stability_fields(t)
+        strength = st.get("call_wall_strength") or ""
+        if strength in ("moved", "new", ""):
+            reasons.append(f"call wall {strength or 'unknown'} -- untested")
+        # Room to fall is judged from resistance -- where the trade is entered.
+        room = (1 - pw / cw) if (cw and pw) else None
+        if room is None or room < MIN_ROOM:
+            reasons.append(f"no room to fall: put wall {room:.1%} below resistance"
+                           if room is not None else "no put wall")
+        if not sc.shortable(r):
+            reasons.append("not a short candidate: below book value, or deep value and improving")
+        if not reg[ind]["favorable"]:
+            reasons.append(f"{ind} regime not bearish")
+
+        dist = (cw / spot - 1) if (spot and cw) else None       # how far price is below resistance
+        prox = clamp(1 - dist / NEAR_WALL) if dist is not None and dist >= 0 else 0.0
+        wall_q = {"strong": 1.0, "steady": 0.7, "shifting": 0.3}.get(strength, 0.0)
+        flip = num(r.get("gamma_flip"))
+        below_flip = 1.0 if (flip and spot and spot < flip) else 0.0
+        rs = [v for v in (num(r.get("rel_strength_20d")), num(r.get("rel_strength_60d"))) if v is not None]
+        weak = clamp(0.5 - (sum(rs) / len(rs)) / 0.20) if rs else 0.5
+        location = 0.40 * prox + 0.30 * wall_q + 0.15 * below_flip + 0.15 * weak
+
+        vz = num(r.get("value_z")) or 0.0                        # positive = cheaper than the sector
+        imp = sc.improving_signals(r)
+        valuation = clamp(0.5 - vz / 4) * 0.7 + clamp(1 - len(imp) / 4) * 0.3
+
+        adv = num(r.get("adv_usd_20d"))
+        p_adv = clamp(math.log10(adv / 5e7) / math.log10(40)) if adv and adv > 0 else 0.0
+        p_oi = clamp(math.log10(oi / MIN_ATM_OI) / math.log10(50)) if oi and oi > 0 else 0.0
+        p_sp = clamp((MAX_ATM_SPREAD - spread) / 0.08) if spread is not None else 0.0
+        liquidity = 0.4 * p_adv + 0.3 * p_oi + 0.3 * p_sp
+
+        si = num(short.get(t))
+        si_part = clamp(1 - si / 0.10) if si is not None else 0.5
+
+        d = sc.days_to_filing(r, now)
+        event = 0.0 if (d is not None and 0 <= d <= EVENT_DAYS) else 1.0
+
+        parts = {"location": location, "valuation": valuation, "liquidity": liquidity,
+                 "short_interest": si_part, "event": event}
+        total = round(sum(WEIGHTS[k] * v for k, v in parts.items()), 1)
+        rows.append({
+            "ticker": t, "industry_etf": ind, "side": "bear", "score": total,
+            "grade": next(g for c, g in GRADE_CUTS if total >= c),
+            "eligible": not reasons, "excluded_because": reasons,
+            "spot": spot, "call_wall": cw, "put_wall": pw, "gamma_flip": flip,
+            "resistance": cw, "target": pw,
+            "to_call_wall": round(dist, 4) if dist is not None else None,
+            "room_from_resistance": round(room, 4) if room is not None else None,
+            "band": [round(cw * (1 - BAND), 2), round(cw * (1 + BAND), 2)] if cw else None,
+            "call_wall_strength": strength,
+            "call_wall_held": f"{st.get('call_wall_held')}/{st.get('call_wall_days')}",
+            "atm_iv_30": num(r.get("atm_iv_30")),
+            "short_float": si, "short_interest_supplied": si is not None,
+            "improving": imp, "value_z": round(vz, 2), "earnings_in_days": d,
+            "parts": {k: round(v, 3) for k, v in parts.items()},
+        })
+    rows.sort(key=lambda x: (not x["eligible"], -x["score"]))
+    eligible = [x for x in rows if x["eligible"]]
+    near = [x for x in eligible if x["to_call_wall"] is not None and x["to_call_wall"] <= NEAR_WALL]
+    watch = (near or eligible or [None])[0]
+    return {"sector": sector, "side": "bear", "as_of": str(tech["capture_ts"].max()),
+            "regimes": reg, "watch": watch, "ranked": rows}
+
+
 def put_value(S, K, T, vol):
     """Undiscounted lognormal put value, zero drift (put-call parity)."""
     return call_value(S, K, T, vol) - (S - K)
@@ -848,7 +990,7 @@ def _load(path):
 def main():
     p = argparse.ArgumentParser(description="Sector support agent arithmetic.")
     p.add_argument("mode", choices=["etfs", "indices", "rank", "check", "score",
-                                   "bear-indices", "bear-check", "bear-score", "quality"])
+                                   "bear-rank", "bear-indices", "bear-check", "bear-score", "quality"])
     p.add_argument("--sector", default="XLK", choices=SECTORS)
     p.add_argument("--bars-dir", help="folder of <ETF>.json daily bars (rank)")
     p.add_argument("--short", help='JSON {"TICKER": short_float_fraction} (rank)')
@@ -887,6 +1029,9 @@ def main():
 
     if a.mode == "bear-indices":
         out(bear_setups(a.bars_dir))
+        return 0
+    if a.mode == "bear-rank":
+        out(bear_rank(a.sector, a.bars_dir, _load(a.short)))
         return 0
     if a.mode in ("bear-check", "bear-score"):
         if a.resistance is None or a.target is None:
