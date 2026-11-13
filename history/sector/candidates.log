@@ -727,3 +727,21 @@
 2026-11-13T07:57:20.705524+00:00Z  [stock] XLV: 28 names  long REGN(A),LLY(A),ISRG(B)  short BDX(C),ABT(B),BSX(B)
 2026-11-13T07:57:20.718114+00:00Z  [watch] CPB (XLP, stock): short  grade B  score -3.59  rank 30/30  gates: compressing_gross_margin;compressing_operating_margin;net_debt_over_3x_ebitda
 2026-11-13T07:57:20.718185+00:00Z  === candidates: 4 sector pairs, 18 options-table rows, 24 stock-table rows ===
+2026-11-13T12:20:28.147155+00:00Z  XLP: below book, excluded from shorts -- KHC 0.81x
+2026-11-13T12:20:28.149529+00:00Z  XLK: deep value + improving (+0.5, no short) -- SNDK, CRM
+2026-11-13T12:20:28.149636+00:00Z  XLP: deep value + improving (+0.5, no short) -- SJM, KR
+2026-11-13T12:20:28.149735+00:00Z  XLV: deep value + improving (+0.5, no short) -- CI, ELV, CVS
+2026-11-13T12:20:28.162703+00:00Z  XLF: long COF  short HOOD  -- 21 illiquid excluded, 9 liquid and scorable, 4 passed the gates
+2026-11-13T12:20:28.162763+00:00Z  XLK: long SNDK  short IBM  -- 9 illiquid excluded, 21 liquid and scorable, 11 passed the gates
+2026-11-13T12:20:28.162786+00:00Z  XLP: long KO  short DG  -- 26 illiquid excluded, 4 liquid and scorable, 1 passed the gates
+2026-11-13T12:20:28.162806+00:00Z  XLV: long UNH  short PFE  -- 28 illiquid excluded, 2 liquid and scorable, 1 passed the gates
+2026-11-13T12:20:28.223424+00:00Z  [options] XLF: 9 names  long COF(D),BAC(C),JPM(C)  short HOOD(A),V(C),GS(C)
+2026-11-13T12:20:28.223502+00:00Z  [options] XLK: 21 names  long SNDK(C),MU(B),CRWD(A)  short IBM(C),ORCL(A),NOW(A)
+2026-11-13T12:20:28.223531+00:00Z  [options] XLP: 4 names  long KO(B)  short DG(D),WMT(D),TGT(D)
+2026-11-13T12:20:28.223553+00:00Z  [options] XLV: 2 names  long UNH(C)  short PFE(C)
+2026-11-13T12:20:28.225804+00:00Z  [stock] XLF: 21 names  long CME(A),BLK(A),MA(A)  short MCO(B),KKR(A),AON(B)
+2026-11-13T12:20:28.225861+00:00Z  [stock] XLK: 9 names  long STX(C),TXN(B),KLAC(C)  short PANW(B),INTU(D),ANET(D)
+2026-11-13T12:20:28.225888+00:00Z  [stock] XLP: 26 names  long PM(B),HSY(C),PEP(B)  short CPB(B),GIS(A),BG(A)
+2026-11-13T12:20:28.225910+00:00Z  [stock] XLV: 28 names  long REGN(A),LLY(A),ISRG(B)  short BDX(C),ABT(B),BSX(B)
+2026-11-13T12:20:28.233634+00:00Z  [watch] CPB (XLP, stock): short  grade B  score -3.59  rank 30/30  gates: compressing_gross_margin;compressing_operating_margin;net_debt_over_3x_ebitda
+2026-11-13T12:20:28.233714+00:00Z  === candidates: 4 sector pairs, 18 options-table rows, 24 stock-table rows ===
