@@ -37,6 +37,16 @@ jobs:
         if: always()
         run: python build_dashboard.py
 
+      # Retention (prune_history.py): the snapshot folders are replay material
+      # and grow about 15 MB a session between them. The derived metrics are
+      # never touched. Runs after the dashboard so the build always sees the
+      # full store, and never fails the job: a capture is worth more than a
+      # tidy tree.
+      - name: Prune old snapshots
+        if: always()
+        continue-on-error: true
+        run: python prune_history.py --apply
+
       - name: Commit results
         if: always()
         run: |
