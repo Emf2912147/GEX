@@ -25,12 +25,13 @@ rebuilds the dashboard, and commits.
 | `history/daily_metrics.csv` | one row per symbol per day |
 | `docs/` | the published dashboard |
 
-## Raw chains are the asset
+## Raw chains are replay material; the derived metrics are the record
 
-`daily_metrics.csv` is a cache. It can always be rebuilt from `history/raw/`
-under a new methodology — and it will need to be. The wall definition changed
-twice on the day this was written; had only derived numbers been kept, every
-historical row would be wrong and unrecoverable. **Never delete `history/raw/`.**
+`daily_metrics.csv` is a cache that can be rebuilt from `history/raw/` under a
+new methodology, and the wall definition has already changed twice. So raw
+chains are kept for a rolling window (see **Retention** below) and the derived
+metrics are kept forever. Within the window a formula change can be replayed
+over every stored session; before it, the old derived rows stand as computed.
 
 ## Agent feed: `docs/latest.json`
 
@@ -98,11 +99,28 @@ Tests: `python -m pytest test_vol_metrics.py test_vol_surface.py`.
   to the bars.
 - No backfill exists. History starts the day capture starts.
 
-## Repo growth
+## Retention
 
-Roughly 1-3 MB/day of raw chains, so 0.3-0.8 GB/year in git. Fine for a few
-years; past that, archive older years to a release asset and drop them from
-the working tree.
+`prune_history.py` runs at the end of every capture (`capture.yml`, never fails
+the job) and removes whole session folders older than the window:
+
+| Path | Kept | Per session |
+|---|---|---|
+| `history/raw/` (settled chains) | 90 days | ~0.6 MB |
+| `history/intraday/` (15-minute snapshots) | 30 days | ~14 MB |
+| `daily_metrics.csv`, `intraday_state.csv`, `vix_state.csv`, `realized_vol.csv`, `official_closes.json`, `sector/` | forever | tiny |
+
+The window is measured from the newest session on disk, not the clock, and a
+floor (25 raw / 10 intraday sessions) always survives. Preview with
+`python prune_history.py`; delete with `--apply`; change windows with
+`--raw-days` / `--intraday-days` (0 = forever). **Widen the window before
+running `backfill_walls.py` or any replay**, which can only reach back as far as
+snapshots remain.
+
+Pruning caps the working tree and future growth (~3.5 GB/year of intraday
+snapshots otherwise). It does **not** shrink the existing git history (~580 MB
+pack); only a `git filter-repo` rewrite would, and that breaks existing clones
+and open PRs, so it is a deliberate owner decision.
 
 ## Data
 
