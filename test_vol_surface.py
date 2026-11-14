@@ -93,6 +93,15 @@ def test_event_day_is_flagged_and_marks_the_next_expiry_rich():
     assert not before["event"] and before["rich_rel"] < row["rich_rel"]
 
 
+def test_a_cheap_expiry_does_not_fake_an_event_on_the_next_one():
+    pts = flat_points(days=range(3, 60))
+    i = next(n for n, p in enumerate(pts) if p[1] >= 25)
+    pts[i] = (pts[i][0], pts[i][1], pts[i][2] * 0.96)            # one expiry quoted 4% low
+    s = vs.analyze(pts, ASOF)
+    assert s["rows"][i + 1]["fwd_iv"] > 0.20 * vs.EVENT_RATIO       # the rebound is large...
+    assert s["events"] == []                                        # ...and is not an event
+
+
 def test_pick_expiry_buys_the_cheap_one_and_sells_the_rich_one():
     pts = flat_points()
     cheap, rich = pts[4], pts[6]

@@ -90,6 +90,8 @@ EVENT_FRONT_BD = 45        # events are looked for, and the baseline (median
                            # forward vol) is taken, out to this many sessions
 EVENT_RATIO = 1.20
 EVENT_MIN_PTS = 0.025
+EVENT_REBOUND = 0.90       # previous interval below this share of the baseline
+                           # = the spike may only be a rebound from a cheap expiry
 # An expiry is said to carry event premium when an event interval ends
 # within this many trading days before it (inclusive).
 EVENT_NEAR_BD = 5
@@ -338,12 +340,21 @@ def analyze(points, asof, max_dte: float = 400.0) -> dict:
     front = [r["fwd_iv"] for r in rows if r["fwd_iv"] is not None and r["bd"] <= EVENT_FRONT_BD]
     base = _median(front) if len(front) >= 4 else None
     events = []
-    for r in rows:
+    for i, r in enumerate(rows):
         r["event"] = False
         if (base is None or noisy or r["fwd_iv"] is None or r["_gap"] > EVENT_MAX_GAP
                 or r["bd"] > EVENT_FRONT_BD):
             continue
         if r["fwd_iv"] >= EVENT_RATIO * base and r["fwd_iv"] - base >= EVENT_MIN_PTS:
+            # A cheap (or mis-quoted) expiry just before makes the forward vol
+            # out of it look high. When the previous interval is low, the
+            # extra variance over BOTH intervals must still be event-sized.
+            if i >= 1 and (rows[i - 1]["fwd_iv"] is None or rows[i - 1]["fwd_iv"] < EVENT_REBOUND * base):
+                w0, t0 = (rows[i - 2]["_w"], rows[i - 2]["_tt"]) if i >= 2 else (0.0, 0.0)
+                extra = (r["_w"] - w0) - base * base * (r["_tt"] - t0) / VARIANCE_YEAR
+                need = (EVENT_RATIO ** 2 - 1.0) * base * base * (r["_tt"] - rows[i - 1]["_tt"]) / VARIANCE_YEAR
+                if extra < need:
+                    continue
             r["event"] = True
             events.append({"expiration": r["expiration"], "bd": r["bd"], "gap_bd": r["_gap"],
                            "fwd_iv": r["fwd_iv"], "baseline": round(base, 4),
