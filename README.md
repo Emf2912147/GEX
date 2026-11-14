@@ -56,10 +56,31 @@ today's charm against its own median of the previous 20 sessions (null under
 10). Same dealers-long-calls / short-puts convention as the GEX numbers;
 an assumption, not observed positioning.
 
-Also and a top-level `market.vix` block from `vix_state.csv` (VIX, VIX9D, term
-spread and state, 1d and 20d change). All additive: a reader that ignores
-them is unaffected. Nothing new is fetched or stored; these are derived from
-data already captured. Tests: `python -m pytest test_vol_metrics.py`.
+Since 2026-11-14 each record also carries a `surface` block (`vol_surface.py`),
+the term structure across expirations from the same stored chain:
+
+| field | meaning |
+|---|---|
+| `cm_iv` | ATM IV at 7, 14, 30, 60, 90 and 180 calendar days |
+| `expiries` | parallel arrays, one entry per listed expiry out to 250 days: `atm_iv`, `fwd_iv` (forward vol from the previous expiry), `rich_rel` (IV against a line through the neighbouring expiries; +0.03 = 3% rich), `label`, `event` |
+| `events` | short intervals whose forward vol stands 20% and 2.5 vol points above the front of the curve: a priced event (FOMC, CPI, earnings) |
+| `windows` | per DTE window of the decision table, the expiry cheapest to `buy` and richest to `sell`, with the reason in a sentence |
+| `calendars` | forward-vol gate for the calendar and diagonal cells: near-leg vol over the forward vol to the far leg; fails below 0.80 (near leg cheap), and above 1.15 only when VIX9D is above VIX |
+| `noisy` | true when the chain is too thin to compare expiries (XLF, XLK most days): nothing is ranked or flagged |
+
+Time between expiries runs on a variance clock (1 per session, 0.1 per
+weekend day or holiday), so a weekend is neither cheap nor rich. Thresholds
+are starting values from the 55 stored sessions, not backtested against
+outcomes: the block informs expiry choice, it is not a signal.
+
+Also a top-level `market.vix` block from `vix_state.csv` (VIX, VIX9D, term
+spread and state, 1d and 20d change), and `market.long_vol`: VIX3M, VIX6M and
+VIX1Y with their percentile over the last year and five years and a
+CHEAP (30th or below) / NEUTRAL / RICH (70th or above) state, for timing
+staged long-dated tranches. Its Cboe history is read fresh at most every six
+hours and not stored. All additive: a reader that ignores them is unaffected.
+Apart from `long_vol`, nothing new is fetched, and nothing new is stored.
+Tests: `python -m pytest test_vol_metrics.py test_vol_surface.py`.
 
 ## Known limits
 

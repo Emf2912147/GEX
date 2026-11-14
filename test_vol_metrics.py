@@ -137,10 +137,16 @@ def test_rv_prefers_cboe_history_and_falls_back_to_captured_closes(feed):
     assert feed["QQQ"]["vol"]["rv_20d"] is not None
 
 
-def test_recent_symbols_report_missing_rv_as_null(feed):
-    # TLT was added 2026-10-08: not enough closes yet.
-    assert feed["TLT"]["vol"]["rv_20d"] is None
-    assert feed["TLT"]["vol"]["iv_rv_ratio"] is None
+def test_missing_rv_is_reported_as_null_not_guessed(feed):
+    # A symbol without 21 closes reports rv_20d as null, and then the ratio
+    # is null too. (TLT, added 2026-10-08, was the example until it had them.)
+    for sym, rec in feed.items():
+        if sym in ("generated_utc", "market"):
+            continue
+        if rec["vol"]["rv_20d"] is None:
+            assert rec["vol"]["iv_rv_ratio"] is None, sym
+        else:
+            assert rec["vol"]["rv_20d"] > 0, sym
 
 
 def test_market_vix_block(feed):
