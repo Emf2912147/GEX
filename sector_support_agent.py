@@ -138,7 +138,12 @@ SCORE (the trade)
     Bull call verticals, long strike from the wall up to ~ATM, short strike
     at or below the call wall, expirations 14-60 DTE, scored on
     risk/reward 30, price edge vs lognormal fair value at the long leg's IV
-    30, liquidity 25, DTE 15 (best 21-45). Under MIN_SPREAD_SCORE (55) it
+    30, liquidity 25, DTE 15 (best 21-45), plus up to +/-5 for the expiry
+    itself (vol_surface.py): an expiry priced cheap against its neighbouring
+    expiries gains, a rich one (often event premium) loses; no adjustment when
+    the chain is too thin to rank. The result also carries expiry_selection:
+    the cheapest expiry in the window and the expiries with a priced event.
+    bear-score applies the same adjustment. Under MIN_SPREAD_SCORE (55) it
     reports "at support, no edge". Nothing here places an order.
 """
 
@@ -156,6 +161,7 @@ HIST = os.path.join(HERE, "history")
 SECT = os.path.join(HIST, "sector")
 sys.path.insert(0, HERE)
 import sector_candidates as sc  # noqa: E402
+import vol_surface as vsf       # noqa: E402
 
 SECTORS = ("XLK", "XLF", "XLV", "XLP")
 BROAD_PROXY = {"XLK": "QQQ", "XLF": "SPY", "XLV": "SPY", "XLP": "SPY"}
@@ -195,6 +201,10 @@ EVENT_DAYS = 14
 DTE_MIN, DTE_MAX = 14, 60
 LEG_MIN_OI = 100
 MIN_SPREAD_SCORE = 55
+# Expiry selection (vol_surface.py): a debit spread on an expiry that is cheap
+# against its neighbouring expiries gains up to this many points, one that is
+# rich loses up to as many. Zero when the chain is too thin to rank.
+SURFACE_POINTS = 5
 GRADE_CUTS = ((75, "A"), (60, "B"), (45, "C"), (0, "D"))
 WEIGHTS = {"location": 35, "valuation": 25, "liquidity": 15,
            "short_interest": 15, "event": 10}
@@ -794,6 +804,37 @@ def bear_rank(sector, bars_dir=None, short=None):
             "regimes": reg, "watch": watch, "ranked": rows}
 
 
+def _surface(legs, spot, today):
+    """Term structure across the chain's expiries (None when it cannot be built)."""
+    try:
+        surf = vsf.from_legs(legs, spot, today)
+    except Exception:                                # never cost a trade its score
+        return None
+    return surf if surf.get("rows") else None
+
+
+def _expiry_adjust(surface, exp):
+    """(score points, note, row fields) for buying a debit spread on `exp`."""
+    if surface is None:
+        return 0.0, None, {}
+    adj, note = vsf.score_adjustment(surface, exp, "buy", cap=SURFACE_POINTS)
+    r = vsf.row_for(surface, exp) or {}
+    return adj, note, {"expiry_rich_rel": r.get("rich_rel"), "expiry_label": r.get("label"),
+                       "expiry_event_premium": bool(r.get("event_premium")),
+                       "expiry_points": adj, "expiry_note": note}
+
+
+def _expiry_summary(surface):
+    """Cheapest expiry to buy inside the DTE window, and the priced events."""
+    if surface is None:
+        return None
+    pick = vsf.pick_expiry(surface, DTE_MIN, DTE_MAX, "buy")
+    return {"noisy": surface.get("noisy"),
+            "cheapest": pick and {k: pick[k] for k in ("expiration", "dte", "rich_rel", "edge_rel",
+                                                       "event_premium", "reason")},
+            "events": [e["expiration"] for e in surface.get("events", [])]}
+
+
 def put_value(S, K, T, vol):
     """Undiscounted lognormal put value, zero drift (put-call parity)."""
     return call_value(S, K, T, vol) - (S - K)
@@ -808,12 +849,14 @@ def bear_score(ticker, chain, resistance, target, today=None):
     for l in legs:
         by_exp.setdefault(l["expiration"], []).append(l)
     out_rows, skipped = [], {"illiquid": 0, "dte": 0}
+    surface = _surface(chain["legs"], S, today)
     for exp, ls in by_exp.items():
         dte = (date.fromisoformat(exp) - today).days
         if not (DTE_MIN <= dte <= DTE_MAX):
             skipped["dte"] += len(ls)
             continue
         T = dte / 365.0
+        s_adj, s_note, s_row = _expiry_adjust(surface, exp)
         longs = [l for l in ls if S * 0.99 <= float(l["strike"]) <= resistance]
         shorts = [l for l in ls if target <= float(l["strike"]) < S]
         for a in longs:
@@ -846,7 +889,7 @@ def bear_score(ticker, chain, resistance, target, today=None):
                 p_liq = 0.6 * clamp((0.15 - spr) / 0.13) + \
                         0.4 * clamp(math.log10(oi_min / LEG_MIN_OI) / math.log10(50))
                 p_dte = 1.0 if 21 <= dte <= 45 else 0.6
-                total = 30 * p_rr + 30 * p_edge + 25 * p_liq + 15 * p_dte
+                total = clamp((30 * p_rr + 30 * p_edge + 25 * p_liq + 15 * p_dte + s_adj) / 100.0) * 100.0
                 out_rows.append({
                     "ticker": ticker, "side": "bear put vertical", "expiration": exp, "dte": dte,
                     "long": K1, "short": K2, "width": width,
@@ -857,6 +900,7 @@ def bear_score(ticker, chain, resistance, target, today=None):
                     "edge_per_day": round(edge / dte, 4),
                     "worst_leg_spread": round(spr, 3), "min_leg_oi": oi_min,
                     "iv": round(vol, 3), "score": round(total, 1),
+                    **s_row,
                 })
     out_rows.sort(key=lambda x: (-x["score"], -x["edge_per_day"]))
     best = out_rows[0] if out_rows else None
@@ -871,6 +915,7 @@ def bear_score(ticker, chain, resistance, target, today=None):
             "target": target,
             "tradeable": bool(best and best["score"] >= MIN_SPREAD_SCORE and S > target),
             "note": note, "candidates": len(out_rows), "skipped": skipped,
+            "expiry_selection": _expiry_summary(surface),
             "best": best, "top": out_rows[:5]}
 
 
@@ -909,12 +954,14 @@ def score(ticker, chain, put_wall, call_wall, today=None):
         by_exp.setdefault(l["expiration"], []).append(l)
 
     out_rows, skipped = [], {"illiquid": 0, "dte": 0}
+    surface = _surface(chain["legs"], S, today)
     for exp, ls in by_exp.items():
         dte = (date.fromisoformat(exp) - today).days
         if not (DTE_MIN <= dte <= DTE_MAX):
             skipped["dte"] += len(ls)
             continue
         T = dte / 365.0
+        s_adj, s_note, s_row = _expiry_adjust(surface, exp)
         ls = sorted(ls, key=lambda l: float(l["strike"]))
         longs = [l for l in ls if put_wall <= float(l["strike"]) <= S * 1.01]
         shorts = [l for l in ls if S < float(l["strike"]) <= call_wall]
@@ -950,7 +997,7 @@ def score(ticker, chain, put_wall, call_wall, today=None):
                 p_liq = 0.6 * clamp((0.15 - spr) / 0.13) + \
                         0.4 * clamp(math.log10(oi_min / LEG_MIN_OI) / math.log10(50))
                 p_dte = 1.0 if 21 <= dte <= 45 else 0.6
-                total = 30 * p_rr + 30 * p_edge + 25 * p_liq + 15 * p_dte
+                total = clamp((30 * p_rr + 30 * p_edge + 25 * p_liq + 15 * p_dte + s_adj) / 100.0) * 100.0
                 out_rows.append({
                     "ticker": ticker, "expiration": exp, "dte": dte,
                     "long": K1, "short": K2, "width": width,
@@ -962,6 +1009,7 @@ def score(ticker, chain, put_wall, call_wall, today=None):
                     "worst_leg_spread": round(spr, 3), "min_leg_oi": oi_min,
                     "iv": round(vol, 3), "score": round(total, 1),
                     "short_at_or_below_call_wall": K2 <= call_wall,
+                    **s_row,
                 })
     out_rows.sort(key=lambda x: (-x["score"], -x["edge_per_day"]))
     best = out_rows[0] if out_rows else None
@@ -975,6 +1023,7 @@ def score(ticker, chain, put_wall, call_wall, today=None):
     return {"ticker": ticker, "spot": S, "put_wall": put_wall, "call_wall": call_wall,
             "tradeable": bool(best and best["score"] >= MIN_SPREAD_SCORE and S < call_wall),
             "note": note, "candidates": len(out_rows), "skipped": skipped,
+            "expiry_selection": _expiry_summary(surface),
             "best": out_rows[0] if out_rows else None, "top": out_rows[:5]}
 
 

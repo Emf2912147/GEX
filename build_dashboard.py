@@ -765,6 +765,14 @@ def build_latest_json(histdir, docsdir):
         datetime.now(timezone.utc).isoformat()
     }
 
+    # Market-wide stress read for the calendar gate: VIX9D above VIX.
+    stress = False
+    try:
+        _vix = vm.vix_block(histdir)
+        stress = bool(_vix and str(_vix.get("term_state") or "").startswith("backwardation"))
+    except Exception as ex:                         # pragma: no cover
+        print(f"latest.json: stress read skipped ({ex})")
+
     for _, row in latest.iterrows():
 
         output[str(row["symbol"])] = {
@@ -801,6 +809,16 @@ def build_latest_json(histdir, docsdir):
         except Exception as ex:                     # pragma: no cover
             print(f"latest.json: vol block skipped for {sym} ({ex})")
 
+        # Term structure across expirations (vol_surface.py), same containment.
+        try:
+            raw = latest_raw(histdir, sym)
+            if raw is not None:
+                surface = vm.symbol_surface_block(raw, row, stress=stress)
+                if surface is not None:
+                    output[sym]["surface"] = surface
+        except Exception as ex:                     # pragma: no cover
+            print(f"latest.json: surface block skipped for {sym} ({ex})")
+
         # Dealer vanna / charm flows (dealer_flows.py), same containment.
         try:
             raw = latest_raw(histdir, sym)
@@ -816,6 +834,14 @@ def build_latest_json(histdir, docsdir):
             output["market"] = {"vix": vix}
     except Exception as ex:                         # pragma: no cover
         print(f"latest.json: vix block skipped ({ex})")
+
+    # Long-dated vol vs its own history (VIX3M / VIX6M / VIX1Y).
+    try:
+        long_vol = vm.long_vol_block(docsdir)
+        if long_vol is not None:
+            output.setdefault("market", {})["long_vol"] = long_vol
+    except Exception as ex:                         # pragma: no cover
+        print(f"latest.json: long-vol block skipped ({ex})")
 
     outfile = os.path.join(
         docsdir,

@@ -379,3 +379,192 @@ def vix_block(histdir: str) -> dict | None:
         "vix_chg_1d_pct": num("vix_chg_1d_pct"),
         "vix_20d_change_pct": num("vix_20d_change_pct"),
     }
+
+
+# --------------------------------------------------------------------------
+# Volatility surface across expirations (vol_surface.py)
+# --------------------------------------------------------------------------
+#
+# Additive like everything above. The per-symbol block is computed from the
+# stored chain; the market-wide long-dated block reads Cboe's VIX3M / VIX6M /
+# VIX1Y daily history fresh and stores nothing but its result in latest.json.
+
+import vol_surface as vs
+
+# DTE windows the decision table trades (calendar days) and the calendar /
+# diagonal pairs (near window, far window) of cells U1/U2 and C1/C2.
+SURFACE_WINDOWS = ((7, 14), (15, 25), (20, 35), (35, 45), (45, 60), (60, 120))
+SURFACE_CALENDARS = {"diagonal_35_45_over_7_14": ((7, 14), (35, 45)),
+                     "calendar_45_60_over_7_14": ((7, 14), (45, 60))}
+SURFACE_TENORS = (7, 14, 30, 60, 90, 180)
+SURFACE_MAX_DTE = 250
+
+LONG_VOL_SYMBOLS = {"vix": "VIX", "vix3m": "VIX3M", "vix6m": "VIX6M", "vix1y": "VIX1Y"}
+LONG_VOL_URL = "https://cdn.cboe.com/api/global/us_indices/daily_prices/{sym}_History.csv"
+LONG_VOL_MAX_AGE_H = 6.0
+
+
+def _session_date(raw: pd.DataFrame, row=None):
+    """The session the stored chain describes. feed_ts is UTC; an evening
+    feed (after 00:00 UTC) still belongs to the previous US session."""
+    if row is not None:
+        s = str(row.get("session_date", "") or "")
+        if len(s) >= 10 and s[:4].isdigit():
+            return pd.Timestamp(s[:10]).date()
+    ts = pd.to_datetime(raw["feed_ts"].iloc[0], errors="coerce")
+    if pd.isna(ts):
+        ts = pd.to_datetime(raw["capture_ts"].iloc[0], utc=True).tz_localize(None)
+    return (ts - pd.Timedelta(hours=5)).date()
+
+
+def surface_points(df: pd.DataFrame, spot: float, asof) -> list[tuple]:
+    """(expiry date, calendar days from the session date, ATM IV) per expiry."""
+    pts = []
+    for expiry, exp in _usable(df).groupby("expiry"):
+        iv = _expiry_atm_iv(exp, spot)
+        if iv is None or iv <= 0:
+            continue
+        e = pd.Timestamp(expiry).date()
+        dte = (e - asof).days
+        if dte > 0:
+            pts.append((e, float(dte), float(iv)))
+    return pts
+
+
+SURFACE_COLUMNS = ("expiration", "dte", "atm_iv", "fwd_iv", "rich_rel", "label", "event")
+
+
+def _columns(rows):
+    """Rows as parallel arrays (same shape as the smile block): a third the
+    size of a list of objects in a feed the agents fetch every run."""
+    return {c: [r.get(c) for r in rows] for c in SURFACE_COLUMNS}
+
+
+def _slim_pick(p):
+    if p is None:
+        return None
+    return {k: p[k] for k in ("expiration", "dte", "rich_rel", "label", "edge_rel",
+                              "event_premium", "reason")}
+
+
+def symbol_surface_block(raw: pd.DataFrame, row, stress: bool = False) -> dict | None:
+    """
+    Term-structure block for one symbol from the stored chain:
+
+        cm_iv      ATM IV at constant maturities (calendar days)
+        expiries   parallel arrays, one entry per listed expiry out to 250
+                   days: ATM IV, forward vol from the previous expiry,
+                   richness against neighbours (rich_rel, label), event flag
+        events     intervals whose forward vol marks a priced event
+        windows    cheapest expiry to buy / richest to sell per DTE window
+        calendars  the forward-vol gate for the calendar and diagonal cells
+    `stress` is the market-wide backwardation read (VIX9D above VIX).
+    """
+    df = raw.copy()
+    df["dte"] = pd.to_numeric(df["dte"], errors="coerce")
+    df = df[df["dte"] > 0]
+    if df.empty:
+        return None
+    spot = float(row["spot"])
+    asof = _session_date(raw, row)
+    surf = vs.analyze(surface_points(df, spot, asof), asof, max_dte=SURFACE_MAX_DTE)
+    if not surf["rows"]:
+        return None
+
+    windows = {}
+    for lo, hi in SURFACE_WINDOWS:
+        windows[f"{lo}-{hi}"] = {"buy": _slim_pick(vs.pick_expiry(surf, lo, hi, "buy")),
+                                 "sell": _slim_pick(vs.pick_expiry(surf, lo, hi, "sell"))}
+
+    def leg(window, side):
+        lo, hi = window
+        p = vs.pick_expiry(surf, lo, hi, side)
+        if p is not None:
+            return p["expiration"]
+        inside = [r for r in surf["rows"] if lo <= r["dte"] <= hi]
+        mid = (lo + hi) / 2.0
+        return min(inside, key=lambda r: abs(r["dte"] - mid))["expiration"] if inside else None
+
+    calendars = {}
+    for name, (near, far) in SURFACE_CALENDARS.items():
+        f, b = leg(near, "sell"), leg(far, "buy")
+        if f and b:
+            g = vs.calendar_gate(surf, f, b, stress=stress)
+            calendars[name] = {k: g.get(k) for k in ("front", "back", "pass", "state", "ratio",
+                                                     "fwd_iv", "front_event", "reason")}
+
+    return {
+        "asof": surf["asof"],
+        "noisy": surf["noisy"],
+        "baseline_fwd": surf["baseline_fwd"],
+        "cm_iv": {str(d): vs.constant_maturity(surf, d) for d in SURFACE_TENORS},
+        "expiries": _columns(vs.public_rows(surf)),
+        "events": surf["events"],
+        "windows": windows,
+        "calendars": calendars,
+    }
+
+
+def _fetch_closes(symbol: str):
+    """Daily closes, oldest first, from Cboe's history CSV (DATE,OPEN,HIGH,LOW,CLOSE)."""
+    import requests
+    from io import StringIO
+    r = requests.get(LONG_VOL_URL.format(sym=symbol), timeout=30)
+    r.raise_for_status()
+    hist = pd.read_csv(StringIO(r.text))
+    cols = {str(c).strip().upper(): c for c in hist.columns}
+    if "CLOSE" not in cols or "DATE" not in cols:
+        return None, None
+    closes = pd.to_numeric(hist[cols["CLOSE"]], errors="coerce")
+    keep = closes.notna() & (closes > 0)
+    dates = pd.to_datetime(hist[cols["DATE"]], format="%m/%d/%Y", errors="coerce")
+    last = dates[keep].iloc[-1] if keep.any() else pd.NaT
+    return closes[keep].astype(float).tolist(), (None if pd.isna(last) else last.strftime("%Y-%m-%d"))
+
+
+def long_vol_block(docsdir: str | None = None, fetch=None, now=None) -> dict | None:
+    """
+    VIX3M / VIX6M / VIX1Y against their own trailing year: the long-dated
+    cheap / rich read for staged position tranches.
+
+    The history files change once a day, so the block already in
+    docs/latest.json is reused while it is under LONG_VOL_MAX_AGE_H old. A
+    failed fetch keeps the previous block (marked stale) rather than dropping
+    it. Nothing is written to history/.
+    """
+    import json as _json
+    from datetime import datetime, timezone
+    now = now or datetime.now(timezone.utc)
+    fetch = fetch or _fetch_closes
+    prev = None
+    if docsdir:
+        try:
+            with open(_os.path.join(docsdir, "latest.json"), encoding="utf-8") as fh:
+                prev = (_json.load(fh).get("market") or {}).get("long_vol")
+        except (OSError, ValueError):
+            prev = None
+    if prev and prev.get("fetched_utc"):
+        try:
+            age = (now - datetime.fromisoformat(prev["fetched_utc"])).total_seconds() / 3600.0
+            if 0 <= age < LONG_VOL_MAX_AGE_H:
+                return prev
+        except (ValueError, TypeError):
+            pass
+    try:
+        closes, asof = {}, None
+        for key, sym in LONG_VOL_SYMBOLS.items():
+            c, last = fetch(sym)
+            if not c:
+                raise ValueError(f"{sym}: no usable history")
+            closes[key] = c
+            if key != "vix":
+                asof = last if asof is None else min(asof, last or asof)
+        out = vs.long_vol_state(closes)
+        out.update({"asof": asof, "fetched_utc": now.isoformat(), "stale": False,
+                    "source": "cboe daily history (read fresh, not stored)"})
+        return out
+    except Exception as ex:                          # network, schema, anything
+        print(f"latest.json: long-vol fetch failed ({ex})")
+        if prev:
+            return {**prev, "stale": True}
+        return None
