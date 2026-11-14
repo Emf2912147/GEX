@@ -69,6 +69,9 @@ VARIANCE_YEAR = 252 + 113 * CLOSED_DAY_WEIGHT
 # rich_rel beyond these is labelled rich / cheap against the neighbours.
 RICH_REL = 0.02
 CHEAP_REL = -0.02
+# score_adjustment() ignores richness smaller than this (ordinary scatter:
+# the middle 60% of expiries on the stored index chains sit inside it).
+ADJ_DEAD_BAND = 0.01
 # Two expiries within this much of each other count as a tie.
 TIE_REL = 0.005
 
@@ -468,13 +471,18 @@ def score_adjustment(surface: dict, expiration, side: str, cap: float = 1.0) -> 
     """
     (-cap .. +cap, note) for an expiry on a buy or sell: +cap when it is
     RICH_REL*2 or more on the right side of its neighbours, -cap when it is
-    that far on the wrong side. 0.0 and no note when the surface cannot rank it.
+    that far on the wrong side, 0.0 within ADJ_DEAD_BAND of them. 0.0 and no
+    note when the surface cannot rank it.
     """
     r = row_for(surface, expiration)
     if r is None or r.get("rich_rel") is None or surface.get("noisy"):
         return 0.0, None
     sign = -1.0 if side == "buy" else 1.0
-    x = max(-1.0, min(1.0, sign * r["rich_rel"] / (2 * RICH_REL)))
+    rel = sign * r["rich_rel"]
+    # Nothing inside the dead band (half the fair range: ordinary scatter),
+    # then linear up to the cap at twice RICH_REL.
+    size = max(0.0, abs(rel) - ADJ_DEAD_BAND) / (2 * RICH_REL - ADJ_DEAD_BAND)
+    x = math.copysign(min(1.0, size), rel)
     note = None
     if r["label"] in ("rich", "cheap"):
         note = (f"{r['expiration']} expiry is {r['label']} against neighbouring expiries "

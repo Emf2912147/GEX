@@ -143,6 +143,9 @@ def test_score_adjustment_sign_and_cap():
     adj_sell, _ = vs.score_adjustment(s, pts[4][0], "sell", cap=5)
     assert adj_buy == 5 and adj_sell == -5 and "cheap" in note
     assert vs.score_adjustment(s, date(2030, 1, 1), "buy") == (0.0, None)
+    fair = flat_points()
+    fair[4] = (fair[4][0], fair[4][1], fair[4][2] * 0.994)       # inside the dead band
+    assert vs.score_adjustment(vs.analyze(fair, ASOF), fair[4][0], "buy", cap=5)[0] == 0.0
 
 
 # ------------------------------------------------------------------ calendar gate
