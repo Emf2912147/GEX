@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-11-14T17:15:14.968247+00:00",
+  "generated_utc": "2026-11-15T17:54:30.054706+00:00",
   "SPX": {
     "spot": 7561.6699,
     "flip": 7630.9385,
@@ -747,6 +747,483 @@
         ]
       }
     },
+    "surface": {
+      "asof": "2026-11-13",
+      "noisy": false,
+      "baseline_fwd": 0.1493,
+      "cm_iv": {
+        "7": 0.1621,
+        "14": 0.1496,
+        "30": 0.1493,
+        "60": 0.1521,
+        "90": 0.1578,
+        "180": 0.1693
+      },
+      "expiries": {
+        "expiration": [
+          "2026-11-16",
+          "2026-11-17",
+          "2026-11-18",
+          "2026-11-19",
+          "2026-11-20",
+          "2026-11-23",
+          "2026-11-24",
+          "2026-11-25",
+          "2026-11-27",
+          "2026-11-30",
+          "2026-12-01",
+          "2026-12-02",
+          "2026-12-03",
+          "2026-12-04",
+          "2026-12-07",
+          "2026-12-08",
+          "2026-12-09",
+          "2026-12-10",
+          "2026-12-11",
+          "2026-12-14",
+          "2026-12-15",
+          "2026-12-16",
+          "2026-12-17",
+          "2026-12-18",
+          "2026-12-21",
+          "2026-12-22",
+          "2026-12-24",
+          "2026-12-31",
+          "2027-01-08",
+          "2027-01-15",
+          "2027-01-22",
+          "2027-01-29",
+          "2027-02-19",
+          "2027-02-26",
+          "2027-03-19",
+          "2027-03-31",
+          "2027-04-16",
+          "2027-04-30",
+          "2027-05-21",
+          "2027-06-17",
+          "2027-06-30",
+          "2027-07-16"
+        ],
+        "dte": [
+          3.0,
+          4.0,
+          5.0,
+          6.0,
+          7.0,
+          10.0,
+          11.0,
+          12.0,
+          14.0,
+          17.0,
+          18.0,
+          19.0,
+          20.0,
+          21.0,
+          24.0,
+          25.0,
+          26.0,
+          27.0,
+          28.0,
+          31.0,
+          32.0,
+          33.0,
+          34.0,
+          35.0,
+          38.0,
+          39.0,
+          41.0,
+          48.0,
+          56.0,
+          63.0,
+          70.0,
+          77.0,
+          98.0,
+          105.0,
+          126.0,
+          138.0,
+          154.0,
+          168.0,
+          189.0,
+          216.0,
+          229.0,
+          245.0
+        ],
+        "atm_iv": [
+          0.1247,
+          0.1427,
+          0.156,
+          0.1642,
+          0.1621,
+          0.1514,
+          0.1526,
+          0.1545,
+          0.1496,
+          0.1431,
+          0.1443,
+          0.1458,
+          0.1472,
+          0.15,
+          0.1458,
+          0.1464,
+          0.1505,
+          0.1531,
+          0.1538,
+          0.1505,
+          0.1508,
+          0.1525,
+          0.1532,
+          0.1535,
+          0.1514,
+          0.152,
+          0.153,
+          0.1525,
+          0.1531,
+          0.1538,
+          0.1541,
+          0.1563,
+          0.1579,
+          0.1596,
+          0.1624,
+          0.1631,
+          0.1655,
+          0.1684,
+          0.1706,
+          0.1732,
+          0.1742,
+          0.1757
+        ],
+        "fwd_iv": [
+          0.1674,
+          0.1586,
+          0.1703,
+          0.1701,
+          0.1263,
+          0.1652,
+          0.1388,
+          0.1481,
+          0.1324,
+          0.1446,
+          0.1392,
+          0.1449,
+          0.1463,
+          0.1672,
+          0.1505,
+          0.136,
+          0.1966,
+          0.177,
+          0.1457,
+          0.1559,
+          0.1349,
+          0.1697,
+          0.1478,
+          0.1399,
+          0.1667,
+          0.148,
+          0.1446,
+          0.1619,
+          0.1635,
+          0.1568,
+          0.1699,
+          0.1748,
+          0.1658,
+          0.1799,
+          0.1731,
+          0.1828,
+          0.1781,
+          0.1946,
+          0.1845,
+          0.1936,
+          0.1988,
+          0.1968
+        ],
+        "rich_rel": [
+          null,
+          null,
+          0.01,
+          0.0445,
+          0.0136,
+          0.033,
+          0.0197,
+          0.0151,
+          0.0,
+          -0.0054,
+          -0.0124,
+          -0.0152,
+          -0.0175,
+          -0.009,
+          -0.0092,
+          -0.0145,
+          0.0055,
+          0.0151,
+          0.0122,
+          0.0118,
+          0.006,
+          0.0103,
+          0.0079,
+          0.003,
+          0.0054,
+          0.0029,
+          -0.0031,
+          -0.0002,
+          0.0013,
+          -0.0022,
+          -0.0002,
+          0.005,
+          -0.0029,
+          -0.0003,
+          -0.0033,
+          -0.0022,
+          -0.006,
+          -0.0008,
+          -0.0021,
+          0.0031,
+          0.0074,
+          null
+        ],
+        "label": [
+          null,
+          null,
+          "fair",
+          "rich",
+          "fair",
+          "rich",
+          "fair",
+          "fair",
+          "fair",
+          "fair",
+          "fair",
+          "fair",
+          "fair",
+          "fair",
+          "fair",
+          "fair",
+          "fair",
+          "fair",
+          "fair",
+          "fair",
+          "fair",
+          "fair",
+          "fair",
+          "fair",
+          "fair",
+          "fair",
+          "fair",
+          "fair",
+          "fair",
+          "fair",
+          "fair",
+          "fair",
+          "fair",
+          "fair",
+          "fair",
+          "fair",
+          "fair",
+          "fair",
+          "fair",
+          "fair",
+          "fair",
+          null
+        ],
+        "event": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          true,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      "events": [
+        {
+          "expiration": "2026-12-09",
+          "bd": 17,
+          "gap_bd": 1,
+          "fwd_iv": 0.1966,
+          "baseline": 0.1493,
+          "excess_pts": 0.0473
+        }
+      ],
+      "windows": {
+        "7-14": {
+          "buy": {
+            "expiration": "2026-11-27",
+            "dte": 14.0,
+            "rich_rel": 0.0,
+            "label": "fair",
+            "edge_rel": 0.0151,
+            "event_premium": false,
+            "reason": "2026-11-27 (14d) is the cheapest to buy in the 7-14 day window: IV in line with its neighbours, 1.5% better than the window's median expiry"
+          },
+          "sell": {
+            "expiration": "2026-11-23",
+            "dte": 10.0,
+            "rich_rel": 0.033,
+            "label": "rich",
+            "edge_rel": 0.0179,
+            "event_premium": false,
+            "reason": "2026-11-23 (10d) is the richest to sell in the 7-14 day window: IV 3.3% above its neighbours, 1.8% better than the window's median expiry"
+          }
+        },
+        "15-25": {
+          "buy": {
+            "expiration": "2026-12-03",
+            "dte": 20.0,
+            "rich_rel": -0.0175,
+            "label": "fair",
+            "edge_rel": 0.0051,
+            "event_premium": false,
+            "reason": "2026-12-03 (20d) is the cheapest to buy in the 15-25 day window: IV 1.8% below its neighbours, 0.5% better than the window's median expiry"
+          },
+          "sell": {
+            "expiration": "2026-12-04",
+            "dte": 21.0,
+            "rich_rel": -0.009,
+            "label": "fair",
+            "edge_rel": 0.0034,
+            "event_premium": false,
+            "reason": "2026-12-04 (21d): the expiries in the 15-25 day window are priced alike; no expiry edge"
+          }
+        },
+        "20-35": {
+          "buy": {
+            "expiration": "2026-12-08",
+            "dte": 25.0,
+            "rich_rel": -0.0145,
+            "label": "fair",
+            "edge_rel": 0.0203,
+            "event_premium": false,
+            "reason": "2026-12-08 (25d) is the cheapest to buy in the 20-35 day window: IV 1.5% below its neighbours, 2.0% better than the window's median expiry"
+          },
+          "sell": {
+            "expiration": "2026-12-10",
+            "dte": 27.0,
+            "rich_rel": 0.0151,
+            "label": "fair",
+            "edge_rel": 0.0094,
+            "event_premium": false,
+            "reason": "2026-12-10 (27d) is the richest to sell in the 20-35 day window: IV 1.5% above its neighbours, 0.9% better than the window's median expiry"
+          }
+        },
+        "35-45": {
+          "buy": {
+            "expiration": "2026-12-24",
+            "dte": 41.0,
+            "rich_rel": -0.0031,
+            "label": "fair",
+            "edge_rel": 0.006,
+            "event_premium": false,
+            "reason": "2026-12-24 (41d) is the cheapest to buy in the 35-45 day window: IV 0.3% below its neighbours, 0.6% better than the window's median expiry"
+          },
+          "sell": {
+            "expiration": "2026-12-22",
+            "dte": 39.0,
+            "rich_rel": 0.0029,
+            "label": "fair",
+            "edge_rel": -0.0001,
+            "event_premium": false,
+            "reason": "2026-12-22 (39d): the expiries in the 35-45 day window are priced alike; no expiry edge"
+          }
+        },
+        "45-60": {
+          "buy": {
+            "expiration": "2027-01-08",
+            "dte": 56.0,
+            "rich_rel": 0.0013,
+            "label": "fair",
+            "edge_rel": -0.0008,
+            "event_premium": false,
+            "reason": "2027-01-08 (56d): the expiries in the 45-60 day window are priced alike; no expiry edge"
+          },
+          "sell": {
+            "expiration": "2027-01-08",
+            "dte": 56.0,
+            "rich_rel": 0.0013,
+            "label": "fair",
+            "edge_rel": 0.0008,
+            "event_premium": false,
+            "reason": "2027-01-08 (56d): the expiries in the 45-60 day window are priced alike; no expiry edge"
+          }
+        },
+        "60-120": {
+          "buy": {
+            "expiration": "2027-02-19",
+            "dte": 98.0,
+            "rich_rel": -0.0029,
+            "label": "fair",
+            "edge_rel": 0.0026,
+            "event_premium": false,
+            "reason": "2027-02-19 (98d): the expiries in the 60-120 day window are priced alike; no expiry edge"
+          },
+          "sell": {
+            "expiration": "2027-01-29",
+            "dte": 77.0,
+            "rich_rel": 0.005,
+            "label": "fair",
+            "edge_rel": 0.0053,
+            "event_premium": false,
+            "reason": "2027-01-29 (77d) is the richest to sell in the 60-120 day window: IV 0.5% above its neighbours, 0.5% better than the window's median expiry"
+          }
+        }
+      },
+      "calendars": {
+        "diagonal_35_45_over_7_14": {
+          "front": "2026-11-23",
+          "back": "2026-12-24",
+          "pass": true,
+          "state": "fair",
+          "ratio": 1.06,
+          "fwd_iv": 0.1517,
+          "front_event": false,
+          "reason": "near leg fairly priced against the forward vol: near 16.1% vs forward 15.2% (ratio 1.06). The edge has to come from the pin, not the term structure"
+        },
+        "calendar_45_60_over_7_14": {
+          "front": "2026-11-23",
+          "back": "2027-01-08",
+          "pass": true,
+          "state": "fair",
+          "ratio": 1.037,
+          "fwd_iv": 0.155,
+          "front_event": false,
+          "reason": "near leg fairly priced against the forward vol: near 16.1% vs forward 15.5% (ratio 1.04). The edge has to come from the pin, not the term structure"
+        }
+      }
+    },
     "flows": {
       "charm_bp_day": 36.91,
       "vanna_bp_per_volpt": 30.12,
@@ -855,6 +1332,304 @@
           0.1982,
           0.2133
         ]
+      }
+    },
+    "surface": {
+      "asof": "2026-11-13",
+      "noisy": false,
+      "baseline_fwd": 0.1158,
+      "cm_iv": {
+        "7": 0.1057,
+        "14": 0.1028,
+        "30": 0.1145,
+        "60": 0.1179,
+        "90": 0.1232,
+        "180": 0.1283
+      },
+      "expiries": {
+        "expiration": [
+          "2026-11-16",
+          "2026-11-18",
+          "2026-11-20",
+          "2026-11-23",
+          "2026-11-25",
+          "2026-11-27",
+          "2026-11-30",
+          "2026-12-04",
+          "2026-12-11",
+          "2026-12-18",
+          "2026-12-24",
+          "2026-12-31",
+          "2027-01-15",
+          "2027-02-19",
+          "2027-03-19",
+          "2027-03-31",
+          "2027-04-16",
+          "2027-05-21",
+          "2027-06-17",
+          "2027-06-30",
+          "2027-07-16"
+        ],
+        "dte": [
+          3.0,
+          5.0,
+          7.0,
+          10.0,
+          12.0,
+          14.0,
+          17.0,
+          21.0,
+          28.0,
+          35.0,
+          41.0,
+          48.0,
+          63.0,
+          98.0,
+          126.0,
+          138.0,
+          154.0,
+          189.0,
+          216.0,
+          229.0,
+          245.0
+        ],
+        "atm_iv": [
+          0.0765,
+          0.0964,
+          0.1057,
+          0.0958,
+          0.1042,
+          0.1028,
+          0.1007,
+          0.1081,
+          0.1178,
+          0.1197,
+          0.1189,
+          0.1174,
+          0.1197,
+          0.1235,
+          0.1254,
+          0.1251,
+          0.1258,
+          0.1294,
+          0.131,
+          0.1305,
+          0.1315
+        ],
+        "fwd_iv": [
+          0.1027,
+          0.102,
+          0.107,
+          0.0904,
+          0.1178,
+          0.1081,
+          0.1211,
+          0.1146,
+          0.1411,
+          0.125,
+          0.1158,
+          0.1171,
+          0.1289,
+          0.1329,
+          0.1299,
+          0.13,
+          0.1276,
+          0.1418,
+          0.1443,
+          0.1279,
+          0.1444
+        ],
+        "rich_rel": [
+          null,
+          0.0247,
+          -0.0009,
+          -0.0391,
+          -0.0306,
+          -0.0392,
+          -0.0306,
+          -0.0472,
+          0.0207,
+          0.0214,
+          0.004,
+          -0.0083,
+          null,
+          0.0081,
+          0.0044,
+          0.0001,
+          -0.0112,
+          0.0,
+          0.0077,
+          0.0016,
+          null
+        ],
+        "label": [
+          null,
+          "rich",
+          "fair",
+          "cheap",
+          "cheap",
+          "cheap",
+          "cheap",
+          "cheap",
+          "rich",
+          "rich",
+          "fair",
+          "fair",
+          null,
+          "fair",
+          "fair",
+          "fair",
+          "fair",
+          "fair",
+          "fair",
+          "fair",
+          null
+        ],
+        "event": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          true,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      "events": [
+        {
+          "expiration": "2026-12-11",
+          "bd": 19,
+          "gap_bd": 5,
+          "fwd_iv": 0.1411,
+          "baseline": 0.1158,
+          "excess_pts": 0.0253
+        }
+      ],
+      "windows": {
+        "7-14": {
+          "buy": {
+            "expiration": "2026-11-23",
+            "dte": 10.0,
+            "rich_rel": -0.0391,
+            "label": "cheap",
+            "edge_rel": 0.0043,
+            "event_premium": false,
+            "reason": "2026-11-23 (10d): the expiries in the 7-14 day window are priced alike; no expiry edge"
+          },
+          "sell": {
+            "expiration": "2026-11-20",
+            "dte": 7.0,
+            "rich_rel": -0.0009,
+            "label": "fair",
+            "edge_rel": 0.034,
+            "event_premium": false,
+            "reason": "2026-11-20 (7d) is the richest to sell in the 7-14 day window: IV 0.1% below its neighbours, 3.4% better than the window's median expiry"
+          }
+        },
+        "15-25": {
+          "buy": {
+            "expiration": "2026-12-04",
+            "dte": 21.0,
+            "rich_rel": -0.0472,
+            "label": "cheap",
+            "edge_rel": 0.0083,
+            "event_premium": false,
+            "reason": "2026-12-04 (21d) is the cheapest to buy in the 15-25 day window: IV 4.7% below its neighbours, 0.8% better than the window's median expiry"
+          },
+          "sell": {
+            "expiration": "2026-11-30",
+            "dte": 17.0,
+            "rich_rel": -0.0306,
+            "label": "cheap",
+            "edge_rel": 0.0083,
+            "event_premium": false,
+            "reason": "2026-11-30 (17d) is the richest to sell in the 15-25 day window: IV 3.1% below its neighbours, 0.8% better than the window's median expiry"
+          }
+        },
+        "20-35": {
+          "buy": {
+            "expiration": "2026-12-04",
+            "dte": 21.0,
+            "rich_rel": -0.0472,
+            "label": "cheap",
+            "edge_rel": 0.0679,
+            "event_premium": false,
+            "reason": "2026-12-04 (21d) is the cheapest to buy in the 20-35 day window: IV 4.7% below its neighbours, 6.8% better than the window's median expiry"
+          },
+          "sell": {
+            "expiration": "2026-12-11",
+            "dte": 28.0,
+            "rich_rel": 0.0207,
+            "label": "rich",
+            "edge_rel": -0.0,
+            "event_premium": true,
+            "reason": "2026-12-11 (28d): the expiries in the 20-35 day window are priced alike; no expiry edge; its richness is event premium (a priced event falls just before it), so selling it means carrying that event"
+          }
+        },
+        "35-45": {
+          "buy": {
+            "expiration": "2026-12-24",
+            "dte": 41.0,
+            "rich_rel": 0.004,
+            "label": "fair",
+            "edge_rel": 0.0087,
+            "event_premium": false,
+            "reason": "2026-12-24 (41d) is the cheapest to buy in the 35-45 day window: IV 0.4% above its neighbours, 0.9% better than the window's median expiry"
+          },
+          "sell": {
+            "expiration": "2026-12-18",
+            "dte": 35.0,
+            "rich_rel": 0.0214,
+            "label": "rich",
+            "edge_rel": 0.0087,
+            "event_premium": false,
+            "reason": "2026-12-18 (35d) is the richest to sell in the 35-45 day window: IV 2.1% above its neighbours, 0.9% better than the window's median expiry"
+          }
+        },
+        "45-60": {
+          "buy": null,
+          "sell": null
+        },
+        "60-120": {
+          "buy": null,
+          "sell": null
+        }
+      },
+      "calendars": {
+        "diagonal_35_45_over_7_14": {
+          "front": "2026-11-20",
+          "back": "2026-12-24",
+          "pass": true,
+          "state": "fair",
+          "ratio": 0.85,
+          "fwd_iv": 0.1225,
+          "front_event": false,
+          "reason": "near leg fairly priced against the forward vol: near 10.4% vs forward 12.3% (ratio 0.85). The edge has to come from the pin, not the term structure"
+        },
+        "calendar_45_60_over_7_14": {
+          "front": "2026-11-20",
+          "back": "2026-12-31",
+          "pass": true,
+          "state": "fair",
+          "ratio": 0.855,
+          "fwd_iv": 0.1217,
+          "front_event": false,
+          "reason": "near leg fairly priced against the forward vol: near 10.4% vs forward 12.2% (ratio 0.86). The edge has to come from the pin, not the term structure"
+        }
       }
     },
     "flows": {
@@ -1027,6 +1802,286 @@
         ]
       }
     },
+    "surface": {
+      "asof": "2026-11-13",
+      "noisy": false,
+      "baseline_fwd": 0.1814,
+      "cm_iv": {
+        "7": 0.1927,
+        "14": 0.1758,
+        "30": 0.1854,
+        "60": 0.1897,
+        "90": 0.1967,
+        "180": 0.205
+      },
+      "expiries": {
+        "expiration": [
+          "2026-11-16",
+          "2026-11-17",
+          "2026-11-18",
+          "2026-11-19",
+          "2026-11-20",
+          "2026-11-23",
+          "2026-11-24",
+          "2026-11-25",
+          "2026-11-27",
+          "2026-12-04",
+          "2026-12-11",
+          "2026-12-18",
+          "2026-12-24",
+          "2026-12-31",
+          "2027-01-15",
+          "2027-02-19",
+          "2027-03-19",
+          "2027-03-31",
+          "2027-04-16",
+          "2027-05-21",
+          "2027-06-17",
+          "2027-06-30"
+        ],
+        "dte": [
+          3.0,
+          4.0,
+          5.0,
+          6.0,
+          7.0,
+          10.0,
+          11.0,
+          12.0,
+          14.0,
+          21.0,
+          28.0,
+          35.0,
+          41.0,
+          48.0,
+          63.0,
+          98.0,
+          126.0,
+          138.0,
+          154.0,
+          189.0,
+          216.0,
+          229.0
+        ],
+        "atm_iv": [
+          0.1557,
+          0.1705,
+          0.1797,
+          0.1858,
+          0.1927,
+          0.1765,
+          0.1789,
+          0.1812,
+          0.1758,
+          0.1821,
+          0.1911,
+          0.1896,
+          0.1909,
+          0.1893,
+          0.1926,
+          0.197,
+          0.2011,
+          0.2008,
+          0.2035,
+          0.206,
+          0.2088,
+          0.209
+        ],
+        "fwd_iv": [
+          0.209,
+          0.1773,
+          0.1807,
+          0.1814,
+          0.1949,
+          0.1763,
+          0.1708,
+          0.1746,
+          0.1585,
+          0.1914,
+          0.2125,
+          0.1809,
+          0.2016,
+          0.1944,
+          0.2057,
+          0.2092,
+          0.2118,
+          0.2123,
+          0.2176,
+          0.2134,
+          0.2309,
+          0.223
+        ],
+        "rich_rel": [
+          null,
+          null,
+          0.0031,
+          0.0033,
+          0.0192,
+          0.0106,
+          -0.0114,
+          -0.0198,
+          -0.0366,
+          -0.0215,
+          0.0201,
+          -0.0017,
+          -0.0004,
+          -0.0041,
+          null,
+          0.0012,
+          0.0022,
+          0.0016,
+          0.0004,
+          -0.0045,
+          0.006,
+          null
+        ],
+        "label": [
+          null,
+          null,
+          "fair",
+          "fair",
+          "fair",
+          "fair",
+          "fair",
+          "fair",
+          "cheap",
+          "cheap",
+          "rich",
+          "fair",
+          "fair",
+          "fair",
+          null,
+          "fair",
+          "fair",
+          "fair",
+          "fair",
+          "fair",
+          "fair",
+          null
+        ],
+        "event": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      "events": [],
+      "windows": {
+        "7-14": {
+          "buy": {
+            "expiration": "2026-11-27",
+            "dte": 14.0,
+            "rich_rel": -0.0366,
+            "label": "cheap",
+            "edge_rel": 0.0252,
+            "event_premium": false,
+            "reason": "2026-11-27 (14d) is the cheapest to buy in the 7-14 day window: IV 3.7% below its neighbours, 2.5% better than the window's median expiry"
+          },
+          "sell": {
+            "expiration": "2026-11-20",
+            "dte": 7.0,
+            "rich_rel": 0.0192,
+            "label": "fair",
+            "edge_rel": 0.0306,
+            "event_premium": false,
+            "reason": "2026-11-20 (7d) is the richest to sell in the 7-14 day window: IV 1.9% above its neighbours, 3.1% better than the window's median expiry"
+          }
+        },
+        "15-25": {
+          "buy": null,
+          "sell": null
+        },
+        "20-35": {
+          "buy": {
+            "expiration": "2026-12-04",
+            "dte": 21.0,
+            "rich_rel": -0.0215,
+            "label": "cheap",
+            "edge_rel": 0.0198,
+            "event_premium": false,
+            "reason": "2026-12-04 (21d) is the cheapest to buy in the 20-35 day window: IV 2.1% below its neighbours, 2.0% better than the window's median expiry"
+          },
+          "sell": {
+            "expiration": "2026-12-11",
+            "dte": 28.0,
+            "rich_rel": 0.0201,
+            "label": "rich",
+            "edge_rel": 0.0218,
+            "event_premium": false,
+            "reason": "2026-12-11 (28d) is the richest to sell in the 20-35 day window: IV 2.0% above its neighbours, 2.2% better than the window's median expiry"
+          }
+        },
+        "35-45": {
+          "buy": {
+            "expiration": "2026-12-24",
+            "dte": 41.0,
+            "rich_rel": -0.0004,
+            "label": "fair",
+            "edge_rel": -0.0006,
+            "event_premium": false,
+            "reason": "2026-12-24 (41d): the expiries in the 35-45 day window are priced alike; no expiry edge"
+          },
+          "sell": {
+            "expiration": "2026-12-24",
+            "dte": 41.0,
+            "rich_rel": -0.0004,
+            "label": "fair",
+            "edge_rel": 0.0006,
+            "event_premium": false,
+            "reason": "2026-12-24 (41d): the expiries in the 35-45 day window are priced alike; no expiry edge"
+          }
+        },
+        "45-60": {
+          "buy": null,
+          "sell": null
+        },
+        "60-120": {
+          "buy": null,
+          "sell": null
+        }
+      },
+      "calendars": {
+        "diagonal_35_45_over_7_14": {
+          "front": "2026-11-20",
+          "back": "2026-12-24",
+          "pass": true,
+          "state": "fair",
+          "ratio": 0.987,
+          "fwd_iv": 0.1923,
+          "front_event": false,
+          "reason": "near leg fairly priced against the forward vol: near 19.0% vs forward 19.2% (ratio 0.99). The edge has to come from the pin, not the term structure"
+        },
+        "calendar_45_60_over_7_14": {
+          "front": "2026-11-20",
+          "back": "2026-12-31",
+          "pass": true,
+          "state": "fair",
+          "ratio": 0.986,
+          "fwd_iv": 0.1926,
+          "front_event": false,
+          "reason": "near leg fairly priced against the forward vol: near 19.0% vs forward 19.3% (ratio 0.99). The edge has to come from the pin, not the term structure"
+        }
+      }
+    },
     "flows": {
       "charm_bp_day": 82.33,
       "vanna_bp_per_volpt": 51.51,
@@ -1117,6 +2172,196 @@
           0.1902,
           0.2504
         ]
+      }
+    },
+    "surface": {
+      "asof": "2026-11-13",
+      "noisy": true,
+      "baseline_fwd": 0.1486,
+      "cm_iv": {
+        "7": 0.1777,
+        "14": 0.1438,
+        "30": 0.1446,
+        "60": 0.1481,
+        "90": 0.1568,
+        "180": 0.1714
+      },
+      "expiries": {
+        "expiration": [
+          "2026-11-16",
+          "2026-11-18",
+          "2026-11-20",
+          "2026-11-23",
+          "2026-11-25",
+          "2026-11-27",
+          "2026-12-04",
+          "2026-12-11",
+          "2026-12-18",
+          "2026-12-24",
+          "2026-12-31",
+          "2027-01-15",
+          "2027-03-19",
+          "2027-03-31",
+          "2027-06-17",
+          "2027-06-30"
+        ],
+        "dte": [
+          3.0,
+          5.0,
+          7.0,
+          10.0,
+          12.0,
+          14.0,
+          21.0,
+          28.0,
+          35.0,
+          41.0,
+          48.0,
+          63.0,
+          126.0,
+          138.0,
+          216.0,
+          229.0
+        ],
+        "atm_iv": [
+          0.1055,
+          0.1336,
+          0.1777,
+          0.1498,
+          0.1578,
+          0.1438,
+          0.1462,
+          0.1486,
+          0.1561,
+          0.162,
+          0.1528,
+          0.1488,
+          0.1628,
+          0.1707,
+          0.1714,
+          0.1747
+        ],
+        "fwd_iv": [
+          0.1417,
+          0.1419,
+          0.2179,
+          0.0448,
+          0.1642,
+          null,
+          0.1486,
+          0.1534,
+          0.1805,
+          0.1957,
+          0.0869,
+          0.1372,
+          0.1766,
+          0.2558,
+          0.1712,
+          0.2337
+        ],
+        "rich_rel": [
+          null,
+          -0.1591,
+          0.1445,
+          0.0265,
+          0.0483,
+          -0.0368,
+          -0.0455,
+          -0.0565,
+          0.0003,
+          0.061,
+          -0.0003,
+          null,
+          null,
+          null,
+          -0.0248,
+          null
+        ],
+        "label": [
+          null,
+          "cheap",
+          "rich",
+          "rich",
+          "rich",
+          "cheap",
+          "cheap",
+          "cheap",
+          "fair",
+          "rich",
+          "fair",
+          null,
+          null,
+          null,
+          "cheap",
+          null
+        ],
+        "event": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      "events": [],
+      "windows": {
+        "7-14": {
+          "buy": null,
+          "sell": null
+        },
+        "15-25": {
+          "buy": null,
+          "sell": null
+        },
+        "20-35": {
+          "buy": null,
+          "sell": null
+        },
+        "35-45": {
+          "buy": null,
+          "sell": null
+        },
+        "45-60": {
+          "buy": null,
+          "sell": null
+        },
+        "60-120": {
+          "buy": null,
+          "sell": null
+        }
+      },
+      "calendars": {
+        "diagonal_35_45_over_7_14": {
+          "front": "2026-11-23",
+          "back": "2026-12-24",
+          "pass": null,
+          "state": "unknown",
+          "ratio": null,
+          "fwd_iv": null,
+          "front_event": null,
+          "reason": "forward vol not measurable: the chain is too thin, its expiries scatter too much to compare"
+        },
+        "calendar_45_60_over_7_14": {
+          "front": "2026-11-23",
+          "back": "2026-12-31",
+          "pass": null,
+          "state": "unknown",
+          "ratio": null,
+          "fwd_iv": null,
+          "front_event": null,
+          "reason": "forward vol not measurable: the chain is too thin, its expiries scatter too much to compare"
+        }
       }
     },
     "flows": {
@@ -1221,6 +2466,268 @@
           0.5369,
           0.547
         ]
+      }
+    },
+    "surface": {
+      "asof": "2026-11-13",
+      "noisy": false,
+      "baseline_fwd": 0.4511,
+      "cm_iv": {
+        "7": 0.563,
+        "14": 0.4992,
+        "30": 0.4647,
+        "60": 0.4389,
+        "90": 0.4303,
+        "180": 0.4218
+      },
+      "expiries": {
+        "expiration": [
+          "2026-11-16",
+          "2026-11-18",
+          "2026-11-20",
+          "2026-11-23",
+          "2026-11-25",
+          "2026-11-27",
+          "2026-12-04",
+          "2026-12-11",
+          "2026-12-18",
+          "2026-12-24",
+          "2026-12-31",
+          "2027-01-15",
+          "2027-02-19",
+          "2027-03-19",
+          "2027-04-16",
+          "2027-05-21",
+          "2027-06-17"
+        ],
+        "dte": [
+          3.0,
+          5.0,
+          7.0,
+          10.0,
+          12.0,
+          14.0,
+          21.0,
+          28.0,
+          35.0,
+          41.0,
+          48.0,
+          63.0,
+          98.0,
+          126.0,
+          154.0,
+          189.0,
+          216.0
+        ],
+        "atm_iv": [
+          0.378,
+          0.5302,
+          0.563,
+          0.5186,
+          0.5219,
+          0.4992,
+          0.4855,
+          0.4789,
+          0.4738,
+          0.4649,
+          0.4542,
+          0.4405,
+          0.4275,
+          0.4282,
+          0.4233,
+          0.4224,
+          0.419
+        ],
+        "fwd_iv": [
+          0.5076,
+          0.5936,
+          0.5416,
+          0.532,
+          0.457,
+          0.3799,
+          0.4502,
+          0.4519,
+          0.4462,
+          0.4151,
+          0.4181,
+          0.3993,
+          0.4119,
+          0.4243,
+          0.4037,
+          0.4123,
+          0.4001
+        ],
+        "rich_rel": [
+          null,
+          -0.0101,
+          0.0364,
+          0.0464,
+          0.0307,
+          0.0072,
+          -0.0069,
+          -0.0036,
+          0.0005,
+          0.0,
+          -0.0023,
+          null,
+          null,
+          null,
+          -0.0076,
+          -0.0062,
+          null
+        ],
+        "label": [
+          null,
+          "fair",
+          "rich",
+          "rich",
+          "rich",
+          "fair",
+          "fair",
+          "fair",
+          "fair",
+          "fair",
+          "fair",
+          null,
+          null,
+          null,
+          "fair",
+          "fair",
+          null
+        ],
+        "event": [
+          false,
+          true,
+          true,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      "events": [
+        {
+          "expiration": "2026-11-18",
+          "bd": 3,
+          "gap_bd": 2,
+          "fwd_iv": 0.5936,
+          "baseline": 0.4511,
+          "excess_pts": 0.1426
+        },
+        {
+          "expiration": "2026-11-20",
+          "bd": 5,
+          "gap_bd": 2,
+          "fwd_iv": 0.5416,
+          "baseline": 0.4511,
+          "excess_pts": 0.0905
+        }
+      ],
+      "windows": {
+        "7-14": {
+          "buy": {
+            "expiration": "2026-11-27",
+            "dte": 14.0,
+            "rich_rel": 0.0072,
+            "label": "fair",
+            "edge_rel": 0.0264,
+            "event_premium": false,
+            "reason": "2026-11-27 (14d) is the cheapest to buy in the 7-14 day window: IV 0.7% above its neighbours, 2.6% better than the window's median expiry"
+          },
+          "sell": {
+            "expiration": "2026-11-23",
+            "dte": 10.0,
+            "rich_rel": 0.0464,
+            "label": "rich",
+            "edge_rel": 0.0128,
+            "event_premium": true,
+            "reason": "2026-11-23 (10d) is the richest to sell in the 7-14 day window: IV 4.6% above its neighbours, 1.3% better than the window's median expiry; its richness is event premium (a priced event falls just before it), so selling it means carrying that event"
+          }
+        },
+        "15-25": {
+          "buy": null,
+          "sell": null
+        },
+        "20-35": {
+          "buy": {
+            "expiration": "2026-12-11",
+            "dte": 28.0,
+            "rich_rel": -0.0036,
+            "label": "fair",
+            "edge_rel": 0.0,
+            "event_premium": false,
+            "reason": "2026-12-11 (28d): the expiries in the 20-35 day window are priced alike; no expiry edge"
+          },
+          "sell": {
+            "expiration": "2026-12-11",
+            "dte": 28.0,
+            "rich_rel": -0.0036,
+            "label": "fair",
+            "edge_rel": -0.0,
+            "event_premium": false,
+            "reason": "2026-12-11 (28d): the expiries in the 20-35 day window are priced alike; no expiry edge"
+          }
+        },
+        "35-45": {
+          "buy": {
+            "expiration": "2026-12-24",
+            "dte": 41.0,
+            "rich_rel": 0.0,
+            "label": "fair",
+            "edge_rel": 0.0003,
+            "event_premium": false,
+            "reason": "2026-12-24 (41d): the expiries in the 35-45 day window are priced alike; no expiry edge"
+          },
+          "sell": {
+            "expiration": "2026-12-24",
+            "dte": 41.0,
+            "rich_rel": 0.0,
+            "label": "fair",
+            "edge_rel": -0.0003,
+            "event_premium": false,
+            "reason": "2026-12-24 (41d): the expiries in the 35-45 day window are priced alike; no expiry edge"
+          }
+        },
+        "45-60": {
+          "buy": null,
+          "sell": null
+        },
+        "60-120": {
+          "buy": null,
+          "sell": null
+        }
+      },
+      "calendars": {
+        "diagonal_35_45_over_7_14": {
+          "front": "2026-11-23",
+          "back": "2026-12-24",
+          "pass": true,
+          "state": "front_rich",
+          "ratio": 1.249,
+          "fwd_iv": 0.4409,
+          "front_event": true,
+          "reason": "near leg rich against the forward vol: near 55.1% vs forward 44.1% (ratio 1.25). Favourable pricing; the richness is a priced event before the near expiry, so the calendar is short that event"
+        },
+        "calendar_45_60_over_7_14": {
+          "front": "2026-11-23",
+          "back": "2026-12-31",
+          "pass": true,
+          "state": "front_rich",
+          "ratio": 1.259,
+          "fwd_iv": 0.4374,
+          "front_event": true,
+          "reason": "near leg rich against the forward vol: near 55.1% vs forward 43.7% (ratio 1.26). Favourable pricing; the richness is a priced event before the near expiry, so the calendar is short that event"
+        }
       }
     },
     "flows": {
@@ -1430,6 +2937,272 @@
           0.2563,
           0.2597
         ]
+      }
+    },
+    "surface": {
+      "asof": "2026-11-13",
+      "noisy": false,
+      "baseline_fwd": 0.2334,
+      "cm_iv": {
+        "7": 0.2355,
+        "14": 0.224,
+        "30": 0.2263,
+        "60": 0.2281,
+        "90": 0.2314,
+        "180": 0.2329
+      },
+      "expiries": {
+        "expiration": [
+          "2026-11-16",
+          "2026-11-17",
+          "2026-11-18",
+          "2026-11-19",
+          "2026-11-20",
+          "2026-11-23",
+          "2026-11-24",
+          "2026-11-25",
+          "2026-11-27",
+          "2026-12-04",
+          "2026-12-11",
+          "2026-12-18",
+          "2026-12-24",
+          "2026-12-31",
+          "2027-01-15",
+          "2027-02-19",
+          "2027-03-19",
+          "2027-03-31",
+          "2027-06-17",
+          "2027-06-30"
+        ],
+        "dte": [
+          3.0,
+          4.0,
+          5.0,
+          6.0,
+          7.0,
+          10.0,
+          11.0,
+          12.0,
+          14.0,
+          21.0,
+          28.0,
+          35.0,
+          41.0,
+          48.0,
+          63.0,
+          98.0,
+          126.0,
+          138.0,
+          216.0,
+          229.0
+        ],
+        "atm_iv": [
+          0.1764,
+          0.2054,
+          0.2219,
+          0.225,
+          0.2355,
+          0.2187,
+          0.2239,
+          0.2218,
+          0.224,
+          0.2264,
+          0.2332,
+          0.2313,
+          0.232,
+          0.2293,
+          0.2309,
+          0.231,
+          0.2321,
+          0.2312,
+          0.2333,
+          0.2325
+        ],
+        "fwd_iv": [
+          0.2369,
+          0.2334,
+          0.2364,
+          0.2037,
+          0.247,
+          0.2326,
+          0.23,
+          0.1672,
+          0.2715,
+          0.2275,
+          0.249,
+          0.22,
+          0.24,
+          0.2308,
+          0.2394,
+          0.2361,
+          0.2325,
+          0.238,
+          0.2348,
+          0.2303
+        ],
+        "rich_rel": [
+          null,
+          null,
+          0.0159,
+          -0.0156,
+          0.0052,
+          0.0079,
+          0.001,
+          -0.0315,
+          -0.0048,
+          -0.0112,
+          0.0132,
+          -0.0041,
+          -0.0009,
+          -0.0044,
+          null,
+          0.0021,
+          null,
+          null,
+          0.0009,
+          null
+        ],
+        "label": [
+          null,
+          null,
+          "fair",
+          "fair",
+          "fair",
+          "fair",
+          "fair",
+          "cheap",
+          "fair",
+          "fair",
+          "fair",
+          "fair",
+          "fair",
+          "fair",
+          null,
+          "fair",
+          null,
+          null,
+          "fair",
+          null
+        ],
+        "event": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      "events": [],
+      "windows": {
+        "7-14": {
+          "buy": {
+            "expiration": "2026-11-25",
+            "dte": 12.0,
+            "rich_rel": -0.0315,
+            "label": "cheap",
+            "edge_rel": 0.0325,
+            "event_premium": false,
+            "reason": "2026-11-25 (12d) is the cheapest to buy in the 7-14 day window: IV 3.1% below its neighbours, 3.2% better than the window's median expiry"
+          },
+          "sell": {
+            "expiration": "2026-11-23",
+            "dte": 10.0,
+            "rich_rel": 0.0079,
+            "label": "fair",
+            "edge_rel": 0.0069,
+            "event_premium": false,
+            "reason": "2026-11-23 (10d) is the richest to sell in the 7-14 day window: IV 0.8% above its neighbours, 0.7% better than the window's median expiry"
+          }
+        },
+        "15-25": {
+          "buy": null,
+          "sell": null
+        },
+        "20-35": {
+          "buy": {
+            "expiration": "2026-12-04",
+            "dte": 21.0,
+            "rich_rel": -0.0112,
+            "label": "fair",
+            "edge_rel": 0.0071,
+            "event_premium": false,
+            "reason": "2026-12-04 (21d) is the cheapest to buy in the 20-35 day window: IV 1.1% below its neighbours, 0.7% better than the window's median expiry"
+          },
+          "sell": {
+            "expiration": "2026-12-11",
+            "dte": 28.0,
+            "rich_rel": 0.0132,
+            "label": "fair",
+            "edge_rel": 0.0173,
+            "event_premium": false,
+            "reason": "2026-12-11 (28d) is the richest to sell in the 20-35 day window: IV 1.3% above its neighbours, 1.7% better than the window's median expiry"
+          }
+        },
+        "35-45": {
+          "buy": {
+            "expiration": "2026-12-24",
+            "dte": 41.0,
+            "rich_rel": -0.0009,
+            "label": "fair",
+            "edge_rel": -0.0016,
+            "event_premium": false,
+            "reason": "2026-12-24 (41d): the expiries in the 35-45 day window are priced alike; no expiry edge"
+          },
+          "sell": {
+            "expiration": "2026-12-24",
+            "dte": 41.0,
+            "rich_rel": -0.0009,
+            "label": "fair",
+            "edge_rel": 0.0016,
+            "event_premium": false,
+            "reason": "2026-12-24 (41d): the expiries in the 35-45 day window are priced alike; no expiry edge"
+          }
+        },
+        "45-60": {
+          "buy": null,
+          "sell": null
+        },
+        "60-120": {
+          "buy": null,
+          "sell": null
+        }
+      },
+      "calendars": {
+        "diagonal_35_45_over_7_14": {
+          "front": "2026-11-23",
+          "back": "2026-12-24",
+          "pass": true,
+          "state": "fair",
+          "ratio": 0.995,
+          "fwd_iv": 0.2334,
+          "front_event": false,
+          "reason": "near leg fairly priced against the forward vol: near 23.2% vs forward 23.3% (ratio 0.99). The edge has to come from the pin, not the term structure"
+        },
+        "calendar_45_60_over_7_14": {
+          "front": "2026-11-23",
+          "back": "2026-12-31",
+          "pass": true,
+          "state": "fair",
+          "ratio": 0.997,
+          "fwd_iv": 0.233,
+          "front_event": false,
+          "reason": "near leg fairly priced against the forward vol: near 23.2% vs forward 23.3% (ratio 1.00). The edge has to come from the pin, not the term structure"
+        }
       }
     },
     "flows": {
@@ -1806,6 +3579,339 @@
         ]
       }
     },
+    "surface": {
+      "asof": "2026-11-13",
+      "noisy": false,
+      "baseline_fwd": 0.1553,
+      "cm_iv": {
+        "7": 0.1686,
+        "14": 0.1522,
+        "30": 0.1525,
+        "60": 0.1538,
+        "90": 0.1604,
+        "180": 0.1695
+      },
+      "expiries": {
+        "expiration": [
+          "2026-11-16",
+          "2026-11-17",
+          "2026-11-18",
+          "2026-11-19",
+          "2026-11-20",
+          "2026-11-23",
+          "2026-11-24",
+          "2026-11-25",
+          "2026-11-27",
+          "2026-11-30",
+          "2026-12-04",
+          "2026-12-11",
+          "2026-12-18",
+          "2026-12-24",
+          "2026-12-31",
+          "2027-01-15",
+          "2027-01-29",
+          "2027-02-19",
+          "2027-02-26",
+          "2027-03-19",
+          "2027-03-31",
+          "2027-04-16",
+          "2027-04-30",
+          "2027-06-17",
+          "2027-06-30"
+        ],
+        "dte": [
+          3.0,
+          4.0,
+          5.0,
+          6.0,
+          7.0,
+          10.0,
+          11.0,
+          12.0,
+          14.0,
+          17.0,
+          21.0,
+          28.0,
+          35.0,
+          41.0,
+          48.0,
+          63.0,
+          77.0,
+          98.0,
+          105.0,
+          126.0,
+          138.0,
+          154.0,
+          168.0,
+          216.0,
+          229.0
+        ],
+        "atm_iv": [
+          0.1273,
+          0.1491,
+          0.1621,
+          0.1657,
+          0.1686,
+          0.1541,
+          0.1557,
+          0.1567,
+          0.1522,
+          0.1464,
+          0.1533,
+          0.1572,
+          0.1558,
+          0.1541,
+          0.1536,
+          0.1561,
+          0.1576,
+          0.1611,
+          0.1609,
+          0.1636,
+          0.1619,
+          0.1651,
+          0.1683,
+          0.1727,
+          0.1739
+        ],
+        "fwd_iv": [
+          0.171,
+          0.1704,
+          0.175,
+          0.1552,
+          0.1572,
+          0.1519,
+          0.1456,
+          0.1423,
+          0.1391,
+          0.1554,
+          0.1526,
+          0.1658,
+          0.1477,
+          0.146,
+          0.1637,
+          0.1661,
+          0.1691,
+          0.1762,
+          0.1553,
+          0.174,
+          0.1533,
+          0.1834,
+          0.1978,
+          0.1875,
+          0.2033
+        ],
+        "rich_rel": [
+          null,
+          null,
+          0.0263,
+          0.0251,
+          0.0269,
+          0.0223,
+          0.0097,
+          -0.0006,
+          -0.0116,
+          -0.01,
+          -0.01,
+          0.0204,
+          0.0054,
+          -0.0113,
+          -0.005,
+          0.0005,
+          -0.0018,
+          0.0112,
+          0.0018,
+          0.0011,
+          -0.0105,
+          -0.0125,
+          -0.0021,
+          0.0011,
+          null
+        ],
+        "label": [
+          null,
+          null,
+          "rich",
+          "rich",
+          "rich",
+          "rich",
+          "fair",
+          "fair",
+          "fair",
+          "fair",
+          "fair",
+          "rich",
+          "fair",
+          "fair",
+          "fair",
+          "fair",
+          "fair",
+          "fair",
+          "fair",
+          "fair",
+          "fair",
+          "fair",
+          "fair",
+          "fair",
+          null
+        ],
+        "event": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      "events": [],
+      "windows": {
+        "7-14": {
+          "buy": {
+            "expiration": "2026-11-27",
+            "dte": 14.0,
+            "rich_rel": -0.0116,
+            "label": "fair",
+            "edge_rel": 0.0213,
+            "event_premium": false,
+            "reason": "2026-11-27 (14d) is the cheapest to buy in the 7-14 day window: IV 1.2% below its neighbours, 2.1% better than the window's median expiry"
+          },
+          "sell": {
+            "expiration": "2026-11-23",
+            "dte": 10.0,
+            "rich_rel": 0.0223,
+            "label": "rich",
+            "edge_rel": 0.0126,
+            "event_premium": false,
+            "reason": "2026-11-23 (10d) is the richest to sell in the 7-14 day window: IV 2.2% above its neighbours, 1.3% better than the window's median expiry"
+          }
+        },
+        "15-25": {
+          "buy": {
+            "expiration": "2026-12-04",
+            "dte": 21.0,
+            "rich_rel": -0.01,
+            "label": "fair",
+            "edge_rel": 0.0,
+            "event_premium": false,
+            "reason": "2026-12-04 (21d): the expiries in the 15-25 day window are priced alike; no expiry edge"
+          },
+          "sell": {
+            "expiration": "2026-12-04",
+            "dte": 21.0,
+            "rich_rel": -0.01,
+            "label": "fair",
+            "edge_rel": -0.0,
+            "event_premium": false,
+            "reason": "2026-12-04 (21d): the expiries in the 15-25 day window are priced alike; no expiry edge"
+          }
+        },
+        "20-35": {
+          "buy": {
+            "expiration": "2026-12-04",
+            "dte": 21.0,
+            "rich_rel": -0.01,
+            "label": "fair",
+            "edge_rel": 0.0154,
+            "event_premium": false,
+            "reason": "2026-12-04 (21d) is the cheapest to buy in the 20-35 day window: IV 1.0% below its neighbours, 1.5% better than the window's median expiry"
+          },
+          "sell": {
+            "expiration": "2026-12-11",
+            "dte": 28.0,
+            "rich_rel": 0.0204,
+            "label": "rich",
+            "edge_rel": 0.015,
+            "event_premium": false,
+            "reason": "2026-12-11 (28d) is the richest to sell in the 20-35 day window: IV 2.0% above its neighbours, 1.5% better than the window's median expiry"
+          }
+        },
+        "35-45": {
+          "buy": {
+            "expiration": "2026-12-24",
+            "dte": 41.0,
+            "rich_rel": -0.0113,
+            "label": "fair",
+            "edge_rel": 0.0083,
+            "event_premium": false,
+            "reason": "2026-12-24 (41d) is the cheapest to buy in the 35-45 day window: IV 1.1% below its neighbours, 0.8% better than the window's median expiry"
+          },
+          "sell": {
+            "expiration": "2026-12-18",
+            "dte": 35.0,
+            "rich_rel": 0.0054,
+            "label": "fair",
+            "edge_rel": 0.0083,
+            "event_premium": false,
+            "reason": "2026-12-18 (35d) is the richest to sell in the 35-45 day window: IV 0.5% above its neighbours, 0.8% better than the window's median expiry"
+          }
+        },
+        "45-60": {
+          "buy": null,
+          "sell": null
+        },
+        "60-120": {
+          "buy": {
+            "expiration": "2027-01-29",
+            "dte": 77.0,
+            "rich_rel": -0.0018,
+            "label": "fair",
+            "edge_rel": 0.0029,
+            "event_premium": false,
+            "reason": "2027-01-29 (77d): the expiries in the 60-120 day window are priced alike; no expiry edge"
+          },
+          "sell": {
+            "expiration": "2027-02-19",
+            "dte": 98.0,
+            "rich_rel": 0.0112,
+            "label": "fair",
+            "edge_rel": 0.01,
+            "event_premium": false,
+            "reason": "2027-02-19 (98d) is the richest to sell in the 60-120 day window: IV 1.1% above its neighbours, 1.0% better than the window's median expiry"
+          }
+        }
+      },
+      "calendars": {
+        "diagonal_35_45_over_7_14": {
+          "front": "2026-11-23",
+          "back": "2026-12-24",
+          "pass": true,
+          "state": "fair",
+          "ratio": 1.075,
+          "fwd_iv": 0.1523,
+          "front_event": false,
+          "reason": "near leg fairly priced against the forward vol: near 16.4% vs forward 15.2% (ratio 1.07). The edge has to come from the pin, not the term structure"
+        },
+        "calendar_45_60_over_7_14": {
+          "front": "2026-11-23",
+          "back": "2026-12-31",
+          "pass": true,
+          "state": "fair",
+          "ratio": 1.061,
+          "fwd_iv": 0.1541,
+          "front_event": false,
+          "reason": "near leg fairly priced against the forward vol: near 16.4% vs forward 15.4% (ratio 1.06). The edge has to come from the pin, not the term structure"
+        }
+      }
+    },
     "flows": {
       "charm_bp_day": 37.72,
       "vanna_bp_per_volpt": 32.74,
@@ -2168,6 +4274,335 @@
         ]
       }
     },
+    "surface": {
+      "asof": "2026-11-13",
+      "noisy": false,
+      "baseline_fwd": 0.255,
+      "cm_iv": {
+        "7": 0.3027,
+        "14": 0.2687,
+        "30": 0.2546,
+        "60": 0.2452,
+        "90": 0.2444,
+        "180": 0.2467
+      },
+      "expiries": {
+        "expiration": [
+          "2026-11-16",
+          "2026-11-17",
+          "2026-11-18",
+          "2026-11-19",
+          "2026-11-20",
+          "2026-11-23",
+          "2026-11-24",
+          "2026-11-25",
+          "2026-11-27",
+          "2026-11-30",
+          "2026-12-04",
+          "2026-12-11",
+          "2026-12-18",
+          "2026-12-24",
+          "2026-12-31",
+          "2027-01-15",
+          "2027-01-29",
+          "2027-02-19",
+          "2027-03-19",
+          "2027-03-31",
+          "2027-06-17",
+          "2027-06-30"
+        ],
+        "dte": [
+          3.0,
+          4.0,
+          5.0,
+          6.0,
+          7.0,
+          10.0,
+          11.0,
+          12.0,
+          14.0,
+          17.0,
+          21.0,
+          28.0,
+          35.0,
+          41.0,
+          48.0,
+          63.0,
+          77.0,
+          98.0,
+          126.0,
+          138.0,
+          216.0,
+          229.0
+        ],
+        "atm_iv": [
+          0.2206,
+          0.2637,
+          0.289,
+          0.2979,
+          0.3027,
+          0.2749,
+          0.2772,
+          0.2795,
+          0.2687,
+          0.2565,
+          0.2637,
+          0.2624,
+          0.2583,
+          0.2532,
+          0.2492,
+          0.2475,
+          0.2449,
+          0.2434,
+          0.2446,
+          0.2449,
+          0.2472,
+          0.2466
+        ],
+        "fwd_iv": [
+          0.2962,
+          0.3088,
+          0.3172,
+          0.2878,
+          0.28,
+          0.2623,
+          0.2538,
+          0.2586,
+          0.2186,
+          0.2551,
+          0.2481,
+          0.2549,
+          0.2378,
+          0.2244,
+          0.243,
+          0.2455,
+          0.2403,
+          0.2411,
+          0.2452,
+          0.2667,
+          0.2489,
+          0.2485
+        ],
+        "rich_rel": [
+          null,
+          null,
+          0.0086,
+          0.0275,
+          0.0341,
+          0.0272,
+          0.0234,
+          0.0204,
+          0.0027,
+          0.0004,
+          -0.0018,
+          0.0106,
+          0.0038,
+          -0.0081,
+          -0.0068,
+          -0.0005,
+          -0.0019,
+          -0.0069,
+          -0.0078,
+          null,
+          -0.0022,
+          null
+        ],
+        "label": [
+          null,
+          null,
+          "fair",
+          "rich",
+          "rich",
+          "rich",
+          "rich",
+          "rich",
+          "fair",
+          "fair",
+          "fair",
+          "fair",
+          "fair",
+          "fair",
+          "fair",
+          "fair",
+          "fair",
+          "fair",
+          "fair",
+          null,
+          "fair",
+          null
+        ],
+        "event": [
+          false,
+          true,
+          true,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      "events": [
+        {
+          "expiration": "2026-11-17",
+          "bd": 2,
+          "gap_bd": 1,
+          "fwd_iv": 0.3088,
+          "baseline": 0.255,
+          "excess_pts": 0.0538
+        },
+        {
+          "expiration": "2026-11-18",
+          "bd": 3,
+          "gap_bd": 1,
+          "fwd_iv": 0.3172,
+          "baseline": 0.255,
+          "excess_pts": 0.0622
+        }
+      ],
+      "windows": {
+        "7-14": {
+          "buy": {
+            "expiration": "2026-11-27",
+            "dte": 14.0,
+            "rich_rel": 0.0027,
+            "label": "fair",
+            "edge_rel": 0.0207,
+            "event_premium": false,
+            "reason": "2026-11-27 (14d) is the cheapest to buy in the 7-14 day window: IV 0.3% above its neighbours, 2.1% better than the window's median expiry"
+          },
+          "sell": {
+            "expiration": "2026-11-20",
+            "dte": 7.0,
+            "rich_rel": 0.0341,
+            "label": "rich",
+            "edge_rel": 0.0107,
+            "event_premium": true,
+            "reason": "2026-11-20 (7d) is the richest to sell in the 7-14 day window: IV 3.4% above its neighbours, 1.1% better than the window's median expiry; its richness is event premium (a priced event falls just before it), so selling it means carrying that event"
+          }
+        },
+        "15-25": {
+          "buy": {
+            "expiration": "2026-12-04",
+            "dte": 21.0,
+            "rich_rel": -0.0018,
+            "label": "fair",
+            "edge_rel": 0.0011,
+            "event_premium": false,
+            "reason": "2026-12-04 (21d): the expiries in the 15-25 day window are priced alike; no expiry edge"
+          },
+          "sell": {
+            "expiration": "2026-12-04",
+            "dte": 21.0,
+            "rich_rel": -0.0018,
+            "label": "fair",
+            "edge_rel": -0.0011,
+            "event_premium": false,
+            "reason": "2026-12-04 (21d): the expiries in the 15-25 day window are priced alike; no expiry edge"
+          }
+        },
+        "20-35": {
+          "buy": {
+            "expiration": "2026-12-04",
+            "dte": 21.0,
+            "rich_rel": -0.0018,
+            "label": "fair",
+            "edge_rel": 0.0056,
+            "event_premium": false,
+            "reason": "2026-12-04 (21d) is the cheapest to buy in the 20-35 day window: IV 0.2% below its neighbours, 0.6% better than the window's median expiry"
+          },
+          "sell": {
+            "expiration": "2026-12-11",
+            "dte": 28.0,
+            "rich_rel": 0.0106,
+            "label": "fair",
+            "edge_rel": 0.0068,
+            "event_premium": false,
+            "reason": "2026-12-11 (28d) is the richest to sell in the 20-35 day window: IV 1.1% above its neighbours, 0.7% better than the window's median expiry"
+          }
+        },
+        "35-45": {
+          "buy": {
+            "expiration": "2026-12-24",
+            "dte": 41.0,
+            "rich_rel": -0.0081,
+            "label": "fair",
+            "edge_rel": 0.0059,
+            "event_premium": false,
+            "reason": "2026-12-24 (41d) is the cheapest to buy in the 35-45 day window: IV 0.8% below its neighbours, 0.6% better than the window's median expiry"
+          },
+          "sell": {
+            "expiration": "2026-12-18",
+            "dte": 35.0,
+            "rich_rel": 0.0038,
+            "label": "fair",
+            "edge_rel": 0.006,
+            "event_premium": false,
+            "reason": "2026-12-18 (35d) is the richest to sell in the 35-45 day window: IV 0.4% above its neighbours, 0.6% better than the window's median expiry"
+          }
+        },
+        "45-60": {
+          "buy": null,
+          "sell": null
+        },
+        "60-120": {
+          "buy": {
+            "expiration": "2027-02-19",
+            "dte": 98.0,
+            "rich_rel": -0.0069,
+            "label": "fair",
+            "edge_rel": 0.005,
+            "event_premium": false,
+            "reason": "2027-02-19 (98d) is the cheapest to buy in the 60-120 day window: IV 0.7% below its neighbours, 0.5% better than the window's median expiry"
+          },
+          "sell": {
+            "expiration": "2027-01-29",
+            "dte": 77.0,
+            "rich_rel": -0.0019,
+            "label": "fair",
+            "edge_rel": -0.0,
+            "event_premium": false,
+            "reason": "2027-01-29 (77d): the expiries in the 60-120 day window are priced alike; no expiry edge"
+          }
+        }
+      },
+      "calendars": {
+        "diagonal_35_45_over_7_14": {
+          "front": "2026-11-20",
+          "back": "2026-12-24",
+          "pass": true,
+          "state": "front_rich",
+          "ratio": 1.223,
+          "fwd_iv": 0.2439,
+          "front_event": true,
+          "reason": "near leg rich against the forward vol: near 29.8% vs forward 24.4% (ratio 1.22). Favourable pricing; the richness is a priced event before the near expiry, so the calendar is short that event"
+        },
+        "calendar_45_60_over_7_14": {
+          "front": "2026-11-20",
+          "back": "2026-12-31",
+          "pass": true,
+          "state": "front_rich",
+          "ratio": 1.223,
+          "fwd_iv": 0.2438,
+          "front_event": true,
+          "reason": "near leg rich against the forward vol: near 29.8% vs forward 24.4% (ratio 1.22). Favourable pricing; the richness is a priced event before the near expiry, so the calendar is short that event"
+        }
+      }
+    },
     "flows": {
       "charm_bp_day": 29.63,
       "vanna_bp_per_volpt": 15.88,
@@ -2299,6 +4734,161 @@
         ]
       }
     },
+    "surface": {
+      "asof": "2026-11-13",
+      "noisy": true,
+      "baseline_fwd": 0.3377,
+      "cm_iv": {
+        "7": 0.3759,
+        "14": 0.3297,
+        "30": 0.31,
+        "60": 0.3217,
+        "90": 0.3195,
+        "180": 0.2995
+      },
+      "expiries": {
+        "expiration": [
+          "2026-11-20",
+          "2026-11-27",
+          "2026-12-04",
+          "2026-12-11",
+          "2026-12-18",
+          "2026-12-24",
+          "2026-12-31",
+          "2027-01-15",
+          "2027-03-19",
+          "2027-04-16",
+          "2027-06-17"
+        ],
+        "dte": [
+          7.0,
+          14.0,
+          21.0,
+          28.0,
+          35.0,
+          41.0,
+          48.0,
+          63.0,
+          126.0,
+          154.0,
+          216.0
+        ],
+        "atm_iv": [
+          0.3759,
+          0.3297,
+          0.3151,
+          0.3189,
+          0.3279,
+          0.3092,
+          0.3206,
+          0.3266,
+          0.3162,
+          0.2998,
+          0.2994
+        ],
+        "fwd_iv": [
+          0.3704,
+          0.299,
+          0.2795,
+          0.3252,
+          0.3566,
+          0.1635,
+          0.4121,
+          0.3503,
+          0.307,
+          0.2122,
+          0.2979
+        ],
+        "rich_rel": [
+          null,
+          0.0078,
+          -0.0358,
+          0.0001,
+          0.0311,
+          -0.0498,
+          -0.0002,
+          null,
+          null,
+          null,
+          null
+        ],
+        "label": [
+          null,
+          "fair",
+          "cheap",
+          "fair",
+          "rich",
+          "cheap",
+          "fair",
+          null,
+          null,
+          null,
+          null
+        ],
+        "event": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      "events": [],
+      "windows": {
+        "7-14": {
+          "buy": null,
+          "sell": null
+        },
+        "15-25": {
+          "buy": null,
+          "sell": null
+        },
+        "20-35": {
+          "buy": null,
+          "sell": null
+        },
+        "35-45": {
+          "buy": null,
+          "sell": null
+        },
+        "45-60": {
+          "buy": null,
+          "sell": null
+        },
+        "60-120": {
+          "buy": null,
+          "sell": null
+        }
+      },
+      "calendars": {
+        "diagonal_35_45_over_7_14": {
+          "front": "2026-11-20",
+          "back": "2026-12-24",
+          "pass": null,
+          "state": "unknown",
+          "ratio": null,
+          "fwd_iv": null,
+          "front_event": null,
+          "reason": "forward vol not measurable: the chain is too thin, its expiries scatter too much to compare"
+        },
+        "calendar_45_60_over_7_14": {
+          "front": "2026-11-20",
+          "back": "2026-12-31",
+          "pass": null,
+          "state": "unknown",
+          "ratio": null,
+          "fwd_iv": null,
+          "front_event": null,
+          "reason": "forward vol not measurable: the chain is too thin, its expiries scatter too much to compare"
+        }
+      }
+    },
     "flows": {
       "charm_bp_day": 20.32,
       "vanna_bp_per_volpt": 5.22,
@@ -2316,6 +4906,42 @@
       "term_state": "contango(short-cheap)",
       "vix_chg_1d_pct": 0.032086,
       "vix_20d_change_pct": -0.034517
+    },
+    "long_vol": {
+      "tenors": {
+        "vix3m": {
+          "level": 20.62,
+          "pct_1y": 66.3,
+          "pct_5y": 55.4,
+          "state": "NEUTRAL",
+          "tenor_days": 93,
+          "ratio_to_vix": 1.068,
+          "ratio_pct_1y": 20.6
+        },
+        "vix6m": {
+          "level": 22.03,
+          "pct_1y": 50.8,
+          "pct_5y": 51.4,
+          "state": "NEUTRAL",
+          "tenor_days": 184,
+          "ratio_to_vix": 1.141,
+          "ratio_pct_1y": 18.7
+        },
+        "vix1y": {
+          "level": 22.85,
+          "pct_1y": 34.5,
+          "pct_5y": 48.7,
+          "state": "NEUTRAL",
+          "tenor_days": 365,
+          "ratio_to_vix": 1.184,
+          "ratio_pct_1y": 19.0
+        }
+      },
+      "window_sessions": 252,
+      "asof": "2026-11-13",
+      "fetched_utc": "2026-11-15T17:54:31.683696+00:00",
+      "stale": false,
+      "source": "cboe daily history (read fresh, not stored)"
     }
   }
 }
