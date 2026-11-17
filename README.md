@@ -21,6 +21,7 @@ rebuilds the dashboard, and commits.
 | `gamma_exposure.py` | chart builder, importable analysis functions |
 | `gex_capture.py` | daily snapshot + metrics |
 | `flow_intensity.py` | Vanna/charm flow intensity: 0-100 score and A-F grade of today's dealer hedging flows against their own history; stores `history/flow_metrics.csv` |
+| `flow_outcomes.py` | Opex / flow-intensity outcome log: each graded session's flow read, its flags (roll-off, post-opex, high vanna selling/buying, high charm bid) and the 1/5-day return and 5-day realized vol that followed; rebuilds `history/flow_outcomes.csv` daily; `python flow_outcomes.py --opex` prints the summary and per-expiry table |
 | `rsi_divergence.py` | RSI divergence gate (G10): 1H / 1D / 1W state and A-F grade for a trade's bias; stdlib only, takes bars from the caller |
 | `build_dashboard.py` | renders `docs/index.html` |
 | `history/raw/<feed-date>/<SYM>.parquet` | full chain, every contract |
@@ -111,7 +112,7 @@ CHEAP (30th or below) / NEUTRAL / RICH (70th or above) state, for timing
 staged long-dated tranches. Its Cboe history is read fresh at most every six
 hours and not stored. All additive: a reader that ignores them is unaffected.
 Apart from `long_vol`, nothing new is fetched, and nothing new is stored.
-Tests: `python -m pytest test_vol_metrics.py test_vol_surface.py test_rsi_divergence.py test_flow_intensity.py`.
+Tests: `python -m pytest test_vol_metrics.py test_vol_surface.py test_rsi_divergence.py test_flow_intensity.py test_flow_outcomes.py`.
 
 `rsi_divergence.py` is not wired into `latest.json`: this pipeline holds no
 price bars for the index ETFs (it reads option chains), so each agent passes the
