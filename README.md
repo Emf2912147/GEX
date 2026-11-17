@@ -60,15 +60,27 @@ today's charm against its own median of the previous 20 sessions (null under
 an assumption, not observed positioning.
 
 Since 2026-11-17 each record also carries a `flow_intensity` block
-(`flow_intensity.py`) and `market.flow_intensity` the SPX/QQQ/IWM average:
+(`flow_intensity.py`) and `market.flow_intensity` the SPX/QQQ/IWM average.
+Since the same day's update it measures every expiry from 0.5 to 65 calendar
+days, which always holds the front monthly AND the next one, in dollars of
+underlying dealers trade (same model and convention as `dealer_flows.py`,
+whose own `flows` block keeps its 30-day window):
 
 | Field | Meaning |
 |---|---|
 | `score`, `grade`, `label` | 0-100 = 0.5 x charm percentile + 0.5 x vanna percentile; A >= 80 very strong, B 60-79, C 40-59, D 20-39, F < 20. No grade under 15 prior sessions |
 | `direction` | `dealer buying`, `dealer selling` or `mixed` (charm and vanna disagree) |
-| `charm_bp_day`, `charm_pct` | charm flow and the percentile of its size over the last 60 sessions |
-| `vol_gap_pts`, `vanna_potential_bp`, `vanna_pct` | (30d IV - 20d RV) in vol points, clipped +/-10; vanna flow if IV moves to realized; percentile of its size |
-| `opex_date`, `sessions_to_opex`, `opex_oi_share`, `rolloff_risk` | next monthly expiry, sessions to it, its share of the 0.5-30 day OI; roll-off flag at <= 5 sessions and >= 30% |
+| `charm_usd_day`, `charm_pct` | charm flow in $/day and the percentile of its size over the last 60 sessions |
+| `vanna_usd_per_volpt`, `vol_gap_pts`, `vanna_potential_usd`, `vanna_pct` | vanna in $ per vol point; (30d IV - 20d RV) in points, clipped +/-10; vanna flow if IV moves to realized; percentile of its size |
+| `front`, `next` | the same flows split at the front monthly: `front` = expiries on or before it, `next` = after it (the next monthly and its weeklies); front + next = total |
+| `opex_date`, `sessions_to_opex`, `opex_oi_share`, `front_charm_share`, `rolloff_risk` | front monthly, sessions to it, its share of the window's OI, the share of today's charm it carries; roll-off flag at <= 5 sessions and >= 50% |
+
+Effect of including the next month (all 41 stored sessions re-scored, 104
+graded SPX/SPY/QQQ/IWM readings): score rank correlation with the 30-day
+version 0.85, median shift 5 points, same grade 65%, within one grade 94%.
+Since Oct 21 (deeper history): correlation 0.94, median shift 3 points, same
+grade 80%. The larger differences sit in early October (thin history) and on
+expiration days, where the dollar charm now drops with the expiring monthly.
 
 Information only: the weights and the IV-toward-realized assumption are not
 fitted, and over the first 22 graded sessions the score showed no reliable

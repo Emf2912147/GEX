@@ -3,30 +3,47 @@
 Vanna / charm flow intensity: how strong the dealer hedging flows are today,
 as a 0-100 score and an A-F grade (requested by Eugenio, 2026-11-17).
 
-The raw flows come from dealer_flows.py (0.5-30 DTE window, dealers assumed
-long calls / short puts, Black-Scholes greeks, in basis points of the window's
-open-interest notional):
+What is measured (user rule 2026-11-17): every expiry from 0.5 to
+HORIZON_DTE (65) calendar days. That window ALWAYS holds the front monthly
+and the next one (the next monthly is never more than 64 days from a
+session, checked 2026-2030), so in the run-up to an expiration the
+following month's exposure is counted instead of appearing all at once 30
+days out. A fixed horizon also means no step on expiration day: contracts
+roll in one expiry at a time.
 
-    charm_bp_day         dealer hedge trade from one calendar day of time
-                         decay. Positive = dealers BUY.
-    vanna_bp_per_volpt   dealer hedge trade if implied vol FALLS one point.
+Flows are in DOLLARS of underlying the dealers trade (dealers assumed long
+calls / short puts, Black-Scholes greeks from dealer_flows.py):
+
+    charm_usd_day         dealer hedge trade from one calendar day of time
+                          decay. Positive = dealers BUY.
+    vanna_usd_per_volpt   dealer hedge trade if implied vol FALLS one point.
+    front_* / next_*      the same split at the front monthly: front = every
+                          expiry on or before it; next = everything after it
+                          in the window (the next monthly and its weeklies).
+                          front + next = total.
+
+Why dollars and not basis points of open-interest notional: any notional
+base jumps when a large quarterly (SPX December holds ~60% of the open
+interest within 65 days) enters it, which shrank every reading by up to half
+with no change in the flows. The percentile ranking below already makes
+symbols comparable.
 
 On its own the vanna number is a sensitivity, not a flow: nothing happens
 unless implied vol moves. This module turns it into an expected flow with
 an explicit, simple assumption: implied vol drifts toward realized vol.
 
-    vol_gap_pts          (30d ATM IV - 20d realized vol) x 100, clipped to
-                         +/-10 points. Positive = IV rich, room to fall.
-    vanna_potential_bp   vanna_bp_per_volpt x vol_gap_pts. Positive =
-                         dealer buying if IV closes the gap; negative =
-                         dealer selling (IV below realized, likely to rise).
+    vol_gap_pts           (30d ATM IV - 20d realized vol) x 100, clipped to
+                          +/-10 points. Positive = IV rich, room to fall.
+    vanna_potential_usd   vanna_usd_per_volpt x vol_gap_pts. Positive =
+                          dealer buying if IV closes the gap; negative =
+                          dealer selling (IV below realized, likely to rise).
 
 Intensity ranks each flow's SIZE against the symbol's own stored history
 (the same session and the up-to-60 before it), so "strong" means strong for
 this market, not big in dollars:
 
-    charm_pct            percentile of |charm_bp_day|
-    vanna_pct            percentile of |vanna_potential_bp|
+    charm_pct            percentile of |charm_usd_day|
+    vanna_pct            percentile of |vanna_potential_usd|
     score                0.5 x charm_pct + 0.5 x vanna_pct   (0-100)
 
     Grade  A >= 80 very strong   B 60-79 strong   C 40-59 normal
@@ -36,10 +53,11 @@ this market, not big in dollars:
 Direction is reported separately: both flows positive = dealer buying
 (a supportive bid), both negative = dealer selling, otherwise mixed.
 
-Opex roll-off: the share of the window's open-interest notional that
-expires at the next monthly expiration (third Friday) and how many
-sessions away it is. A large share close to expiry means today's charm
-bid is about to roll off (the post-opex "window of weakness").
+Opex roll-off: the share of today's charm flow that comes from the front
+monthly and its weeklies (front_charm_share) and how many sessions away the
+front monthly is. Flagged at <= 5 sessions and >= 50%: most of today's
+charm bid ends with that expiration (the post-opex "window of weakness").
+What remains is the next month's piece, shown separately.
 
 Status: INFORMATION ONLY. The equal weights and the IV-toward-RV
 assumption are starting choices, not fitted. dealer_flows' own support
@@ -69,9 +87,15 @@ import market_calendar as mc
 import vol_metrics as vm
 
 HISTORY_FILE = "flow_metrics.csv"
-COLUMNS = ["session_date", "symbol", "charm_bp_day", "vanna_bp_per_volpt",
-           "iv30", "rv20", "vol_gap_pts", "vanna_potential_bp",
-           "sessions_to_opex", "opex_date", "opex_oi_share"]
+COLUMNS = ["session_date", "symbol", "charm_usd_day", "vanna_usd_per_volpt",
+           "iv30", "rv20", "vol_gap_pts", "vanna_potential_usd",
+           "sessions_to_opex", "opex_date", "opex_oi_share",
+           "next_opex_date", "next_oi_share",
+           "front_charm_usd_day", "front_vanna_usd_per_volpt",
+           "next_charm_usd_day", "next_vanna_usd_per_volpt", "window_max_dte"]
+HORIZON_DTE = 65.0     # calendar days; always holds the front and next monthly
+ROLLOFF_SESSIONS = 5   # roll-off flag: front monthly this close ...
+ROLLOFF_SHARE = 0.5    # ... and carrying at least this share of the charm bid
 LOOKBACK = 60          # prior sessions ranked against
 MIN_HISTORY = 15       # prior sessions needed before a grade is given
 GAP_CLIP = 10.0        # vol points
@@ -139,21 +163,57 @@ def _rv20(histdir: str, metrics: pd.DataFrame | None, symbol: str, session: str)
     return vm.realized_vol(vm._closes_from_metrics(m, symbol))
 
 
-def _opex_share(raw: pd.DataFrame, opex: date) -> float | None:
+def next_monthly(opex: date) -> date:
+    """The monthly expiration after `opex`."""
+    return monthly_opex(opex + timedelta(days=1))
+
+
+def two_month_flows(raw: pd.DataFrame, symbol: str, front: date, nxt: date) -> dict | None:
+    """Charm and vanna in dollars over every expiry from 0.5 to HORIZON_DTE
+    days, split at the front monthly (see the module docstring)."""
     df = raw.copy()
     df["dte"] = pd.to_numeric(df["dte"], errors="coerce")
-    df = df[(df["dte"] >= dfl.MIN_DTE) & (df["dte"] <= dfl.MAX_DTE) & (df["oi"] > 0)]
+    keep = ((df["dte"] >= dfl.MIN_DTE) & (df["dte"] <= HORIZON_DTE)
+            & (df["iv"] > 0) & (df["oi"] > 0))
+    df = df[keep]
     if df.empty:
         return None
     exp = pd.to_datetime(df["expiry"]).dt.date
-    total = float(df["oi"].sum())
-    return float(df.loc[exp == opex, "oi"].sum()) / total if total > 0 else None
+    S = float(df["spot"].iloc[0])
+    q = dfl.DIVIDEND_YIELD.get(symbol.upper(), 0.0)
+    T = df["dte"].to_numpy(float) / 365.0
+    K = df["strike"].to_numpy(float)
+    iv = df["iv"].to_numpy(float)
+    is_call = (df["type"] == "C").to_numpy()
+    oi = df["oi"].to_numpy(float)
+    weight = np.where(is_call, 1.0, -1.0) * oi * 100.0 * S
+    # hedge trade = minus the change in dealer delta (as in dealer_flows)
+    charm_usd = -(weight * dfl.charm(S, K, T, iv, is_call, q)) / 365.0
+    vanna_usd = (weight * dfl.vanna(S, K, T, iv, q)) * 0.01
+    is_front = (exp <= front).to_numpy()
+    total_oi = float(oi.sum())
+    return {
+        "charm_usd_day": float(charm_usd.sum()),
+        "vanna_usd_per_volpt": float(vanna_usd.sum()),
+        "front_charm_usd_day": float(charm_usd[is_front].sum()),
+        "front_vanna_usd_per_volpt": float(vanna_usd[is_front].sum()),
+        "next_charm_usd_day": float(charm_usd[~is_front].sum()),
+        "next_vanna_usd_per_volpt": float(vanna_usd[~is_front].sum()),
+        "opex_oi_share": float(oi[(exp == front).to_numpy()].sum()) / total_oi,
+        "next_oi_share": float(oi[(exp == nxt).to_numpy()].sum()) / total_oi,
+        "window_max_dte": float(df["dte"].max()),
+    }
 
 
 def session_row(raw: pd.DataFrame, symbol: str, session: str, histdir: str,
                 metrics: pd.DataFrame | None) -> dict | None:
     """One stored row of flow metrics for a symbol's chain."""
-    f = dfl.flows(raw, symbol)
+    sday = pd.Timestamp(session).date()
+    # the book is end-of-day: on expiration day the monthly is already gone,
+    # so the front is the following one
+    opex = monthly_opex(sday + timedelta(days=1))
+    nxt = next_monthly(opex)
+    f = two_month_flows(raw, symbol, opex, nxt)
     if f is None:
         return None
     spot = float(raw["spot"].iloc[0])
@@ -162,19 +222,25 @@ def session_row(raw: pd.DataFrame, symbol: str, session: str, histdir: str,
     gap = None
     if iv30 and rv20:
         gap = max(-GAP_CLIP, min(GAP_CLIP, (iv30 - rv20) * 100.0))
-    sday = pd.Timestamp(session).date()
-    opex = monthly_opex(sday)
+    r3 = lambda v: round(v)  # noqa: E731  (whole dollars)
     return {
         "session_date": session, "symbol": symbol,
-        "charm_bp_day": round(f["charm_bp_day"], 3),
-        "vanna_bp_per_volpt": round(f["vanna_bp_per_volpt"], 3),
+        "charm_usd_day": r3(f["charm_usd_day"]),
+        "vanna_usd_per_volpt": r3(f["vanna_usd_per_volpt"]),
         "iv30": round(iv30, 5) if iv30 else None,
         "rv20": round(rv20, 5) if rv20 else None,
         "vol_gap_pts": round(gap, 3) if gap is not None else None,
-        "vanna_potential_bp": round(f["vanna_bp_per_volpt"] * gap, 3) if gap is not None else None,
+        "vanna_potential_usd": r3(f["vanna_usd_per_volpt"] * gap) if gap is not None else None,
         "sessions_to_opex": sessions_between(sday, opex),
         "opex_date": opex.isoformat(),
-        "opex_oi_share": round(s, 4) if (s := _opex_share(raw, opex)) is not None else None,
+        "opex_oi_share": round(f["opex_oi_share"], 4),
+        "next_opex_date": nxt.isoformat(),
+        "next_oi_share": round(f["next_oi_share"], 4),
+        "front_charm_usd_day": r3(f["front_charm_usd_day"]),
+        "front_vanna_usd_per_volpt": r3(f["front_vanna_usd_per_volpt"]),
+        "next_charm_usd_day": r3(f["next_charm_usd_day"]),
+        "next_vanna_usd_per_volpt": r3(f["next_vanna_usd_per_volpt"]),
+        "window_max_dte": round(f["window_max_dte"], 1),
     }
 
 
@@ -228,21 +294,39 @@ def _direction(charm: float, vanna_pot: float | None) -> str:
     return "mixed"
 
 
+def _num(v):
+    return None if v is None or (isinstance(v, float) and math.isnan(v)) or pd.isna(v) else float(v)
+
+
+def _bucket(today: dict, which: str) -> dict | None:
+    """Front-monthly or next-monthly piece of today's flows (same units as the
+    totals, so front + next = total). None for rows stored before 2026-11-17."""
+    ch = _num(today.get(f"{which}_charm_usd_day"))
+    va = _num(today.get(f"{which}_vanna_usd_per_volpt"))
+    if ch is None or va is None:
+        return None
+    gap = _num(today.get("vol_gap_pts"))
+    return {"expiry": today.get("opex_date" if which == "front" else "next_opex_date"),
+            "charm_usd_day": round(ch), "vanna_usd_per_volpt": round(va),
+            "vanna_potential_usd": round(va * gap) if gap is not None else None,
+            "oi_share_monthly": _num(today.get("opex_oi_share" if which == "front" else "next_oi_share"))}
+
+
 def score_row(today: dict, prior: pd.DataFrame) -> dict:
     """Intensity for one session against the symbol's prior sessions
     (oldest first; only the last LOOKBACK are used). The ranking pool
     includes today, so a record reading scores near 100."""
     prior = prior.tail(LOOKBACK)
     n = len(prior)
-    charm = float(today["charm_bp_day"])
-    vpot = today.get("vanna_potential_bp")
+    charm = float(today["charm_usd_day"])
+    vpot = today.get("vanna_potential_usd")
     vpot = None if vpot is None or pd.isna(vpot) else float(vpot)
 
-    charm_pool = list(prior["charm_bp_day"].abs()) + [abs(charm)]
+    charm_pool = list(prior["charm_usd_day"].abs()) + [abs(charm)]
     charm_pct = pct_rank(charm_pool, abs(charm))
     vanna_pct, vanna_hist = None, 0
     if vpot is not None:
-        vp = prior["vanna_potential_bp"].dropna().abs()
+        vp = prior["vanna_potential_usd"].dropna().abs()
         vanna_hist = len(vp)
         if len(vp) >= MIN_HISTORY:
             vanna_pct = pct_rank(list(vp) + [abs(vpot)], abs(vpot))
@@ -257,8 +341,10 @@ def score_row(today: dict, prior: pd.DataFrame) -> dict:
 
     opex_share = today.get("opex_oi_share")
     s_to = today.get("sessions_to_opex")
-    rolloff = bool(opex_share is not None and not pd.isna(opex_share) and s_to is not None
-                   and int(s_to) <= 5 and float(opex_share) >= 0.30)
+    fch = _num(today.get("front_charm_usd_day"))
+    front_share = fch / charm if fch is not None and charm > 0 else None
+    rolloff = bool(front_share is not None and s_to is not None and not pd.isna(s_to)
+                   and int(s_to) <= ROLLOFF_SESSIONS and front_share >= ROLLOFF_SHARE)
 
     note = None
     if n < MIN_HISTORY:
@@ -274,17 +360,20 @@ def score_row(today: dict, prior: pd.DataFrame) -> dict:
         "score": round(score, 1) if score is not None else None,
         "grade": g, "label": word,
         "direction": _direction(charm, vpot),
-        "charm_bp_day": round(charm, 2),
+        "charm_usd_day": round(charm),
         "charm_pct": round(charm_pct, 1) if score is not None else None,
-        "vanna_bp_per_volpt": round(float(today["vanna_bp_per_volpt"]), 2),
+        "vanna_usd_per_volpt": round(float(today["vanna_usd_per_volpt"])),
         "vol_gap_pts": None if today.get("vol_gap_pts") is None or pd.isna(today.get("vol_gap_pts"))
                        else round(float(today["vol_gap_pts"]), 2),
-        "vanna_potential_bp": None if vpot is None else round(vpot, 2),
+        "vanna_potential_usd": None if vpot is None else round(vpot),
         "vanna_pct": round(vanna_pct, 1) if vanna_pct is not None else None,
         "opex_date": today.get("opex_date"),
         "sessions_to_opex": None if s_to is None else int(s_to),
         "opex_oi_share": None if opex_share is None or pd.isna(opex_share) else round(float(opex_share), 3),
+        "front_charm_share": None if front_share is None else round(front_share, 3),
         "rolloff_risk": rolloff,
+        "front": _bucket(today, "front"),
+        "next": _bucket(today, "next"),
         "history_sessions": n,
         "note": note,
         "status": "information only (untested)",
@@ -366,6 +455,15 @@ def backfill(histdir: str) -> int:
     return len(load_history(histdir))
 
 
+def usd(x) -> str:
+    """$ amount for display: +$1.2bn, -$350m."""
+    if x is None or pd.isna(x):
+        return "n/a"
+    sign = "+" if x >= 0 else "-"
+    x = abs(float(x))
+    return f"{sign}${x / 1e9:.1f}bn" if x >= 1e9 else f"{sign}${x / 1e6:.0f}m"
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--histdir", default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "history"))
@@ -380,11 +478,15 @@ def main(argv=None):
         if b is None:
             print(f"{s}: no data")
             continue
-        print(f"{s} {b['session_date']}: score {b['score']} grade {b['grade']} ({b['label']}), "
-              f"{b['direction']}; charm {b['charm_bp_day']} bp/day (p{b['charm_pct']}), "
-              f"vanna {b['vanna_potential_bp']} bp at gap {b['vol_gap_pts']} pts (p{b['vanna_pct']}); "
-              f"opex {b['opex_date']} in {b['sessions_to_opex']} sessions, "
-              f"{b['opex_oi_share']} of OI" + (f"  [{b['note']}]" if b["note"] else ""))
+        fr, nx = b.get("front") or {}, b.get("next") or {}
+        print(f"{s} {b['session_date']}: score {b['score']} grade {b['grade']} ({b['label']}), {b['direction']}; "
+              f"charm {usd(b['charm_usd_day'])}/day (p{b['charm_pct']}), "
+              f"vanna {usd(b['vanna_potential_usd'])} at gap {b['vol_gap_pts']} pts (p{b['vanna_pct']}); "
+              f"front {fr.get('expiry')} charm {usd(fr.get('charm_usd_day'))}, "
+              f"next {nx.get('expiry')} charm {usd(nx.get('charm_usd_day'))} "
+              f"vanna/pt {usd(nx.get('vanna_usd_per_volpt'))}; "
+              f"opex in {b['sessions_to_opex']} sessions, roll-off {b['rolloff_risk']}"
+              + (f"  [{b['note']}]" if b["note"] else ""))
     c = composite(blocks)
     if c:
         print(f"MARKET (SPX/QQQ/IWM): score {c['score']} grade {c['grade']} ({c['label']}), {c['direction']}")
