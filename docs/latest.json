@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-11-17T15:37:08.984779+00:00",
+  "generated_utc": "2026-11-17T15:52:08.935515+00:00",
   "TLT": {
     "spot": 79.4,
     "flip": 79.0447,
@@ -422,6 +422,20 @@
       "history_sessions": 21,
       "note": "vanna not scored yet (6 of 15 sessions with an IV/RV reading); score is charm only",
       "status": "information only (untested)"
+    },
+    "sign_model": {
+      "flip_naive": 79.0447,
+      "flip_signed": 79.0447,
+      "delta_pts": 0.0,
+      "delta_pct": 0.0,
+      "delta_dm": 0.0,
+      "regime_naive": "POS",
+      "regime_signed": "POS",
+      "agrees": true,
+      "buckets_significant": 0,
+      "bucket_sessions": 21,
+      "label": "regime agrees (POS), flip stable",
+      "info_only": true
     }
   },
   "GLD": {
@@ -912,6 +926,20 @@
       "history_sessions": 21,
       "note": "vanna not scored yet (6 of 15 sessions with an IV/RV reading); score is charm only",
       "status": "information only (untested)"
+    },
+    "sign_model": {
+      "flip_naive": 362.107,
+      "flip_signed": 362.0782,
+      "delta_pts": -0.0288,
+      "delta_pct": -0.0082,
+      "delta_dm": -0.005,
+      "regime_naive": "NEG",
+      "regime_signed": "NEG",
+      "agrees": true,
+      "buckets_significant": 1,
+      "bucket_sessions": 21,
+      "label": "regime agrees (NEG), flip stable",
+      "info_only": true
     }
   },
   "QQQ": {
@@ -1610,6 +1638,20 @@
       "history_sessions": 41,
       "note": null,
       "status": "information only (untested)"
+    },
+    "sign_model": {
+      "flip_naive": 680.0344,
+      "flip_signed": 665.286,
+      "delta_pts": -14.7484,
+      "delta_pct": -2.2279,
+      "delta_dm": -0.904,
+      "regime_naive": "NEG",
+      "regime_signed": "NEG",
+      "agrees": true,
+      "buckets_significant": 4,
+      "bucket_sessions": 41,
+      "label": "regime agrees (NEG) but flip moves 0.90 DM - check G3",
+      "info_only": true
     }
   },
   "IWM": {
@@ -2087,6 +2129,20 @@
       "history_sessions": 41,
       "note": null,
       "status": "information only (untested)"
+    },
+    "sign_model": {
+      "flip_naive": 281.4401,
+      "flip_signed": 281.4428,
+      "delta_pts": 0.0027,
+      "delta_pct": 0.001,
+      "delta_dm": 0.001,
+      "regime_naive": "NEG",
+      "regime_signed": "NEG",
+      "agrees": true,
+      "buckets_significant": 1,
+      "bucket_sessions": 41,
+      "label": "regime agrees (NEG), flip stable",
+      "info_only": true
     }
   },
   "SPY": {
@@ -2811,6 +2867,20 @@
       "history_sessions": 41,
       "note": null,
       "status": "information only (untested)"
+    },
+    "sign_model": {
+      "flip_naive": 754.9606,
+      "flip_signed": 751.7928,
+      "delta_pts": -3.1678,
+      "delta_pct": -0.428,
+      "delta_dm": -0.282,
+      "regime_naive": "NEG",
+      "regime_signed": "NEG",
+      "agrees": true,
+      "buckets_significant": 2,
+      "bucket_sessions": 41,
+      "label": "regime agrees (NEG), flip stable",
+      "info_only": true
     }
   },
   "SMH": {
@@ -3251,6 +3321,20 @@
       "history_sessions": 17,
       "note": "vanna not scored yet (2 of 15 sessions with an IV/RV reading); score is charm only",
       "status": "information only (untested)"
+    },
+    "sign_model": {
+      "flip_naive": 491.8737,
+      "flip_signed": 491.8737,
+      "delta_pts": 0.0,
+      "delta_pct": 0.0,
+      "delta_dm": 0.0,
+      "regime_naive": "NEG",
+      "regime_signed": "NEG",
+      "agrees": true,
+      "buckets_significant": 0,
+      "bucket_sessions": 17,
+      "label": "regime agrees (NEG), flip stable",
+      "info_only": true
     }
   },
   "XLF": {
@@ -3555,6 +3639,20 @@
       "history_sessions": 17,
       "note": "vanna not scored yet (2 of 15 sessions with an IV/RV reading); score is charm only",
       "status": "information only (untested)"
+    },
+    "sign_model": {
+      "flip_naive": 57.8351,
+      "flip_signed": 57.8351,
+      "delta_pts": 0.0,
+      "delta_pct": 0.0,
+      "delta_dm": 0.0,
+      "regime_naive": "POS",
+      "regime_signed": "POS",
+      "agrees": true,
+      "buckets_significant": 0,
+      "bucket_sessions": 17,
+      "label": "regime agrees (POS), flip stable",
+      "info_only": true
     }
   },
   "XLK": {
@@ -3873,6 +3971,20 @@
       "history_sessions": 17,
       "note": "vanna not scored yet (2 of 15 sessions with an IV/RV reading); score is charm only",
       "status": "information only (untested)"
+    },
+    "sign_model": {
+      "flip_naive": 177.6541,
+      "flip_signed": 177.6541,
+      "delta_pts": 0.0,
+      "delta_pct": 0.0,
+      "delta_dm": 0.0,
+      "regime_naive": "NEG",
+      "regime_signed": "NEG",
+      "agrees": true,
+      "buckets_significant": 0,
+      "bucket_sessions": 17,
+      "label": "regime agrees (NEG), flip stable",
+      "info_only": true
     }
   },
   "SPX": {
@@ -4923,6 +5035,20 @@
       "history_sessions": 41,
       "note": null,
       "status": "information only (untested)"
+    },
+    "sign_model": {
+      "flip_naive": 7585.2432,
+      "flip_signed": 7512.7287,
+      "delta_pts": -72.5145,
+      "delta_pct": -0.9777,
+      "delta_dm": -0.507,
+      "regime_naive": "NEG",
+      "regime_signed": "NEG",
+      "agrees": true,
+      "buckets_significant": 2,
+      "bucket_sessions": 55,
+      "label": "regime agrees (NEG) but flip moves 0.51 DM - check G3",
+      "info_only": true
     }
   },
   "market": {
@@ -4938,13 +5064,13 @@
       ]
     },
     "vix": {
-      "asof": "2026-11-17T10:21:16",
-      "vix": 22.99,
-      "vix9d": 23.75,
-      "term_spread_9d_vs_30d": 0.76,
+      "asof": "2026-11-17T10:36:16",
+      "vix": 24.18,
+      "vix9d": 25.47,
+      "term_spread_9d_vs_30d": 1.29,
       "term_state": "backwardation(short-rich)",
-      "vix_chg_1d_pct": 0.003492,
-      "vix_20d_change_pct": 0.328134
+      "vix_chg_1d_pct": 0.055434,
+      "vix_20d_change_pct": 0.39688
     },
     "long_vol": {
       "tenors": {
