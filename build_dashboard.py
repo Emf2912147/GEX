@@ -29,6 +29,10 @@ import market_calendar as cal
 import vol_metrics as vm
 import dealer_flows as dfl
 import flow_intensity as fi
+try:
+    import dealer_sign as ds              # sign model (information only)
+except ImportError:                       # not deployed yet: feed builds without it
+    ds = None
 import support_resistance as sr
 
 SYMBOL_ORDER = ["SPX", "SPY", "QQQ", "IWM", "XLK", "SMH", "XLF", "GLD", "TLT"]
@@ -839,6 +843,20 @@ def build_latest_json(histdir, docsdir):
                     output[sym]["flow_intensity"] = intensity
         except Exception as ex:                     # pragma: no cover
             print(f"latest.json: flow intensity skipped for {sym} ({ex})")
+
+        # Sign model: the same chain read with dealer signs estimated from net
+        # buying pressure (dealer_sign.py) instead of the +1 call / -1 put
+        # convention. The gap between the two flips measures how much of the
+        # regime call rests on that convention. Information only.
+        try:
+            raw = latest_raw(histdir, sym) if ds is not None else None
+            if raw is not None:
+                sign_model = ds.block(
+                    histdir, raw, sym, str(row.get("session_date", "")), df)
+                if sign_model is not None:
+                    output[sym]["sign_model"] = sign_model
+        except Exception as ex:                     # pragma: no cover
+            print(f"latest.json: sign model skipped for {sym} ({ex})")
 
     try:
         mkt = fi.composite({s: (output.get(s) or {}).get("flow_intensity") for s in fi.COMPOSITE})
