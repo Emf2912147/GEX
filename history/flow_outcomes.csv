@@ -25,7 +25,7 @@ session_date,symbol,score,grade,direction,charm_pct,vanna_pct,front_charm_share,
 2026-11-11,SPX,66.5,B,mixed,37.2,95.8,0.689,7,2026-11-20,False,False,True,False,False,7619.38,-0.00354725,,,
 2026-11-12,SPX,84.9,A,mixed,71.2,98.6,0.674,6,2026-11-20,False,False,True,False,True,7592.4,-0.00405568,,,
 2026-11-13,SPX,64.4,B,mixed,35.4,93.4,0.58,5,2026-11-20,True,False,True,False,False,7561.67,-0.0193727,,,
-2026-11-16,SPX,50.5,C,mixed,53.6,47.4,0.595,4,2026-11-20,True,False,False,False,False,7416.59,,,,
+2026-11-16,SPX,55.6,C,mixed,53.6,57.7,0.595,4,2026-11-20,True,False,False,False,False,7416.59,,,,
 2026-10-01,SPY,71.9,B,dealer buying,71.9,,0.857,11,2026-10-16,False,False,False,False,True,763.99,0.00736817,0.0129267,0.0869015,-0.000969068
 2026-10-02,SPY,20.6,D,dealer buying,20.6,,0.762,10,2026-10-16,False,False,False,False,False,769.64,0.00672078,0.011536,0.0825303,-0.00833724
 2026-10-06,SPY,75,B,dealer buying,75,,0.811,8,2026-10-16,False,False,False,False,True,779.09,-0.00240312,-0.00138719,0.0612214,-0.0205409
@@ -52,7 +52,7 @@ session_date,symbol,score,grade,direction,charm_pct,vanna_pct,front_charm_share,
 2026-11-11,SPY,71.6,B,mixed,47.4,95.8,0.775,7,2026-11-20,False,False,True,False,False,759.98,-0.00278025,,,
 2026-11-12,SPY,83.7,A,mixed,68.8,98.6,0.729,6,2026-11-20,False,False,True,False,True,757.87,-0.0110122,,,
 2026-11-13,SPY,59.4,C,mixed,28,90.8,0.609,5,2026-11-20,True,False,True,False,False,749.57,-0.0126468,,,
-2026-11-16,SPY,61.2,B,mixed,75,47.4,0.67,4,2026-11-20,True,False,False,False,True,740.15,,,,
+2026-11-16,SPY,68.9,B,mixed,75,62.8,0.67,4,2026-11-20,True,False,True,False,True,740.15,,,,
 2026-10-01,QQQ,71.9,B,dealer buying,71.9,,0.895,11,2026-10-16,False,False,False,False,True,742.03,0.0101234,0.00745165,0.154291,-0.0444064
 2026-10-02,QQQ,32.4,D,dealer buying,32.4,,0.78,10,2026-10-16,False,False,False,False,False,749.58,0.00879284,0.00225206,0.139687,-0.0545298
 2026-10-06,QQQ,52.8,C,dealer buying,52.8,,0.799,8,2026-10-16,False,False,False,False,False,759.66,-0.00254384,-0.0214081,0.106703,-0.0678877
@@ -106,7 +106,7 @@ session_date,symbol,score,grade,direction,charm_pct,vanna_pct,front_charm_share,
 2026-11-11,IWM,79.6,B,mixed,88.5,70.8,0.834,7,2026-11-20,False,False,True,False,True,283.11,-0.0163097,,,
 2026-11-12,IWM,89.9,A,mixed,81.2,98.6,0.775,6,2026-11-20,False,False,True,False,True,278.53,-0.00981355,,,
 2026-11-13,IWM,70.9,B,mixed,69.5,72.4,0.796,5,2026-11-20,True,False,True,False,True,275.81,-0.0111933,,,
-2026-11-16,IWM,51.3,C,mixed,98.8,3.8,0.855,4,2026-11-20,True,False,False,False,True,272.74,,,,
+2026-11-16,IWM,60.3,B,mixed,98.8,21.8,0.855,4,2026-11-20,True,False,False,False,True,272.74,,,,
 2026-11-12,SMH,78.1,B,mixed,78.1,,0.896,6,2026-11-20,False,False,False,False,True,504.93,-0.0476797,,,
 2026-11-13,SMH,32.4,D,mixed,32.4,,0.779,5,2026-11-20,True,False,False,False,False,481.42,-0.0389914,,,
 2026-11-16,SMH,41.7,C,mixed,41.7,,0.809,4,2026-11-20,True,False,False,False,False,463.01,,,,
