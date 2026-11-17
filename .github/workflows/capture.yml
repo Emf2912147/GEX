@@ -37,6 +37,15 @@ jobs:
         if: always()
         run: python build_dashboard.py
 
+      # Opex / flow-intensity outcome log (flow_outcomes.py): rebuilds
+      # history/flow_outcomes.csv from flow_metrics.csv (just updated by the
+      # dashboard build) and the session closes. Information only; never
+      # fails the job.
+      - name: Flow outcome log
+        if: always()
+        continue-on-error: true
+        run: python flow_outcomes.py
+
       # Retention (prune_history.py): the snapshot folders are replay material
       # and grow about 15 MB a session between them. The derived metrics are
       # never touched. Runs after the dashboard so the build always sees the
