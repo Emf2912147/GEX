@@ -28,6 +28,7 @@ import gamma_exposure as gx
 import market_calendar as cal
 import vol_metrics as vm
 import dealer_flows as dfl
+import flow_intensity as fi
 import support_resistance as sr
 
 SYMBOL_ORDER = ["SPX", "SPY", "QQQ", "IWM", "XLK", "SMH", "XLF", "GLD", "TLT"]
@@ -828,10 +829,28 @@ def build_latest_json(histdir, docsdir):
         except Exception as ex:                     # pragma: no cover
             print(f"latest.json: flows block skipped for {sym} ({ex})")
 
+        # Flow intensity: today's vanna/charm flows ranked against their own
+        # history (flow_intensity.py), 0-100 and A-F. Information only.
+        try:
+            raw = latest_raw(histdir, sym)
+            if raw is not None:
+                intensity = fi.block(histdir, raw, sym, str(row.get("session_date", "")), df)
+                if intensity is not None:
+                    output[sym]["flow_intensity"] = intensity
+        except Exception as ex:                     # pragma: no cover
+            print(f"latest.json: flow intensity skipped for {sym} ({ex})")
+
+    try:
+        mkt = fi.composite({s: (output.get(s) or {}).get("flow_intensity") for s in fi.COMPOSITE})
+        if mkt is not None:
+            output.setdefault("market", {})["flow_intensity"] = mkt
+    except Exception as ex:                         # pragma: no cover
+        print(f"latest.json: market flow intensity skipped ({ex})")
+
     try:
         vix = vm.vix_block(histdir)
         if vix is not None:
-            output["market"] = {"vix": vix}
+            output.setdefault("market", {})["vix"] = vix
     except Exception as ex:                         # pragma: no cover
         print(f"latest.json: vix block skipped ({ex})")
 

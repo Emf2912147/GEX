@@ -20,6 +20,7 @@ rebuilds the dashboard, and commits.
 |---|---|
 | `gamma_exposure.py` | chart builder, importable analysis functions |
 | `gex_capture.py` | daily snapshot + metrics |
+| `flow_intensity.py` | Vanna/charm flow intensity: 0-100 score and A-F grade of today's dealer hedging flows against their own history; stores `history/flow_metrics.csv` |
 | `rsi_divergence.py` | RSI divergence gate (G10): 1H / 1D / 1W state and A-F grade for a trade's bias; stdlib only, takes bars from the caller |
 | `build_dashboard.py` | renders `docs/index.html` |
 | `history/raw/<feed-date>/<SYM>.parquet` | full chain, every contract |
@@ -58,6 +59,22 @@ today's charm against its own median of the previous 20 sessions (null under
 10). Same dealers-long-calls / short-puts convention as the GEX numbers;
 an assumption, not observed positioning.
 
+Since 2026-11-17 each record also carries a `flow_intensity` block
+(`flow_intensity.py`) and `market.flow_intensity` the SPX/QQQ/IWM average:
+
+| Field | Meaning |
+|---|---|
+| `score`, `grade`, `label` | 0-100 = 0.5 x charm percentile + 0.5 x vanna percentile; A >= 80 very strong, B 60-79, C 40-59, D 20-39, F < 20. No grade under 15 prior sessions |
+| `direction` | `dealer buying`, `dealer selling` or `mixed` (charm and vanna disagree) |
+| `charm_bp_day`, `charm_pct` | charm flow and the percentile of its size over the last 60 sessions |
+| `vol_gap_pts`, `vanna_potential_bp`, `vanna_pct` | (30d IV - 20d RV) in vol points, clipped +/-10; vanna flow if IV moves to realized; percentile of its size |
+| `opex_date`, `sessions_to_opex`, `opex_oi_share`, `rolloff_risk` | next monthly expiry, sessions to it, its share of the 0.5-30 day OI; roll-off flag at <= 5 sessions and >= 30% |
+
+Information only: the weights and the IV-toward-realized assumption are not
+fitted, and over the first 22 graded sessions the score showed no reliable
+link to next-day or 5-day returns. Rebuild the stored series from the raw
+chains with `python flow_intensity.py --backfill`.
+
 Since 2026-11-14 each record also carries a `surface` block (`vol_surface.py`),
 the term structure across expirations from the same stored chain:
 
@@ -82,7 +99,7 @@ CHEAP (30th or below) / NEUTRAL / RICH (70th or above) state, for timing
 staged long-dated tranches. Its Cboe history is read fresh at most every six
 hours and not stored. All additive: a reader that ignores them is unaffected.
 Apart from `long_vol`, nothing new is fetched, and nothing new is stored.
-Tests: `python -m pytest test_vol_metrics.py test_vol_surface.py test_rsi_divergence.py`.
+Tests: `python -m pytest test_vol_metrics.py test_vol_surface.py test_rsi_divergence.py test_flow_intensity.py`.
 
 `rsi_divergence.py` is not wired into `latest.json`: this pipeline holds no
 price bars for the index ETFs (it reads option chains), so each agent passes the
