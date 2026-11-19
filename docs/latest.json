@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-11-19T17:37:12.008654+00:00",
+  "generated_utc": "2026-11-19T17:52:14.274492+00:00",
   "TLT": {
     "spot": 80.2,
     "flip": 79.114,
@@ -5029,13 +5029,13 @@
       ]
     },
     "vix": {
-      "asof": "2026-11-19T12:21:31",
-      "vix": 27.33,
-      "vix9d": 27.95,
-      "term_spread_9d_vs_30d": 0.62,
+      "asof": "2026-11-19T12:36:31",
+      "vix": 25.8,
+      "vix9d": 25.81,
+      "term_spread_9d_vs_30d": 0.01,
       "term_state": "backwardation(short-rich)",
-      "vix_chg_1d_pct": 0.112785,
-      "vix_20d_change_pct": 0.436153
+      "vix_chg_1d_pct": 0.050489,
+      "vix_20d_change_pct": 0.355754
     },
     "long_vol": {
       "tenors": {
@@ -5069,7 +5069,7 @@
       },
       "window_sessions": 252,
       "asof": "2026-11-18",
-      "fetched_utc": "2026-11-19T11:48:19.627845+00:00",
+      "fetched_utc": "2026-11-19T17:52:19.691929+00:00",
       "stale": false,
       "source": "cboe daily history (read fresh, not stored)"
     }
