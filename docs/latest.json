@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-11-19T17:52:14.274492+00:00",
+  "generated_utc": "2026-11-19T18:07:12.878028+00:00",
   "TLT": {
     "spot": 80.2,
     "flip": 79.114,
@@ -4492,12 +4492,12 @@
     "surface": {
       "asof": "2026-11-18",
       "noisy": false,
-      "baseline_fwd": 0.1838,
+      "baseline_fwd": 0.1847,
       "cm_iv": {
         "7": 0.2137,
         "14": 0.1935,
         "30": 0.1942,
-        "60": 0.1835,
+        "60": 0.1833,
         "90": 0.184,
         "180": 0.191
       },
@@ -4590,7 +4590,7 @@
         ],
         "atm_iv": [
           0.3738,
-          0.2779,
+          0.2745,
           0.2048,
           0.2106,
           0.2137,
@@ -4616,7 +4616,7 @@
           0.1912,
           0.1876,
           0.1862,
-          0.1862,
+          0.186,
           0.1835,
           0.1848,
           0.1859,
@@ -4633,8 +4633,8 @@
         ],
         "fwd_iv": [
           0.3175,
-          0.1031,
-          0.1823,
+          0.089,
+          0.1884,
           0.2017,
           0.1964,
           0.1766,
@@ -4659,8 +4659,8 @@
           0.1495,
           0.1819,
           0.1866,
-          0.1835,
-          0.1852,
+          0.1819,
+          0.1886,
           0.1883,
           0.1934,
           0.1858,
@@ -4677,44 +4677,44 @@
         "rich_rel": [
           null,
           null,
-          -0.024,
-          -0.0022,
-          0.0049,
-          -0.0067,
-          0.0001,
-          -0.0026,
+          -0.0226,
+          -0.0013,
+          0.0055,
+          -0.0064,
+          0.0002,
+          -0.0025,
           -0.0066,
           -0.005,
-          0.0019,
-          -0.0003,
-          -0.0014,
-          0.0095,
-          0.0181,
-          0.0187,
-          0.0138,
-          0.0109,
-          0.01,
-          0.0084,
-          0.0014,
-          0.006,
-          0.004,
-          0.0037,
-          -0.0024,
-          -0.0032,
+          0.0018,
           -0.0005,
-          -0.0001,
-          0.0006,
-          -0.0,
-          0.0037,
+          -0.0015,
+          0.0093,
+          0.0178,
+          0.0185,
+          0.0135,
+          0.0107,
+          0.0097,
+          0.0082,
+          0.0011,
+          0.0057,
+          0.0038,
+          0.0035,
+          -0.0027,
+          -0.0033,
+          -0.0006,
+          -0.0015,
+          0.0004,
+          -0.0002,
+          0.0036,
+          -0.0024,
+          -0.0013,
+          -0.0032,
           -0.0022,
-          -0.001,
-          -0.0029,
-          -0.0019,
-          -0.001,
-          -0.0001,
-          -0.0009,
-          0.0012,
-          0.0023,
+          -0.0013,
+          -0.0004,
+          -0.0012,
+          0.0009,
+          0.002,
           null
         ],
         "label": [
@@ -4810,8 +4810,8 @@
           "bd": 1,
           "gap_bd": 1,
           "fwd_iv": 0.3175,
-          "baseline": 0.1838,
-          "excess_pts": 0.1337
+          "baseline": 0.1847,
+          "excess_pts": 0.1328
         }
       ],
       "windows": {
@@ -4819,27 +4819,27 @@
           "buy": {
             "expiration": "2026-11-27",
             "dte": 9.0,
-            "rich_rel": -0.0067,
+            "rich_rel": -0.0064,
             "label": "fair",
-            "edge_rel": 0.0041,
+            "edge_rel": 0.0039,
             "event_premium": false,
             "reason": "2026-11-27 (9d): the expiries in the 7-14 day window are priced alike; no expiry edge"
           },
           "sell": {
-            "expiration": "2026-11-30",
-            "dte": 12.0,
-            "rich_rel": 0.0001,
+            "expiration": "2026-11-25",
+            "dte": 7.0,
+            "rich_rel": 0.0055,
             "label": "fair",
-            "edge_rel": 0.0027,
+            "edge_rel": 0.008,
             "event_premium": false,
-            "reason": "2026-11-30 (12d): the expiries in the 7-14 day window are priced alike; no expiry edge"
+            "reason": "2026-11-25 (7d) is the richest to sell in the 7-14 day window: IV 0.5% above its neighbours, 0.8% better than the window's median expiry"
           }
         },
         "15-25": {
           "buy": {
             "expiration": "2026-12-08",
             "dte": 20.0,
-            "rich_rel": -0.0014,
+            "rich_rel": -0.0015,
             "label": "fair",
             "edge_rel": 0.0033,
             "event_premium": false,
@@ -4848,9 +4848,9 @@
           "sell": {
             "expiration": "2026-12-10",
             "dte": 22.0,
-            "rich_rel": 0.0181,
+            "rich_rel": 0.0178,
             "label": "fair",
-            "edge_rel": 0.0162,
+            "edge_rel": 0.016,
             "event_premium": false,
             "reason": "2026-12-10 (22d) is the richest to sell in the 15-25 day window: IV 1.8% above its neighbours, 1.6% better than the window's median expiry"
           }
@@ -4859,18 +4859,18 @@
           "buy": {
             "expiration": "2026-12-18",
             "dte": 30.0,
-            "rich_rel": 0.0014,
+            "rich_rel": 0.0011,
             "label": "fair",
-            "edge_rel": 0.0075,
+            "edge_rel": 0.0077,
             "event_premium": false,
             "reason": "2026-12-18 (30d) is the cheapest to buy in the 20-35 day window: IV 0.1% above its neighbours, 0.8% better than the window's median expiry"
           },
           "sell": {
             "expiration": "2026-12-14",
             "dte": 26.0,
-            "rich_rel": 0.0138,
+            "rich_rel": 0.0135,
             "label": "fair",
-            "edge_rel": 0.0049,
+            "edge_rel": 0.0047,
             "event_premium": false,
             "reason": "2026-12-14 (26d): the expiries in the 20-35 day window are priced alike; no expiry edge"
           }
@@ -4879,18 +4879,18 @@
           "buy": {
             "expiration": "2026-12-31",
             "dte": 43.0,
-            "rich_rel": -0.0032,
+            "rich_rel": -0.0033,
             "label": "fair",
-            "edge_rel": 0.0008,
+            "edge_rel": 0.0006,
             "event_premium": false,
             "reason": "2026-12-31 (43d): the expiries in the 35-45 day window are priced alike; no expiry edge"
           },
           "sell": {
             "expiration": "2026-12-23",
             "dte": 35.0,
-            "rich_rel": 0.0037,
+            "rich_rel": 0.0035,
             "label": "fair",
-            "edge_rel": 0.0061,
+            "edge_rel": 0.0062,
             "event_premium": false,
             "reason": "2026-12-23 (35d) is the richest to sell in the 35-45 day window: IV 0.4% above its neighbours, 0.6% better than the window's median expiry"
           }
@@ -4899,18 +4899,18 @@
           "buy": {
             "expiration": "2027-01-08",
             "dte": 51.0,
-            "rich_rel": -0.0005,
+            "rich_rel": -0.0006,
             "label": "fair",
-            "edge_rel": 0.0002,
+            "edge_rel": -0.0004,
             "event_premium": false,
             "reason": "2027-01-08 (51d): the expiries in the 45-60 day window are priced alike; no expiry edge"
           },
           "sell": {
             "expiration": "2027-01-08",
             "dte": 51.0,
-            "rich_rel": -0.0005,
+            "rich_rel": -0.0006,
             "label": "fair",
-            "edge_rel": -0.0002,
+            "edge_rel": 0.0004,
             "event_premium": false,
             "reason": "2027-01-08 (51d): the expiries in the 45-60 day window are priced alike; no expiry edge"
           }
@@ -4919,7 +4919,7 @@
           "buy": {
             "expiration": "2027-02-19",
             "dte": 93.0,
-            "rich_rel": -0.0022,
+            "rich_rel": -0.0024,
             "label": "fair",
             "edge_rel": 0.0022,
             "event_premium": false,
@@ -4928,9 +4928,9 @@
           "sell": {
             "expiration": "2027-02-26",
             "dte": 100.0,
-            "rich_rel": -0.001,
+            "rich_rel": -0.0013,
             "label": "fair",
-            "edge_rel": -0.001,
+            "edge_rel": -0.0011,
             "event_premium": false,
             "reason": "2027-02-26 (100d): the expiries in the 60-120 day window are priced alike; no expiry edge"
           }
@@ -4938,24 +4938,24 @@
       },
       "calendars": {
         "diagonal_35_45_over_7_14": {
-          "front": "2026-11-30",
+          "front": "2026-11-25",
           "back": "2026-12-31",
           "pass": true,
           "state": "fair",
-          "ratio": 1.104,
-          "fwd_iv": 0.1845,
-          "front_event": false,
-          "reason": "near leg fairly priced against the forward vol: near 20.4% vs forward 18.5% (ratio 1.10). The edge has to come from the pin, not the term structure"
+          "ratio": 1.14,
+          "fwd_iv": 0.1848,
+          "front_event": true,
+          "reason": "near leg fairly priced against the forward vol: near 21.1% vs forward 18.5% (ratio 1.14). The edge has to come from the pin, not the term structure"
         },
         "calendar_45_60_over_7_14": {
-          "front": "2026-11-30",
+          "front": "2026-11-25",
           "back": "2027-01-08",
           "pass": true,
           "state": "fair",
-          "ratio": 1.102,
-          "fwd_iv": 0.1849,
-          "front_event": false,
-          "reason": "near leg fairly priced against the forward vol: near 20.4% vs forward 18.5% (ratio 1.10). The edge has to come from the pin, not the term structure"
+          "ratio": 1.138,
+          "fwd_iv": 0.1851,
+          "front_event": true,
+          "reason": "near leg fairly priced against the forward vol: near 21.1% vs forward 18.5% (ratio 1.14). The edge has to come from the pin, not the term structure"
         }
       }
     },
@@ -5029,13 +5029,13 @@
       ]
     },
     "vix": {
-      "asof": "2026-11-19T12:36:31",
-      "vix": 25.8,
-      "vix9d": 25.81,
-      "term_spread_9d_vs_30d": 0.01,
+      "asof": "2026-11-19T12:51:31",
+      "vix": 26.83,
+      "vix9d": 27.13,
+      "term_spread_9d_vs_30d": 0.3,
       "term_state": "backwardation(short-rich)",
-      "vix_chg_1d_pct": 0.050489,
-      "vix_20d_change_pct": 0.355754
+      "vix_chg_1d_pct": 0.092427,
+      "vix_20d_change_pct": 0.409879
     },
     "long_vol": {
       "tenors": {
