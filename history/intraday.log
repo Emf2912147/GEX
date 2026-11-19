@@ -42801,3 +42801,4 @@ requests.exceptions.HTTPError: 429 Client Error: Too Many Requests for url: http
 2026-11-19T21:52:05+00:00  RV GLD: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
 2026-11-19T21:52:05+00:00  RV TLT: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
 2026-11-19T21:52:05+00:00  --- intraday done  ok=7  skipped=2  failed=0
+2026-11-19T21:52:15+00:00  --- runner: session complete, 16 capture(s) by this link
