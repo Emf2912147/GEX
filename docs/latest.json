@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-11-19T16:07:13.060511+00:00",
+  "generated_utc": "2026-11-19T16:22:12.980625+00:00",
   "TLT": {
     "spot": 80.2,
     "flip": 79.114,
@@ -2047,22 +2047,22 @@
         "diagonal_35_45_over_7_14": {
           "front": "2026-11-25",
           "back": "2026-12-31",
-          "pass": false,
-          "state": "front_rich_stress",
+          "pass": true,
+          "state": "front_rich",
           "ratio": 1.287,
           "fwd_iv": 0.2634,
           "front_event": true,
-          "reason": "near leg rich (near 33.9% vs forward 26.3% (ratio 1.29)) but the market is in stress backwardation: a short near leg gets run over"
+          "reason": "near leg rich against the forward vol: near 33.9% vs forward 26.3% (ratio 1.29). Favourable pricing; the richness is a priced event before the near expiry, so the calendar is short that event"
         },
         "calendar_45_60_over_7_14": {
           "front": "2026-11-25",
           "back": "2027-01-15",
-          "pass": false,
-          "state": "front_rich_stress",
+          "pass": true,
+          "state": "front_rich",
           "ratio": 1.3,
           "fwd_iv": 0.2606,
           "front_event": true,
-          "reason": "near leg rich (near 33.9% vs forward 26.1% (ratio 1.30)) but the market is in stress backwardation: a short near leg gets run over"
+          "reason": "near leg rich against the forward vol: near 33.9% vs forward 26.1% (ratio 1.30). Favourable pricing; the richness is a priced event before the near expiry, so the calendar is short that event"
         }
       }
     },
@@ -3124,22 +3124,22 @@
         "diagonal_35_45_over_7_14": {
           "front": "2026-12-02",
           "back": "2026-12-31",
-          "pass": false,
-          "state": "front_rich_stress",
+          "pass": true,
+          "state": "front_rich",
           "ratio": 1.248,
           "fwd_iv": 0.4526,
           "front_event": false,
-          "reason": "near leg rich (near 56.5% vs forward 45.3% (ratio 1.25)) but the market is in stress backwardation: a short near leg gets run over"
+          "reason": "near leg rich against the forward vol: near 56.5% vs forward 45.3% (ratio 1.25). Favourable pricing"
         },
         "calendar_45_60_over_7_14": {
           "front": "2026-12-02",
           "back": "2027-01-15",
-          "pass": false,
-          "state": "front_rich_stress",
+          "pass": true,
+          "state": "front_rich",
           "ratio": 1.261,
           "fwd_iv": 0.448,
           "front_event": false,
-          "reason": "near leg rich (near 56.5% vs forward 44.8% (ratio 1.26)) but the market is in stress backwardation: a short near leg gets run over"
+          "reason": "near leg rich against the forward vol: near 56.5% vs forward 44.8% (ratio 1.26). Favourable pricing"
         }
       }
     },
@@ -3822,22 +3822,22 @@
         "diagonal_35_45_over_7_14": {
           "front": "2026-11-25",
           "back": "2026-12-31",
-          "pass": false,
-          "state": "front_rich_stress",
+          "pass": true,
+          "state": "front_rich",
           "ratio": 1.155,
           "fwd_iv": 0.1873,
           "front_event": false,
-          "reason": "near leg rich (near 21.6% vs forward 18.7% (ratio 1.16)) but the market is in stress backwardation: a short near leg gets run over"
+          "reason": "near leg rich against the forward vol: near 21.6% vs forward 18.7% (ratio 1.16). Favourable pricing"
         },
         "calendar_45_60_over_7_14": {
           "front": "2026-11-25",
           "back": "2027-01-15",
-          "pass": false,
-          "state": "front_rich_stress",
+          "pass": true,
+          "state": "front_rich",
           "ratio": 1.155,
           "fwd_iv": 0.1872,
           "front_event": false,
-          "reason": "near leg rich (near 21.6% vs forward 18.7% (ratio 1.16)) but the market is in stress backwardation: a short near leg gets run over"
+          "reason": "near leg rich against the forward vol: near 21.6% vs forward 18.7% (ratio 1.16). Favourable pricing"
         }
       }
     },
@@ -5029,13 +5029,13 @@
       ]
     },
     "vix": {
-      "asof": "2026-11-19T10:51:16",
-      "vix": 25.73,
-      "vix9d": 26.13,
-      "term_spread_9d_vs_30d": 0.4,
-      "term_state": "backwardation(short-rich)",
-      "vix_chg_1d_pct": 0.047638,
-      "vix_20d_change_pct": 0.352076
+      "asof": "2026-11-19T11:06:16",
+      "vix": 25.12,
+      "vix9d": 25.03,
+      "term_spread_9d_vs_30d": -0.09,
+      "term_state": "contango(short-cheap)",
+      "vix_chg_1d_pct": 0.022801,
+      "vix_20d_change_pct": 0.320021
     },
     "long_vol": {
       "tenors": {
