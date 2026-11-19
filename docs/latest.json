@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-11-19T16:52:12.479970+00:00",
+  "generated_utc": "2026-11-19T17:07:12.739296+00:00",
   "TLT": {
     "spot": 80.2,
     "flip": 79.114,
@@ -5029,13 +5029,13 @@
       ]
     },
     "vix": {
-      "asof": "2026-11-19T11:36:16",
-      "vix": 25.06,
-      "vix9d": 24.89,
-      "term_spread_9d_vs_30d": -0.17,
+      "asof": "2026-11-19T11:51:16",
+      "vix": 25.29,
+      "vix9d": 25.25,
+      "term_spread_9d_vs_30d": -0.04,
       "term_state": "contango(short-cheap)",
-      "vix_chg_1d_pct": 0.020358,
-      "vix_20d_change_pct": 0.316868
+      "vix_chg_1d_pct": 0.029723,
+      "vix_20d_change_pct": 0.328954
     },
     "long_vol": {
       "tenors": {
