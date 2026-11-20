@@ -47037,3 +47037,179 @@ requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://cdn-
 2026-11-20T19:37:01+00:00  RV TLT: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
 2026-11-20T19:37:01+00:00  --- intraday done  ok=0  skipped=0  failed=10
 2026-11-20T19:37:12+00:00  --- runner: capture at 19:37 UTC exited 1
+2026-11-20T19:52:00+00:00  --- intraday capture  symbols=SPX SPY QQQ IWM XLK SMH XLF GLD TLT
+2026-11-20T19:52:01+00:00  SPX: FAILED -- 403 Client Error: Forbidden for url: https://cdn-api.cboe.com/api/global/delayed_quotes/options/_SPX.json
+Traceback (most recent call last):
+  File "/home/runner/work/GEX/GEX/gex_intraday.py", line 1386, in one
+    _, state = capture_symbol(sym, args, logpath, now)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/GEX/GEX/gex_intraday.py", line 1144, in capture_symbol
+    df, spot, feed_ts, g_fill, iv_fill = fetch_valid_chain(
+                                         ^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/GEX/GEX/gex_intraday.py", line 1115, in fetch_valid_chain
+    payload = gx.fetch_chain(symbol)
+              ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/GEX/GEX/gamma_exposure.py", line 83, in fetch_chain
+    r.raise_for_status()
+  File "/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/requests/models.py", line 1167, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://cdn-api.cboe.com/api/global/delayed_quotes/options/_SPX.json
+
+2026-11-20T19:52:01+00:00  SPY: FAILED -- 403 Client Error: Forbidden for url: https://cdn-api.cboe.com/api/global/delayed_quotes/options/SPY.json
+Traceback (most recent call last):
+  File "/home/runner/work/GEX/GEX/gex_intraday.py", line 1386, in one
+    _, state = capture_symbol(sym, args, logpath, now)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/GEX/GEX/gex_intraday.py", line 1144, in capture_symbol
+    df, spot, feed_ts, g_fill, iv_fill = fetch_valid_chain(
+                                         ^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/GEX/GEX/gex_intraday.py", line 1115, in fetch_valid_chain
+    payload = gx.fetch_chain(symbol)
+              ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/GEX/GEX/gamma_exposure.py", line 83, in fetch_chain
+    r.raise_for_status()
+  File "/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/requests/models.py", line 1167, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://cdn-api.cboe.com/api/global/delayed_quotes/options/SPY.json
+
+2026-11-20T19:52:01+00:00  QQQ: FAILED -- 403 Client Error: Forbidden for url: https://cdn-api.cboe.com/api/global/delayed_quotes/options/QQQ.json
+Traceback (most recent call last):
+  File "/home/runner/work/GEX/GEX/gex_intraday.py", line 1386, in one
+    _, state = capture_symbol(sym, args, logpath, now)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/GEX/GEX/gex_intraday.py", line 1144, in capture_symbol
+    df, spot, feed_ts, g_fill, iv_fill = fetch_valid_chain(
+                                         ^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/GEX/GEX/gex_intraday.py", line 1115, in fetch_valid_chain
+    payload = gx.fetch_chain(symbol)
+              ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/GEX/GEX/gamma_exposure.py", line 83, in fetch_chain
+    r.raise_for_status()
+  File "/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/requests/models.py", line 1167, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://cdn-api.cboe.com/api/global/delayed_quotes/options/QQQ.json
+
+2026-11-20T19:52:01+00:00  IWM: FAILED -- 403 Client Error: Forbidden for url: https://cdn-api.cboe.com/api/global/delayed_quotes/options/IWM.json
+Traceback (most recent call last):
+  File "/home/runner/work/GEX/GEX/gex_intraday.py", line 1386, in one
+    _, state = capture_symbol(sym, args, logpath, now)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/GEX/GEX/gex_intraday.py", line 1144, in capture_symbol
+    df, spot, feed_ts, g_fill, iv_fill = fetch_valid_chain(
+                                         ^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/GEX/GEX/gex_intraday.py", line 1115, in fetch_valid_chain
+    payload = gx.fetch_chain(symbol)
+              ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/GEX/GEX/gamma_exposure.py", line 83, in fetch_chain
+    r.raise_for_status()
+  File "/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/requests/models.py", line 1167, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://cdn-api.cboe.com/api/global/delayed_quotes/options/IWM.json
+
+2026-11-20T19:52:01+00:00  XLK: FAILED -- 403 Client Error: Forbidden for url: https://cdn-api.cboe.com/api/global/delayed_quotes/options/XLK.json
+Traceback (most recent call last):
+  File "/home/runner/work/GEX/GEX/gex_intraday.py", line 1386, in one
+    _, state = capture_symbol(sym, args, logpath, now)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/GEX/GEX/gex_intraday.py", line 1144, in capture_symbol
+    df, spot, feed_ts, g_fill, iv_fill = fetch_valid_chain(
+                                         ^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/GEX/GEX/gex_intraday.py", line 1115, in fetch_valid_chain
+    payload = gx.fetch_chain(symbol)
+              ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/GEX/GEX/gamma_exposure.py", line 83, in fetch_chain
+    r.raise_for_status()
+  File "/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/requests/models.py", line 1167, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://cdn-api.cboe.com/api/global/delayed_quotes/options/XLK.json
+
+2026-11-20T19:52:01+00:00  SMH: FAILED -- 403 Client Error: Forbidden for url: https://cdn-api.cboe.com/api/global/delayed_quotes/options/SMH.json
+Traceback (most recent call last):
+  File "/home/runner/work/GEX/GEX/gex_intraday.py", line 1386, in one
+    _, state = capture_symbol(sym, args, logpath, now)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/GEX/GEX/gex_intraday.py", line 1144, in capture_symbol
+    df, spot, feed_ts, g_fill, iv_fill = fetch_valid_chain(
+                                         ^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/GEX/GEX/gex_intraday.py", line 1115, in fetch_valid_chain
+    payload = gx.fetch_chain(symbol)
+              ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/GEX/GEX/gamma_exposure.py", line 83, in fetch_chain
+    r.raise_for_status()
+  File "/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/requests/models.py", line 1167, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://cdn-api.cboe.com/api/global/delayed_quotes/options/SMH.json
+
+2026-11-20T19:52:01+00:00  XLF: FAILED -- 403 Client Error: Forbidden for url: https://cdn-api.cboe.com/api/global/delayed_quotes/options/XLF.json
+Traceback (most recent call last):
+  File "/home/runner/work/GEX/GEX/gex_intraday.py", line 1386, in one
+    _, state = capture_symbol(sym, args, logpath, now)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/GEX/GEX/gex_intraday.py", line 1144, in capture_symbol
+    df, spot, feed_ts, g_fill, iv_fill = fetch_valid_chain(
+                                         ^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/GEX/GEX/gex_intraday.py", line 1115, in fetch_valid_chain
+    payload = gx.fetch_chain(symbol)
+              ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/GEX/GEX/gamma_exposure.py", line 83, in fetch_chain
+    r.raise_for_status()
+  File "/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/requests/models.py", line 1167, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://cdn-api.cboe.com/api/global/delayed_quotes/options/XLF.json
+
+2026-11-20T19:52:01+00:00  GLD: FAILED -- 403 Client Error: Forbidden for url: https://cdn-api.cboe.com/api/global/delayed_quotes/options/GLD.json
+Traceback (most recent call last):
+  File "/home/runner/work/GEX/GEX/gex_intraday.py", line 1386, in one
+    _, state = capture_symbol(sym, args, logpath, now)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/GEX/GEX/gex_intraday.py", line 1144, in capture_symbol
+    df, spot, feed_ts, g_fill, iv_fill = fetch_valid_chain(
+                                         ^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/GEX/GEX/gex_intraday.py", line 1115, in fetch_valid_chain
+    payload = gx.fetch_chain(symbol)
+              ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/GEX/GEX/gamma_exposure.py", line 83, in fetch_chain
+    r.raise_for_status()
+  File "/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/requests/models.py", line 1167, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://cdn-api.cboe.com/api/global/delayed_quotes/options/GLD.json
+
+2026-11-20T19:52:01+00:00  TLT: FAILED -- 403 Client Error: Forbidden for url: https://cdn-api.cboe.com/api/global/delayed_quotes/options/TLT.json
+Traceback (most recent call last):
+  File "/home/runner/work/GEX/GEX/gex_intraday.py", line 1386, in one
+    _, state = capture_symbol(sym, args, logpath, now)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/GEX/GEX/gex_intraday.py", line 1144, in capture_symbol
+    df, spot, feed_ts, g_fill, iv_fill = fetch_valid_chain(
+                                         ^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/GEX/GEX/gex_intraday.py", line 1115, in fetch_valid_chain
+    payload = gx.fetch_chain(symbol)
+              ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/GEX/GEX/gamma_exposure.py", line 83, in fetch_chain
+    r.raise_for_status()
+  File "/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/requests/models.py", line 1167, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://cdn-api.cboe.com/api/global/delayed_quotes/options/TLT.json
+
+2026-11-20T19:52:01+00:00  VIX: FAILED -- 403 Client Error: Forbidden for url: https://cdn-api.cboe.com/api/global/delayed_quotes/quotes/_VIX.json
+Traceback (most recent call last):
+  File "/home/runner/work/GEX/GEX/gex_intraday.py", line 1461, in main
+    vix_row = capture_vix(args, logpath, now)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/GEX/GEX/gex_intraday.py", line 715, in capture_vix
+    vix_data = fetch_vix_quote("VIX")
+               ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/GEX/GEX/gex_intraday.py", line 562, in fetch_vix_quote
+    r.raise_for_status()
+  File "/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/requests/models.py", line 1167, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://cdn-api.cboe.com/api/global/delayed_quotes/quotes/_VIX.json
+
+2026-11-20T19:52:01+00:00  RV QQQ: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
+2026-11-20T19:52:01+00:00  RV XLK: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
+2026-11-20T19:52:01+00:00  RV SMH: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
+2026-11-20T19:52:01+00:00  RV XLF: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
+2026-11-20T19:52:01+00:00  RV GLD: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
+2026-11-20T19:52:01+00:00  RV TLT: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
+2026-11-20T19:52:01+00:00  --- intraday done  ok=0  skipped=0  failed=10
+2026-11-20T19:52:12+00:00  --- runner: capture at 19:52 UTC exited 1
