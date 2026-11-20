@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-11-20T17:52:07.252233+00:00",
+  "generated_utc": "2026-11-20T18:07:07.276910+00:00",
   "TLT": {
     "spot": 80.22,
     "flip": 79.1142,
@@ -5071,7 +5071,7 @@
       },
       "window_sessions": 252,
       "asof": "2026-11-19",
-      "fetched_utc": "2026-11-20T11:53:13.577350+00:00",
+      "fetched_utc": "2026-11-20T18:07:12.016415+00:00",
       "stale": false,
       "source": "cboe daily history (read fresh, not stored)"
     }
