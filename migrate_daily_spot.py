@@ -156,6 +156,11 @@ def main():
 
     path = os.path.join(HIST, "daily_metrics.csv")
     d = pd.read_csv(path)
+    # recompute() returns "" for a missing flip or wall; a float column will not
+    # take that under pandas 3 (it upcast silently before), so hold them as object.
+    for c in ("flip", "flip_pct_vs_spot", "call_wall", "put_wall"):
+        if c in d.columns:
+            d[c] = d[c].astype(object)
     raws = raw_index()
     official, intraday = official_closes(), session_closes()
     print(f"{len(official)} official closes on file")
