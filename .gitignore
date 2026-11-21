@@ -29,6 +29,7 @@ schwab_*.bat
 schwab_*.json
 schwab_login_status.txt
 schwab_capture_log.txt
+schwab_intraday_log.txt
 _SCHWAB_LOGIN_NEEDS_RENEWAL.txt
 rader_*.py
 flow_poll.py

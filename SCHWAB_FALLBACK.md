@@ -118,10 +118,50 @@ Both pieces described above now exist on the PC, in `C:\Users\EMFS\GEX\`:
   today: manual, weekly, via `NMT GEX\Renew Schwab Login.bat` / the
   "Schwab Login Sunday" shortcut.
 
-- **Not yet done**: intraday Schwab capture (every 15 min, mirroring
-  `intraday.yml`) -- out of scope for this pass, same approach would apply.
-  Phone/alert wiring beyond the `_SCHWAB_LOGIN_NEEDS_RENEWAL.txt` flag file
-  (`NMT GEX\emf_alert.py`-style push) also not wired in yet.
+## Built 2026-11-21, part 2: intraday
+
+- **`schwab_intraday.py`** -- the flow-side companion, same relationship to
+  `schwab_daily.py` that `gex_intraday.py` has to `gex_capture.py`: volume
+  and the live state vector (flip, walls, skew, ATM IV, term slope), not
+  settled positioning. Reuses `gex_intraday.py`'s own dedupe
+  (`last_snapshot`/`same_values` -- skips an unchanged feed_ts, and
+  separately skips a republished feed that advanced the timestamp but not
+  spot/net-GEX), its chain-integrity guard (`check_chain_integrity` --
+  refuses a chain with zero gamma/IV fill rather than writing a
+  silently-wrong row), and its window/state-vector math and `append_state`,
+  all unmodified. Dry-run tested: first write, unchanged-feed_ts skip,
+  republished-content skip, and an empty-Greeks chain correctly refused with
+  a nonzero exit.
+
+  No vintage check here -- intraday flow is new volume each cycle, not a
+  settled book to compare against a prior one.
+
+  ```
+  python schwab_intraday.py <schwab_pull.json> [--write]
+  ```
+
+- **`schwab_intraday_auto.bat`** -- every-15-min job: a trading-day + session
+  window gate that mirrors `gex_intraday.py`'s own 09:00-17:15 ET window
+  *exactly* (not the simpler 09:30-16:00 `is_market_open` -- that would drop
+  the deliberate pre-open and 16:22-16:58 ET closing-print captures this repo
+  already depends on) -> login check -> fetch -> dry-run -> `--write` ->
+  `check_integrity.py` -> commits `history/intraday`,
+  `history/intraday_state.csv`, `history/intraday.log` only -> pushes.
+
+  Register once:
+  ```
+  schtasks /Create /SC DAILY /ST 09:35 /ET 16:15 /RI 15 /DU 24:00 ^
+    /TN "GEX Schwab Intraday" /TR "C:\Users\EMFS\GEX\schwab_intraday_auto.bat" ^
+    /RL LIMITED
+  ```
+
+- **Known gap, not faked**: VIX/VIX9D state and realized-vol capture
+  (`gex_intraday.py`'s `capture_vix` / `capture_realized_vol`) read separate
+  Cboe endpoints (`quotes/_VIX.json`, `us_indices/daily_prices`) that
+  `schwab_fetch.py` does not pull. Not wired into the Schwab path -- those
+  two series simply stop updating while Cboe is blocked, same as before this
+  work, rather than being filled with a substitute. Phone/alert wiring beyond
+  the `_SCHWAB_LOGIN_NEEDS_RENEWAL.txt` flag file is also not wired in yet.
 
 ## Still open from 2026-11-20
 
