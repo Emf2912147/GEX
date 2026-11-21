@@ -225,8 +225,38 @@ freshness here.
   work, rather than being filled with a substitute. Phone/alert wiring beyond
   the `_SCHWAB_LOGIN_NEEDS_RENEWAL.txt` flag file is also not wired in yet.
 
-## Still open from 2026-11-20
+## SPX: Schwab does not supply index open interest
 
-SPX's Nov 20 row is still missing: Schwab was returning `openInterest: 0` on
-all SPX expiries that evening, rejected by the vintage check. Re-pull and
-retry before trusting SPX figures for that date.
+**The Nov 20 SPX row cannot be recovered from Schwab, and neither can any
+future one.** The 2026-11-20 session logged `openInterest: 0` on all SPX
+expiries and hypothesised that Schwab rebuilds it later. That hypothesis is
+now disproven. A fresh pull on 2026-11-21 19:28 UTC -- 24 hours later, and
+over a weekend, when the OI book is settled and static -- returned:
+
+| symbol | contracts | total OI | gamma fill |
+|---|---|---|---|
+| SPX (index) | 19,564 | **0** | 36.7% |
+| SPY | 6,250 | 9,593,623 | 62.1% |
+| QQQ | 6,312 | 7,210,576 | 61.4% |
+
+Zero across the *entire* chain, not just the near-dated contracts, while
+every equity ETF in the same pull came back with a normal book. One variable
+differs: SPX is the only index underlying. IV is 100% populated and Greeks
+are partially populated, so this is a field-level omission for index options,
+not an outage and not a mid-refresh artifact.
+
+The vintage check refuses it correctly (`0 is 0.00x the last stored book`),
+so nothing bad gets written -- but it means **the Schwab fallback covers 8 of
+9 symbols, and SPX positioning goes dark for as long as Cboe is blocked.**
+Given the book this feeds is SPX/QQQ/IWM-centric, that is an analytical hole,
+not a cosmetic one. Do not paper over it by relaxing the vintage check.
+
+**A source does exist.** Robinhood returns `open_interest` plus full Greeks
+for SPXW index contracts (verified 2026-11-21 on 2026-11-23 6900C/6900P:
+OI 2 and 1,913, with gamma, delta and IV). It is per-contract by instrument
+UUID, so reconstructing a whole chain through the MCP interface would take
+thousands of round trips -- impractical as a daily job there, but plausible
+against Robinhood's HTTP API directly from the PC or the container, where
+batching is larger. Not built. Deciding whether Robinhood becomes the
+canonical SPX source, or whether this is the argument for a licensed Cboe
+DataShop / LiveVol subscription, is an open call.
