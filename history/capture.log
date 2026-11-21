@@ -2374,3 +2374,11 @@ Traceback (most recent call last):
 requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://cdn-api.cboe.com/api/global/delayed_quotes/options/TLT.json
 
 2026-11-20T21:44:57+00:00  === capture done  ok=0  failed=9
+2026-11-21T10:44:08+00:00  SPY: 6,250 contracts -> SPY.parquet
+2026-11-21T10:44:08+00:00  QQQ: 6,312 contracts -> QQQ.parquet
+2026-11-21T10:44:08+00:00  IWM: 2,806 contracts -> IWM.parquet
+2026-11-21T10:44:08+00:00  XLK: 1,420 contracts -> XLK.parquet
+2026-11-21T10:44:08+00:00  SMH: 3,532 contracts -> SMH.parquet
+2026-11-21T10:44:08+00:00  XLF: 1,008 contracts -> XLF.parquet
+2026-11-21T10:44:08+00:00  GLD: 4,138 contracts -> GLD.parquet
+2026-11-21T10:44:08+00:00  TLT: 1,152 contracts -> TLT.parquet
