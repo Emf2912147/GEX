@@ -301,6 +301,77 @@ so nothing bad gets written -- but it means **the Schwab fallback covers 8 of
 Given the book this feeds is SPX/QQQ/IWM-centric, that is an analytical hole,
 not a cosmetic one. Do not paper over it by relaxing the vintage check.
 
+## SPX from Robinhood: `robinhood_spx_oi.py` (built 2026-11-21)
+
+`robinhood_spx_oi.py` (gitignored, PC-only) rebuilds the SPX chain from
+Robinhood and merges it into the Schwab pull, so `schwab_daily.py` consumes
+it with no change -- it emits rows in `schwab_fetch.py`'s exact format.
+
+**It replaces the whole SPX block, not just the OI column.** Schwab's SPX
+chain carries gamma on only ~37% of contracts, and a contract with
+`gamma == 0` contributes nothing to net GEX however large its open interest.
+Filling OI alone would leave SPX understated while looking healthy. Robinhood
+supplies OI *and* gamma/delta/IV, so SPX comes from one source and stays
+internally consistent. Schwab's spot is kept -- for SPX it matched the
+official close to the cent, index settlement being fixed overnight.
+
+Scale, measured from the 2026-11-21 pull: 11,870 SPX contracts within 30 DTE
+across 20 expirations; 19,564 over the full 90-day horizon, 714 distinct
+strikes spanning 200..13,400. At 50 ids per request that is ~240 requests for
+the metrics window, ~390 for the full chain. The default horizon is 90 days
+to match `schwab_fetch.py`, so the stored raw chain stays replayable under a
+future `max_dte`. **Open interest only moves at overnight settlement, so this
+runs once per session, never per intraday cycle**, and the instrument map is
+cached -- only unseen expirations are enumerated.
+
+Design points worth not undoing:
+- **Addressed by chain UUID, not by symbol.** SPX resolves to two chains,
+  SPXW (weeklies, PM-settled) and SPX (monthlies, AM-settled); both carry real
+  SPX open interest and both are included. `robin_stocks`' symbol helpers
+  resolve through an *equity* instrument, which an index does not have, so the
+  chain ids are hardcoded (verified 2026-11-21) and re-discoverable via the
+  Robinhood connector's `get_option_chains`.
+- **Quotes are matched on the instrument id, never positionally.** Robinhood
+  returns results positionally with nulls for unquotable contracts; trusting
+  that would silently attach one contract's open interest to another the first
+  time it omits a null instead. A quote whose id cannot be resolved is
+  dropped, not guessed. There is a unit test for exactly this.
+- **It never prompts.** An unattended job that blocks on an MFA prompt hangs
+  forever holding the scheduler slot, so the stored session is probed with a
+  cheap authenticated call and a stale one exits 2 with instructions plus
+  `_ROBINHOOD_LOGIN_NEEDS_RENEWAL.txt`. It never takes a password and never
+  calls `login()`.
+- **Wired into `schwab_capture_auto.bat` as a NON-FATAL step.** If it is not
+  set up, the session lapses, or the API changes, the run carries on with
+  Schwab's eight ETFs and SPX simply stays missing -- the status quo, not a
+  regression. It must never be able to take the working symbols down with it.
+
+### Status: HTTP path untested
+
+Verified: the data and field names (OI, gamma, delta, IV, bid/ask, volume on
+SPXW 2026-11-23 6900C/6900P -- OI 2 and 1,913), the row format, the
+instrument-id matching, and the full merge-through-`schwab_daily.py` path
+against a simulated Robinhood block (vintage check passed at 0.97x, 17,494
+contracts, metrics computed). Not verified: auth, pagination, batching and
+rate limits -- this sandbox can reach neither robinhood.com nor a login.
+
+**Run `--probe` first** (7-day horizon, one batch, writes nothing) and read
+the coverage line before trusting a full run:
+
+```
+pip install robin_stocks
+python -c "import robin_stocks.robinhood as r; r.login()"    # once, interactive
+python robinhood_spx_oi.py --probe
+python robinhood_spx_oi.py --merge-into <pull.json> --expect 12932396
+```
+
+One thing to expect: SPX's last stored book is **2026-11-18**, because there
+is no 11-19 or 11-20 SPX chain on file. By Tuesday that baseline is four
+sessions and roughly a 5.6% index move old (7,323.63 -> 6,910.39), so the
+vintage check's 0.6x-1.6x band is easier to trip for SPX than for the ETFs.
+If it refuses on a ratio that looks plausible for a real book, the baseline is
+the thing to question, not the pull -- check the `--expect` line first.
+
 **A source does exist.** Robinhood returns `open_interest` plus full Greeks
 for SPXW index contracts (verified 2026-11-21 on 2026-11-23 6900C/6900P:
 OI 2 and 1,913, with gamma, delta and IV). It is per-contract by instrument

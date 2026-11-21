@@ -26,6 +26,9 @@ _RADER_NEEDS_ATTENTION.txt
 # tracked, strip the secrets first and force it with `git add -f`.
 schwab_*.py
 schwab_*.bat
+robinhood_*.py
+history/.robinhood_spx_instruments.json
+_ROBINHOOD_LOGIN_NEEDS_RENEWAL.txt
 schwab_*.json
 schwab_login_status.txt
 schwab_capture_log.txt
