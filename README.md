@@ -4,6 +4,28 @@ Daily gamma-exposure history for SPX, SPY, QQQ, IWM, XLK, SMH, XLF, GLD and TLT,
 built from Cboe's
 free delayed-quote endpoint.
 
+## Status (2026-11-21)
+
+**Cboe's free delayed-quote endpoint (`cdn-api.cboe.com`) is blocked and is
+being treated as permanently unavailable to this pipeline, not a transient
+outage.** Confirmed blocked from the GitHub Actions runner, the PC, a phone
+network, and a real browser session (direct hit and an in-page `fetch()` off
+Cboe's own dashboard) as of 2026-11-21. Cboe's own retail dashboard no longer
+calls this endpoint client-side either — it now renders server-side. This
+was never a licensed/documented Cboe API; it was the undocumented JSON feed
+behind their public dashboard pages, and it reads as deliberately closed off,
+not a bug on our end.
+
+**Schwab is now the primary data source**, via the `gex-trading-agent` Docker
+container's existing Schwab Trader API connection (shared login with the NMT
+monitor). See `SCHWAB_FALLBACK.md` for the architecture, the constraints that
+rule out a GitHub-Actions-style unattended pipeline, and what's needed to
+automate the parts that can be automated.
+
+`capture.yml` / `intraday.yml` still run on their existing schedule and will
+keep failing against Cboe until they're repointed or paused — see
+`SCHWAB_FALLBACK.md` before changing them.
+
 **Dashboard:** enable GitHub Pages (Settings -> Pages -> Deploy from a branch
 -> `main` / `/docs`), then the page lives at
 `https://<your-username>.github.io/<repo>/`.
@@ -12,7 +34,10 @@ free delayed-quote endpoint.
 
 `.github/workflows/capture.yml` fires daily at 11:30 UTC. It captures each
 symbol's full option chain, stores it raw, appends a row of derived metrics,
-rebuilds the dashboard, and commits.
+rebuilds the dashboard, and commits. **As of 2026-11-20 this fails every run**
+because the Cboe endpoint it depends on is blocked (see Status above) — the
+daily row is currently produced by a manual/semi-automated Schwab capture
+instead; see `SCHWAB_FALLBACK.md`.
 
 ## Layout
 
@@ -160,5 +185,7 @@ and open PRs, so it is a deliberate owner decision.
 
 ## Data
 
-Public market data from Cboe's delayed-quote endpoint. Nothing here is
+Public market data from Cboe's delayed-quote endpoint, normally. Since
+2026-11-20, Cboe is blocked (see Status above) and daily rows come from
+Schwab option-chain data instead — see `SCHWAB_FALLBACK.md`. Nothing here is
 account or position information.
