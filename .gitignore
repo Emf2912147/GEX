@@ -32,6 +32,7 @@ schwab_capture_log.txt
 schwab_intraday_log.txt
 _SCHWAB_LOGIN_NEEDS_RENEWAL.txt
 _GEX_INTEGRITY_ATTENTION.txt
+_GEX_PUSH_BLOCKED.txt
 rader_*.py
 flow_poll.py
 compare_sources.py

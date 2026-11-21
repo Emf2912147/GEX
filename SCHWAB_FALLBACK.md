@@ -235,6 +235,27 @@ would not, while doubling the parse cost and supplying the abort that caused
 the problem. Run them by hand without `--write` whenever you want a dry run;
 the scheduled path does not need one.
 
+**6. The jobs commit, then rebase, then push -- in that order.** A bare
+push from the PC is rejected as non-fast-forward whenever anything else has
+landed on `main` since this clone last pulled, and something else lands
+constantly: the sector-agent workflows push on their own schedules, and
+`capture.yml` / `intraday.yml` still fire and still commit their Cboe failure
+logs. Observed for real on 2026-11-21. Committing before the rebase is what
+leaves the working tree clean enough for the rebase to be permitted.
+
+A rebase conflict is possible on `history/capture.log` and
+`history/intraday.log`, which the GitHub runner appends to as well. The jobs
+leave that for a human (`_GEX_PUSH_BLOCKED.txt`) rather than resolving it
+blind; the capture is already committed locally either way, so the data is
+never at risk -- only its publication is delayed.
+
+**Worth considering:** `capture.yml` and `intraday.yml` can now only fail,
+since Cboe is blocked, and every failed run still commits a log. Disabling
+them would stop that noise *and* remove most of the push contention these
+jobs now have to rebase around. Left enabled deliberately -- it is a CI
+change and Eugenio's call -- but there is no longer an argument for keeping
+them running.
+
 ## One guard that goes quiet on the Schwab path
 
 `check_integrity.py`'s *"no chain staler than its limit (15 min, XLK 30)"*
