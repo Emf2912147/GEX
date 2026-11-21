@@ -165,6 +165,48 @@ Both pieces described above now exist on the PC, in `C:\Users\EMFS\GEX\`:
   buys nothing. Move `/ST` earlier (09:05) if you want the pre-open state
   vector the Cboe setup used to capture at 09:07.
 
+## Two things deliberately NOT done in the scheduled jobs
+
+Both were in the first cut of these `.bat` files on 2026-11-21 and were
+removed the same day. If a later session is tempted to "fix" either, this is
+why not.
+
+**1. `check_integrity.py` does not gate any commit.** It audits the whole
+repo's history (14 checks), not the row just written. Its COVERAGE section
+includes *"pipeline ran within 4 days"* and *"no session with fewer than 5
+cycles"* -- both of which fail after any multi-day outage. Gating a commit on
+it deadlocks: the check that reports the pipeline is stale would block the
+commit of the very data that makes it un-stale, and every cycle after that
+one. Worse, the write has already happened by then, so the result is data on
+disk that never gets committed and a red scheduled task every 15 minutes.
+
+What actually gates a row is upstream and row-specific -- the vintage check
+and the official-close refusal in `schwab_daily.py`, the empty-Greeks refusal
+and the two dedupe guards in `schwab_intraday.py`. The daily job still *runs*
+the audit, advisory: it logs the result and writes
+`_GEX_INTEGRITY_ATTENTION.txt` on failure, then commits anyway. The intraday
+job does not run it at all (`check_integrity_auto.bat` and the monthly process
+already cover it).
+
+**2. The daily job does not pass `--prev`.** That flag is for comparing two
+pulls taken the same evening by hand. In an unattended job the file goes
+stale -- a Monday run would vintage-check against Friday's pull. Left off,
+`schwab_daily.py` compares against the most recently *stored* raw book, which
+is always the real last book and maintains itself. Nothing is lost: an
+unrefreshed Schwab pull still comes back with `<=30DTE` OI exactly equal to
+that stored book, which the unchanged-book branch catches.
+
+## One guard that goes quiet on the Schwab path
+
+`check_integrity.py`'s *"no chain staler than its limit (15 min, XLK 30)"*
+measures `capture_ts - feed_ts`. On the Cboe path `feed_ts` was Cboe's own
+publish stamp, so that check caught genuinely stale served chains (it exists
+because of the 2026-09-23 incident where every symbol came back 9+ hours
+old). On the Schwab path `feed_ts` is *our own fetch time*, so the lag is
+always ~0 and the check always passes. It is not catching anything for Schwab
+rows -- it has not been removed, but do not read a pass as evidence of
+freshness here.
+
 - **Known gap, not faked**: VIX/VIX9D state and realized-vol capture
   (`gex_intraday.py`'s `capture_vix` / `capture_realized_vol`) read separate
   Cboe endpoints (`quotes/_VIX.json`, `us_indices/daily_prices`) that
