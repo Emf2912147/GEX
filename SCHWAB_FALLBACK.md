@@ -256,6 +256,25 @@ jobs now have to rebase around. Left enabled deliberately -- it is a CI
 change and Eugenio's call -- but there is no longer an argument for keeping
 them running.
 
+**7. The vintage check compares like-for-like across shared expirations, not
+totals.** Comparing totals is structurally broken across an expiration
+boundary, and not hypothetically: 75% of SPX's <=30DTE open interest sat in
+the 2026-12-18 monthly, so on the first session after it expired the total
+would have come in at **0.25x and been refused -- every run, until someone
+intervened.** The Nov 20 monthly had already depressed 2026-11-21's ratio to
+0.77x, with 25.9% of the baseline expired. Opex is not a data fault and must
+not read as one.
+
+The like-for-like comparison is *sharper*, not merely more permissive. Tested
+against the five scenarios this session actually produced: the real Robinhood
+pull passes at 1.02x (0.77x on totals), the root collision is still refused at
+0.28x (0.37x on totals), the post-Dec-18-opex session passes at 1.04x (0.25x
+on totals, refused), a stale unrefreshed feed is still refused, and a gap long
+enough to leave no shared expiries is refused because it cannot be validated
+at all. `robinhood_oi_diag.py` is kept for diagnosing any future dispute: it
+decomposes both books by expiry so a refusal can be attributed to the data or
+to the baseline in one command.
+
 ## One guard that goes quiet on the Schwab path
 
 `check_integrity.py`'s *"no chain staler than its limit (15 min, XLK 30)"*
@@ -346,7 +365,40 @@ Design points worth not undoing:
   Schwab's eight ETFs and SPX simply stays missing -- the status quo, not a
   regression. It must never be able to take the working symbols down with it.
 
-### Status: HTTP path untested
+### Status: VERIFIED END TO END 2026-11-21
+
+Live run: 21,666 contracts enumerated across 35 expirations, 19,564 quoted
+(90.3%; the rest are contracts Robinhood lists but will not quote), gamma fill
+80.4% against Schwab's 36.7%, ~95 seconds, no rate limiting. **The missing
+2026-11-20 SPX row has been recovered and written** -- session 2026-11-20 now
+has all 9 symbols and `check_integrity.py` passes 14/14.
+
+Two independent validations, because a ratio alone proves little:
+
+1. **Per-expiry against the last Cboe book** (`robinhood_oi_diag.py`, kept for
+   exactly this purpose): every surviving expiration agrees at 1.01x-1.43x,
+   and 2026-12-18 at 1.02x (7,409,656 vs Cboe's 7,283,829). Like-for-like
+   across shared expiries, Robinhood is **1.04x** Cboe.
+2. **Trend continuity.** The Robinhood-sourced row lands on the trend of the
+   three Cboe-sourced rows before it, with no discontinuity:
+
+   | session | source | net GEX | flip | spot |
+   |---|---|---|---|---|
+   | 11-16 | Cboe | -66.8Bn | 7585.24 | 7416.59 |
+   | 11-17 | Cboe | -58.6Bn | 7545.60 | 7340.53 |
+   | 11-18 | Cboe | -48.1Bn | 7522.08 | 7323.63 |
+   | 11-20 | **Robinhood** | **-38.2Bn** | **7191.56** | 6910.39 |
+
+Known caveats, none blocking:
+- `contracts_total` is 19,564 against ~31,000 on the Cboe rows: the pull is
+  capped at a 90-day horizon and Robinhood will not quote ~10% of what it
+  lists. The <=30DTE metrics are unaffected; a replay at a much longer
+  `max_dte` would be.
+- `feed_ts` on the SPX row inherits the pull's top-level Schwab fetch time,
+  about 70 minutes before the Robinhood fetch. Immaterial for a settled
+  overnight book; worth knowing if provenance is ever audited.
+
+### The bug that nearly wrote a 7x-wrong SPX row
 
 Verified: the data and field names (OI, gamma, delta, IV, bid/ask, volume on
 SPXW 2026-11-23 6900C/6900P -- OI 2 and 1,913), the row format, the
@@ -371,6 +423,21 @@ sessions and roughly a 5.6% index move old (7,323.63 -> 6,910.39), so the
 vintage check's 0.6x-1.6x band is easier to trip for SPX than for the ETFs.
 If it refuses on a ratio that looks plausible for a real book, the baseline is
 the thing to question, not the pull -- check the `--expect` line first.
+
+The first live run keyed the instrument map on `(expiry, strike, type)` --
+**without the root.** SPX (AM-settled monthly) and SPXW (PM-settled weekly)
+share expiries and strikes but are different contracts with separate open
+interest, so whichever enumerated second silently overwrote the other. SPXW
+won, and the AM-settled monthly -- where the institutional open interest sits
+-- was discarded: 2026-12-18 came back 962,501 against a true 7,409,656, a
+factor of 7.7.
+
+It was caught only because the loss happened to push the total below the 0.6x
+floor. A collision on a smaller expiry would have passed the check and written
+a plausible-looking row understating the largest gamma concentration in the
+book. **Two lessons kept in the code:** the map key includes the root, and the
+instrument cache carries a version marker so the old collided cache is
+discarded rather than trusted.
 
 **A source does exist.** Robinhood returns `open_interest` plus full Greeks
 for SPXW index contracts (verified 2026-11-21 on 2026-11-23 6900C/6900P:

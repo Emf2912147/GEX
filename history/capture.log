@@ -3278,3 +3278,15 @@ Traceback (most recent call last):
 requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://cdn-api.cboe.com/api/global/delayed_quotes/options/TLT.json
 
 2026-11-21T19:22:29+00:00  === capture done  ok=0  failed=9
+2026-11-21T20:41:31+00:00  === schwab_daily start session=2026-11-20 symbols=SPX  (dry run)
+2026-11-21T20:41:32+00:00  SPX: vintage check PASS -- <=30DTE OI 9,929,481 (0.77x 2026-11-18)
+2026-11-21T20:41:32+00:00  SPX: 19,564 contracts (Schwab, dry run, not written)
+2026-11-21T20:41:32+00:00  SPX: spot 6,910.39  netGEX -38.20Bn  flip 7191.5638  walls 7600.0/6500.0  negative  [schwab]
+2026-11-21T20:41:32+00:00  1 row(s) would be written (dry run, nothing appended)
+2026-11-21T20:41:32+00:00  === schwab_daily done  ok=1  skipped=0  failed=0  (dry run)
+2026-11-21T20:41:50+00:00  === schwab_daily start session=2026-11-20 symbols=SPX
+2026-11-21T20:41:51+00:00  SPX: vintage check PASS -- <=30DTE OI 9,929,481 (0.77x 2026-11-18)
+2026-11-21T20:41:51+00:00  SPX: 19,564 contracts (Schwab) -> SPX.parquet
+2026-11-21T20:41:51+00:00  SPX: spot 6,910.39  netGEX -38.20Bn  flip 7191.5649  walls 7600.0/6500.0  negative  [schwab]
+2026-11-21T20:41:51+00:00  appended 1 metric row(s) (Schwab)
+2026-11-21T20:41:51+00:00  === schwab_daily done  ok=1  skipped=0  failed=0
