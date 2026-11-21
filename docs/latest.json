@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-11-21T13:58:04.469948+00:00",
+  "generated_utc": "2026-11-21T18:08:03.286028+00:00",
   "SPX": {
     "spot": 7323.63,
     "flip": 7522.0755,
@@ -4276,7 +4276,7 @@
       },
       "window_sessions": 252,
       "asof": "2026-11-20",
-      "fetched_utc": "2026-11-21T11:53:16.454322+00:00",
+      "fetched_utc": "2026-11-21T18:08:07.426963+00:00",
       "stale": false,
       "source": "cboe daily history (read fresh, not stored)"
     }
