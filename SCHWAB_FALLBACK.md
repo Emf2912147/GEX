@@ -217,6 +217,24 @@ Scheduler's "run as soon as possible after a missed start", a wake-from-sleep
 catch-up, or a manual re-run. The run summary now counts `skipped`
 separately and skips do not reach the exit code.
 
+**5. Exit codes go by scope, and the jobs make a single pass.** This is
+`gex_intraday.py`'s documented principle -- a couple of symbols refused is
+the known condition, logged and counted, not an alarm; *every* symbol
+refused means the feed is broken -- and on the Schwab path it is load
+bearing rather than tidy. SPX is permanently rejected here (no index open
+interest), so an any-failure exit code means every daily run exits nonzero
+forever, and since the scheduled job treated a nonzero dry run as fatal,
+**the eight symbols that did capture would never have been written. One
+broken symbol would have taken the other eight down with it, every day.**
+
+`schwab_daily.py` and `schwab_intraday.py` now exit nonzero only when
+nothing succeeded and nothing skipped. Both `.bat` files make one pass with
+`--write` instead of a dry run followed by a write: the per-symbol guards
+are inside the Python, so a preceding dry run catches nothing the write pass
+would not, while doubling the parse cost and supplying the abort that caused
+the problem. Run them by hand without `--write` whenever you want a dry run;
+the scheduled path does not need one.
+
 ## One guard that goes quiet on the Schwab path
 
 `check_integrity.py`'s *"no chain staler than its limit (15 min, XLK 30)"*
