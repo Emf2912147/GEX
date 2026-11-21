@@ -206,6 +206,17 @@ Sunday), but as a *failed* run -- so the task would go red every Monday, on a
 non-event. A non-session day is a clean skip, exit 0, which is how
 `capture.yml` treated it.
 
+**4. `session_already_captured` is checked before the vintage check, not
+after.** An already-captured session is a no-op (skip, exit 0), not a
+rejection (failure, exit 1). Checked in the wrong order -- as it was until
+2026-11-21 -- a re-run instead reports `<=30DTE OI unchanged -- Schwab has
+not refreshed`, which is both misleading (the real reason is that the session
+is already on file) and fatal in the scheduled job, whose dry run aborts the
+cycle on any nonzero exit. Any double fire would have gone red: Task
+Scheduler's "run as soon as possible after a missed start", a wake-from-sleep
+catch-up, or a manual re-run. The run summary now counts `skipped`
+separately and skips do not reach the exit code.
+
 ## One guard that goes quiet on the Schwab path
 
 `check_integrity.py`'s *"no chain staler than its limit (15 min, XLK 30)"*
