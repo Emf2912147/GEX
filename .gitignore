@@ -25,6 +25,11 @@ _RADER_NEEDS_ATTENTION.txt
 # Kept out of the public repo deliberately -- if one ever needs to be
 # tracked, strip the secrets first and force it with `git add -f`.
 schwab_*.py
+schwab_*.bat
+schwab_*.json
+schwab_login_status.txt
+schwab_capture_log.txt
+_SCHWAB_LOGIN_NEEDS_RENEWAL.txt
 rader_*.py
 flow_poll.py
 compare_sources.py

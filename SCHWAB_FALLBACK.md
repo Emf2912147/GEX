@@ -61,36 +61,67 @@ is unattended *within* each 7-day login window, with the weekly browser
 login remaining a human step — which already exists and doesn't need
 rebuilding.
 
-## What still needs to be built
+## Built 2026-11-21 (gitignored, PC-only -- never committed)
 
-A PC-side scheduled job (Windows Task Scheduler, not GitHub Actions — only
-the PC's Docker container can reach Schwab) that, once a day (mirroring
-`capture.yml`'s ~7am ET cadence, after overnight OCC settlement) and
-optionally every 15 minutes intraday:
+Both pieces described above now exist on the PC, in `C:\Users\EMFS\GEX\`:
 
-1. **Checks the login is still valid** before doing anything else —
-   `docker exec gex-trading-agent python -m ticker_analysis.schwab` already
-   prints login status; a scheduled job should parse/check this and alert
-   (not silently skip) if the login is expired or expiring within ~24h.
-2. **Fetches the chain**: `docker exec gex-trading-agent python schwab_fetch.py
-   > schwab_chains_YYYYMMDD.json` (already works).
-3. **Builds the row**: a rewritten `schwab_daily.py` — anchors each symbol's
-   close (from `official_closes.json`, refusing to run without one, same as
-   `gex_capture.py`'s `official_close()`), vintage-checks the pulled OI
-   against the last stored book, writes `history/raw/<date>/<SYM>.parquet`,
-   appends `history/daily_metrics.csv`. This is the missing piece above.
-4. **Runs `check_integrity.py`** and aborts the commit if it fails.
-5. **Commits and pushes** — same pattern as `resync_gex_auto.bat` /
-   `check_integrity_auto.bat` already in this repo, logging to a dated log
-   file the same way `capture.log` does.
-6. **Alerts on failure** (login expired, fetch failed, integrity check
-   failed, vintage check rejected the pull) using the same phone-alert
-   mechanism already in use (`NMT GEX\emf_alert.py` / the
-   "SCHWAB_DATA: ... HTTP 403" style alert) rather than failing silently —
-   this is how the 2026-11-20 Cboe outage was first noticed.
+- **`schwab_daily.py`** -- the missing row-builder. Reshapes a
+  `schwab_fetch.py` pull into the exact payload shape
+  `gamma_exposure.fetch_chain` would have returned from Cboe, then runs the
+  *same* `parse_chain` / `normalize_iv` / `gamma_profile` / `gex_by_strike` /
+  `find_walls` math `gex_capture.capture_symbol` uses -- no GEX math is
+  duplicated, so a Schwab-sourced row is computed identically to a
+  Cboe-sourced one. It reuses `gex_capture.py`'s `official_close`,
+  `session_close`, `write_raw`, `append_metrics`, `log` directly (all take an
+  explicit `session_date`/`outdir`, so they drop in unmodified); only
+  `capture_symbol`'s top few lines are replicated, with `session_date` taken
+  from `--session` instead of inferred from "now" (`capture_symbol` assumes
+  it's being run same-day, which a Schwab backfill can't assume).
 
-None of step 1-6 touches the 7-day login itself; that stays manual,
-Sundays, as it already is.
+  **Vintage check**, confirmed against the thresholds agreed on 2026-11-21:
+  any OI left on an already-expired contract rejects outright; `<=30DTE`
+  total OI outside **0.6x-1.6x the last stored book** (or unchanged from it)
+  rejects; comparison is against the most recently stored
+  `history/raw/<date>/<SYM>.parquet` by default, or an explicit `--prev
+  <earlier_pull.json>` when you want to compare two same-evening pulls
+  directly. **A prior book that exists but can't be read (e.g. a missing
+  `pyarrow`) is treated as a hard rejection, never a silent pass** -- a read
+  failure must never look like "nothing to compare against." Dry-run tested
+  against all three paths (reject-out-of-range, pass-in-range,
+  reject-unchanged) plus the read-failure fail-safe.
+
+  ```
+  python schwab_daily.py <pull.json> --session 2026-11-20 [--prev <earlier.json>] [--write]
+  ```
+
+  Always dry-run first (no `--write`) -- exits 1 if anything was rejected,
+  prints what *would* be written otherwise. Add `--write` only once that's
+  clean.
+
+- **`schwab_capture_auto.bat`** -- the scheduled job: checks the login
+  (aborts loudly, writes `_SCHWAB_LOGIN_NEEDS_RENEWAL.txt`, if expired, never
+  retries or skips silently) -> fetches via the same `docker exec -i
+  gex-trading-agent python -` invocation as the manual flow -> dry-run ->
+  `--write` -> `check_integrity.py` (abort, don't commit, if it fails) ->
+  commits `history/raw`, `history/daily_metrics.csv`, `history/capture.log`
+  only (never `schwab_*.py`/`.json`/logs) -> pushes. Logs to
+  `schwab_capture_log.txt`, same pattern as `resync_gex_auto.bat` /
+  `check_integrity_auto.bat` already in this repo.
+
+  Register it once:
+  ```
+  schtasks /Create /SC DAILY /ST 07:00 /TN "GEX Schwab Capture" ^
+    /TR "C:\Users\EMFS\GEX\schwab_capture_auto.bat" /RL LIMITED
+  ```
+
+  This does **not** touch the 7-day login -- that stays exactly as it is
+  today: manual, weekly, via `NMT GEX\Renew Schwab Login.bat` / the
+  "Schwab Login Sunday" shortcut.
+
+- **Not yet done**: intraday Schwab capture (every 15 min, mirroring
+  `intraday.yml`) -- out of scope for this pass, same approach would apply.
+  Phone/alert wiring beyond the `_SCHWAB_LOGIN_NEEDS_RENEWAL.txt` flag file
+  (`NMT GEX\emf_alert.py`-style push) also not wired in yet.
 
 ## Still open from 2026-11-20
 
