@@ -148,12 +148,22 @@ Both pieces described above now exist on the PC, in `C:\Users\EMFS\GEX\`:
   `check_integrity.py` -> commits `history/intraday`,
   `history/intraday_state.csv`, `history/intraday.log` only -> pushes.
 
-  Register once:
+  Register once (verified working 2026-11-21):
   ```
-  schtasks /Create /SC DAILY /ST 09:35 /ET 16:15 /RI 15 /DU 24:00 ^
+  schtasks /Create /SC DAILY /ST 09:35 /ET 16:15 /RI 15 ^
     /TN "GEX Schwab Intraday" /TR "C:\Users\EMFS\GEX\schwab_intraday_auto.bat" ^
     /RL LIMITED
   ```
+  No `/DU`: schtasks refuses `/DU` together with `/ET` ("ERROR: /DU cannot be
+  specified with /ET"), and `/ET` already bounds the repetition.
+
+  On the window: 09:35-16:15 ET is narrower than the script's own
+  09:00-17:15 ET gate, and that is deliberate. `gex_intraday.py`'s window
+  runs to 17:15 because the *Cboe* feed is ~15 min delayed, so 16:22-16:58 ET
+  was when the closing print finally arrived. Schwab's Trader API is not
+  delayed, so a 16:15 capture already carries the close and the late tail
+  buys nothing. Move `/ST` earlier (09:05) if you want the pre-open state
+  vector the Cboe setup used to capture at 09:07.
 
 - **Known gap, not faked**: VIX/VIX9D state and realized-vol capture
   (`gex_intraday.py`'s `capture_vix` / `capture_realized_vol`) read separate
