@@ -196,6 +196,16 @@ is always the real last book and maintains itself. Nothing is lost: an
 unrefreshed Schwab pull still comes back with `<=30DTE` OI exactly equal to
 that stored book, which the unchanged-book branch catches.
 
+**3. The daily job gates on `should_capture`, not just `session_for`.** Both
+rules come from `gex_capture.py`'s `main()` and both are needed.
+`session_for(today)` is simply yesterday; `should_capture(today)` asks whether
+yesterday was a session at all. With only the first, a Monday 07:00 run
+computes `session_for(Mon) = Sunday` and tries to capture a day that never
+traded. It would be refused downstream (no official close on file for a
+Sunday), but as a *failed* run -- so the task would go red every Monday, on a
+non-event. A non-session day is a clean skip, exit 0, which is how
+`capture.yml` treated it.
+
 ## One guard that goes quiet on the Schwab path
 
 `check_integrity.py`'s *"no chain staler than its limit (15 min, XLK 30)"*
