@@ -294,6 +294,49 @@ freshness here.
   work, rather than being filled with a substitute. Phone/alert wiring beyond
   the `_SCHWAB_LOGIN_NEEDS_RENEWAL.txt` flag file is also not wired in yet.
 
+## VIX / VIX9D and realized vol: restored from Yahoo (2026-11-22)
+
+Cboe took two more feeds down with it besides the option chains:
+
+    quotes/_{SYM}.json                        the VIX and VIX9D levels
+    us_indices/daily_prices/{SYM}_History.csv the close history behind the
+                                              20d change, realized vol, and
+                                              vol_metrics' long_vol block
+
+Both now come from Yahoo's chart API via **`index_history.py`** (committed --
+it reads public index levels, no key, nothing to hide, so it is not in the
+broker-script exclusion). Availability was probed before anything was
+written: VIX 1257 bars, VIX9D / VIX3M / VIX6M / VXN / SPX / RUT / XSP 1255
+each. The probe also agreed with this repo's own record -- ^GSPC's last close
+came back 6910.39, matching official_closes.json for 2026-11-20 to the cent.
+
+**This needed no new scheduling.** `gex_intraday.py`'s `main()` already runs
+`capture_vix` and `capture_realized_vol` independently of the chain capture,
+by deliberate design documented in its own comment, so fixing the three
+fetchers was enough: the existing `intraday.yml` workflow -- which still
+fails on chains -- resumes producing `vix_state.csv` and `realized_vol.csv`
+rows on its next run. GitHub's runners reach Yahoo. The PC jobs are not
+involved and should not be.
+
+**VIX1Y stays absent on purpose.** Yahoo serves its current level but no
+usable history, so there is nothing to place it against. `_fetch_closes`
+returns `(None, None)` for it and `long_vol_block` keeps its prior value
+marked stale. A percentile off a handful of points is arithmetic dressed as
+information, and that block drives tranche timing.
+
+**The bug worth not repeating.** `prev_day_close` must be derived from the
+bars, never from Yahoo's `meta.chartPreviousClose` -- that field is the close
+preceding the REQUESTED RANGE, so over 5 days it returns a close about six
+sessions old. It gave SPX 7561.67 against stored closes of 7323.63 / 7175.83
+/ 6910.39, and `capture_vix` divides by it to get `vix_chg_1d_pct`: week-long
+moves would have been written as one-day moves into the term-structure state.
+The replacement is `bars[-2]`, always: `current_price` belongs to the last
+bar's session whether that bar is forming or settled, so the session before
+it is the second-to-last. An intermediate version used "the last bar dated
+before today", which is identical on weekdays and returns prev == current on
+any non-trading day -- every daily change exactly zero. It was only visible
+because it was caught on a Sunday.
+
 ## SPX: Schwab does not supply index open interest
 
 **The Nov 20 SPX row cannot be recovered from Schwab, and neither can any

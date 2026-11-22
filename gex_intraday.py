@@ -186,6 +186,7 @@ import pandas as pd
 import requests
 
 import gamma_exposure as gx
+import index_history as ixh
 import market_calendar as cal
 
 # Bump when the slim schema or the state-vector definitions change.
@@ -552,78 +553,37 @@ def elapsed_seconds(prev_capture_ts, now):
 
 
 def fetch_vix_quote(symbol):
-    """Cboe's plain index-quote endpoint -- not the options-chain one.
+    """The VIX / VIX9D level, as {current_price, prev_day_close, last_trade_time}.
 
-    Verified live 2026-09-10 (_VIX9D): current_price 17.70, prev_day_close
-    15.59, last_trade_time "2026-09-10T16:15:02". Same field set for _VIX.
+    Was Cboe's plain index-quote endpoint (verified live 2026-09-10 on _VIX9D:
+    current_price 17.70, prev_day_close 15.59, last_trade_time
+    "2026-09-10T16:15:02"). That endpoint has been blocked since 2026-11-20,
+    so the levels now come from index_history (Yahoo) in the same field names
+    -- capture_vix reads exactly what it always read.
     """
-    url = VIX_QUOTE_URL.format(sym=symbol)
-    r = requests.get(url, timeout=20)
-    r.raise_for_status()
-    payload = r.json()
-    return payload.get("data", payload)
+    return ixh.quote(symbol)
 
 
 def fetch_history_closes(hist_url):
-    """(dates, closes) from a Cboe daily-price history CSV, oldest first.
+    """(dates, closes) for a daily-close history, oldest first.
 
-    TWO SCHEMAS are in use on this endpoint and they are not interchangeable
-    -- both verified live 2026-09-11:
+    Still takes the Cboe-shaped URL its callers build from module constants;
+    the symbol is resolved out of it and the series fetched from
+    index_history (Yahoo), because the Cboe CSVs have been blocked since
+    2026-11-20.
 
-        VIX / VXN / XSP   DATE,OPEN,HIGH,LOW,CLOSE
-        SPX / RUT         DATE,SPX          <- date and close only, price
-                                               column named for the symbol
-
-    A reader that only knows the first family returns nothing at all on the
-    second, silently, which is how a missing HV20 looks identical to a broken
-    one. Resolution order:
-
-        1. a column literally named CLOSE                -> use it
-        2. exactly two columns, the first of them DATE   -> use the second
-        3. anything else                                 -> (None, None)
-
-    Rule 3 is the important one. Grabbing "whatever column looks numeric" out
-    of a five-column file whose headers changed would produce a number that is
-    wrong rather than absent, and a wrong realized vol flows straight into the
-    RICH/CHEAP axis of the decision table.
-
-    Dates come back as ISO strings. Cboe writes them MM/DD/YYYY; anything that
-    will not parse is passed through verbatim rather than dropped, so a format
-    change shows up in rv_asof_date instead of silently emptying the series.
+    The old two-schema CSV reader lived here -- Cboe served DATE,OPEN,HIGH,
+    LOW,CLOSE for VIX/VXN/XSP but DATE,SPX for SPX/RUT, and a reader that
+    knew only the first returned nothing at all on the second, silently.
+    That hazard is gone with the CSVs; the principle it was written for is
+    not. index_history returns (None, None) rather than a number it had to
+    guess at, for the same reason: a wrong realized vol flows straight into
+    the RICH/CHEAP axis of the decision table, and absent beats wrong.
     """
-    r = requests.get(hist_url, timeout=30)
-    r.raise_for_status()
-    from io import StringIO
-    hist = pd.read_csv(StringIO(r.text))
-    if hist.empty or len(hist.columns) < 2:
+    sym = ixh.symbol_from_history_url(hist_url)
+    if not sym:
         return None, None
-
-    cols = [str(c).strip() for c in hist.columns]
-    close_col = next((c for c, name in zip(hist.columns, cols)
-                      if name.upper() == "CLOSE"), None)
-    if close_col is None:
-        if len(hist.columns) == 2 and cols[0].upper() == "DATE":
-            close_col = hist.columns[1]
-        else:
-            return None, None
-
-    closes = pd.to_numeric(hist[close_col], errors="coerce")
-    date_col = hist.columns[0]
-    parsed = pd.to_datetime(hist[date_col], format="%m/%d/%Y", errors="coerce")
-    if parsed.isna().all():
-        parsed = pd.to_datetime(hist[date_col], errors="coerce")
-
-    dates = [
-        p.strftime("%Y-%m-%d") if pd.notna(p) else str(raw)
-        for p, raw in zip(parsed, hist[date_col])
-    ]
-
-    keep = closes.notna() & (closes > 0)
-    if not keep.any():
-        return None, None
-    closes = closes[keep].astype(float).tolist()
-    dates = [d for d, k in zip(dates, keep) if k]
-    return dates, closes
+    return ixh.daily_closes(sym)
 
 
 def fetch_20d_change(hist_url, today_price):

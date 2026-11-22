@@ -506,20 +506,19 @@ def symbol_surface_block(raw: pd.DataFrame, row, stress: bool = False) -> dict |
 
 
 def _fetch_closes(symbol: str):
-    """Daily closes, oldest first, from Cboe's history CSV (DATE,OPEN,HIGH,LOW,CLOSE)."""
-    import requests
-    from io import StringIO
-    r = requests.get(LONG_VOL_URL.format(sym=symbol), timeout=30)
-    r.raise_for_status()
-    hist = pd.read_csv(StringIO(r.text))
-    cols = {str(c).strip().upper(): c for c in hist.columns}
-    if "CLOSE" not in cols or "DATE" not in cols:
-        return None, None
-    closes = pd.to_numeric(hist[cols["CLOSE"]], errors="coerce")
-    keep = closes.notna() & (closes > 0)
-    dates = pd.to_datetime(hist[cols["DATE"]], format="%m/%d/%Y", errors="coerce")
-    last = dates[keep].iloc[-1] if keep.any() else pd.NaT
-    return closes[keep].astype(float).tolist(), (None if pd.isna(last) else last.strftime("%Y-%m-%d"))
+    """Daily closes, oldest first, with the last date. (None, None) if short.
+
+    Was Cboe's history CSV; blocked since 2026-11-20, so this reads
+    index_history (Yahoo) instead.
+
+    VIX1Y IS EXPECTED TO COME BACK EMPTY. Yahoo serves its current level but
+    no usable history, so there is nothing to place it against. A percentile
+    off a handful of points is arithmetic dressed as information, and this
+    block drives tranche timing -- so VIX1Y is left absent and long_vol_block
+    keeps its previous value marked stale, which is the honest state.
+    """
+    import index_history as ixh
+    return ixh.closes_and_asof(symbol)
 
 
 def long_vol_block(docsdir: str | None = None, fetch=None, now=None) -> dict | None:
