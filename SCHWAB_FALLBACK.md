@@ -491,3 +491,125 @@ against Robinhood's HTTP API directly from the PC or the container, where
 batching is larger. Not built. Deciding whether Robinhood becomes the
 canonical SPX source, or whether this is the argument for a licensed Cboe
 DataShop / LiveVol subscription, is an open call.
+
+## Schwab zeroes in-the-money open interest (found 2026-11-22)
+
+Schwab reports `openInterest` 0 on roughly four fifths of IN-THE-MONEY
+contracts while every neighbouring field on the same contract is exactly
+right. Out-of-the-money open interest arrives largely intact.
+
+Across the 127-name sector universe, established monthlies, contracts with a
+live two-sided market:
+
+| | ITM zero | OTM zero |
+|---|---|---|
+| calls | 3,361/4,095 (82.1%) | 305/1,696 (18.0%) |
+| puts | 3,052/3,932 (77.6%) | 467/1,799 (26.0%) |
+
+The OTM zeros are mostly legitimate -- a listed strike nobody has traded.
+The ITM ones are not.
+
+### How it was pinned down
+
+Confirmed against Robinhood at the same timestamp, same contract:
+
+| contract | Schwab | true | bid/ask/volume |
+|---|---|---|---|
+| MA 261218C00615000 | 0 | 229 | exact match |
+| VRTX 261218C00520000 | 0 | 137 | exact match (vol 201) |
+| MA 261218C00625000 | 62 | 62 | control, correct |
+| MA 261218P00625000 | 215 | 215 | control, correct |
+| SPY 261218C00690000 | 4,224 | 4,224 | control, correct |
+
+Ruled out, each by direct test rather than argument:
+
+- **Our parsing.** The raw response carries `openInterest` as an explicit `0`,
+  key present. `_num()` was suspected of flattening an absent field to zero and
+  was fixed anyway (see `_oi()` in `sector_chains.py`), but that was not this.
+- **Response truncation.** A narrow window (2026-12-17..19, 236 KB) returns the
+  same 0 as the 90-day window (1.7 MB). Not a size limit.
+- **One bad endpoint.** `/marketdata/v1/quotes` returns the identical wrong
+  values, so it is Schwab's open-interest store, not `/chains`.
+- **An alternate field.** No other open-interest-like key exists on the
+  contract; the full key list was dumped and checked.
+- **Weekend staleness.** Every Schwab pull available at the time was taken on a
+  Saturday or Sunday, so this could NOT be excluded from the data then. It is
+  now considered unlikely on mechanism: stale refresh produces random or
+  time-ordered gaps, not a clean split on moneyness, and Robinhood returned
+  correct open interest on the same Sunday. Re-test on a weekday before
+  concluding. `_probe_raw_oi.py` and `_probe_quotes_oi.py` do exactly this.
+
+### Why it looked like two unrelated problems
+
+Gamma peaks at the money and decays both ways, so a defect living in ITM
+contracts sits where gamma is LOWEST. That single fact explains both symptoms:
+
+- **Net gex barely moves.** Restoring the dropped open interest from the last
+  Cboe book shifts the eight production ETFs by 0.1-7.2% (worst SMH 7.2%, XLF
+  6.6%, GLD 5.2%). Call and put errors partly cancel. Call and put walls do not
+  move at all. Gamma flip shifts 0.02-0.16% on SPY/QQQ/GLD/TLT and 1.71% on
+  IWM.
+- **`atm_oi` collapses outright.** It is the MEDIAN over the ten contracts
+  nearest spot -- a window that straddles the money, so about half its slots
+  are ITM. At an 80% ITM zero rate the median goes to 0. That is the 14 names
+  reading zero, and it is the same defect, not a second one.
+
+The one concrete loss on the production path: **XLF reports no gamma flip at
+all.** Restoring the open interest puts one at 61.09 against a spot of 54.57.
+
+### What was done about it
+
+`atm_oi`, `net_gex_musd`, `gamma_flip`, `call_wall` and `put_wall` are WITHHELD
+per name when open interest is not credible, rather than published wrong --
+`gate_on_oi()` in `sector_technicals.py`. `atm_iv_30` and `atm_spread_pct` are
+quote-derived and survive; Schwab's bid, ask, volume, IV and greeks were exact
+on every contract checked.
+
+Threshold is >=4 of the 10 near-ATM contracts showing a live market and zero
+open interest. Set from measurement against the last Cboe session, not taste:
+
+    >=2  flags 61 names, catches 24 of 25 known-bad   (31 false positives)
+    >=3  flags 42 names, catches 24 of 25             (18 false positives)
+    >=4  flags 30 names, catches 24 of 25             <-- chosen
+    >=5  flags 22 names, catches 20 of 25             (5 missed)
+    >=6  flags 13 names, catches 13 of 25             (12 missed)
+
+The one name `>=4` misses is LRCX, at 0.41x Cboe with ZERO zeros in the window
+-- that gap is the 5.6% spot move between the two sessions moving the window
+onto different strikes, not a feed defect.
+
+Measured near the money ON PURPOSE. A whole-chain zero rate flags everything:
+across these 127 names it ran 39% to 98% with no separation between a healthy
+name and a broken one, because far-from-the-money strikes carry a quote and no
+open interest as a matter of course. MA reads 85.8% whole-chain and is fine.
+
+The gate is CONDITIONAL, not a hardcoded suppression. If Schwab starts
+reporting open interest correctly it fires on nothing and the same code is
+still right. Nothing needs to be reverted.
+
+`schwab_daily.py` reports its own ITM/OTM split on every capture
+(`oi_integrity_report()`), so this cannot go quiet again. On session 2026-11-20
+it marks XLF, GLD and TLT suspect. The test is an absolute margin (ITM >=50%
+AND ITM-OTM >=15pp), not a ratio: ETFs list far more strikes than single names,
+so untouched ones lift the OTM baseline and flatten any ratio. XLF read 71% vs
+41% -- the symbol that actually lost its flip -- and a 2x ratio test let it
+through, while equities ran 82% vs 18%. XLK and SMH sit near 55% on BOTH sides
+and are correctly quiet: symmetric means a thin chain, not this defect.
+
+### Still open
+
+- **Re-test on a weekday.** See the weekend caveat above.
+- **OTM-only gamma exposure** would sidestep the defect almost entirely, since
+  OTM is the part that survives. NOT adopted unilaterally: it redefines the
+  metric, and the history back to September is on the current definition, so
+  comparability would break at the seam. Owner's call.
+- **Session 2026-11-19 is permanently missing** for all nine symbols -- the
+  capture was due the morning Cboe went dark. Open interest is a point-in-time
+  snapshot and neither Schwab nor Robinhood serves it historically.
+- **The eight ETF rows for session 2026-11-20 were captured on a Saturday** by
+  an earlier code path that logged no `(Schwab)` tag and ran no vintage check.
+  They carry the 0.1-7.2% understatement and cannot be recaptured.
+- **The Cboe baseline is frozen.** `history/raw/2026-11-18/` is the last Cboe
+  book; the free delayed-quote endpoint appears to have moved behind a
+  DataShop subscription. Everything above was validated against it, and it
+  cannot be refreshed.

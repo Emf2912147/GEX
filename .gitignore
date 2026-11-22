@@ -27,6 +27,8 @@ _RADER_NEEDS_ATTENTION.txt
 schwab_*.py
 schwab_*.bat
 robinhood_*.py
+sector_chains.py
+sector_chains*.json
 history/.robinhood_spx_instruments.json
 _ROBINHOOD_LOGIN_NEEDS_RENEWAL.txt
 schwab_*.json

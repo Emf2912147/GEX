@@ -77,6 +77,23 @@ TARGET_DTE = 30
 MIN_DTE = 7
 NEAR_CONTRACTS_N = 10   # five strikes, call and put
 
+# A near-the-money contract on an established monthly with a live two-sided
+# market and ZERO open interest is not credible. Above this many of them in the
+# ten-nearest window, open interest is not trusted for the name and every
+# figure derived from it is withheld rather than published wrong.
+#
+# Threshold set from measurement, not taste (2026-11-22, 127 names, Schwab
+# chains vs this repo's last Cboe session):
+#     >=2  flags 61 names, catches 24 of 25 known-bad   (31 false positives)
+#     >=3  flags 42 names, catches 24 of 25             (18 false positives)
+#     >=4  flags 30 names, catches 24 of 25             <-- chosen
+#     >=5  flags 22 names, catches 20 of 25             (5 missed)
+#     >=6  flags 13 names, catches 13 of 25             (12 missed)
+# The single name >=4 misses is LRCX, at 0.41x Cboe with ZERO zeros in the
+# window -- that gap is the 5.6% spot move between the two sessions moving the
+# ten-nearest window onto different strikes, not a feed defect.
+OI_ZERO_LIVE_MAX = 3
+
 
 def log(path, msg):
     line = f"{datetime.now(timezone.utc).isoformat()}Z  {msg}"
@@ -259,7 +276,47 @@ def gex_from_payload(payload, spot, options_today=None):
     return out
 
 
+# Chains pre-fetched from Schwab and handed in with --chains. Cboe has been
+# blocked since 2026-11-20, and this job is the one place that needs a chain
+# for 121 arbitrary names rather than a fixed nine, so they are fetched once
+# through the container (which holds the Schwab login) and passed in as a
+# file. Empty when the job runs anywhere without that file -- then the Cboe
+# path below is tried, and failing that the name simply has no options data,
+# which is now REPORTED rather than silently written as zero.
+PRELOADED_CHAINS: dict = {}
+
+
+def load_chains(path, logpath):
+    """{TICKER: cboe-shaped payload} written by sector_chains.py."""
+    import json
+    try:
+        with open(path, encoding="utf-8") as fh:
+            d = json.load(fh)
+    except (OSError, ValueError) as e:
+        log(logpath, f"--chains {path}: unreadable ({type(e).__name__}) -- "
+                     f"options data will be empty for every name")
+        return {}
+    chains = d.get("chains") if isinstance(d, dict) else None
+    chains = chains if isinstance(chains, dict) else (d if isinstance(d, dict) else {})
+    log(logpath, f"--chains {path}: {len(chains)} pre-fetched chains "
+                 f"(fetched {d.get('fetched_utc', '?')})")
+    return {k.upper(): v for k, v in chains.items()}
+
+
 def fetch_cboe_tradability(symbol, logpath):
+    pre = PRELOADED_CHAINS.get(symbol.upper())
+    if pre is not None:
+        data = pre.get("data") or {}
+        spot = data.get("current_price")
+        options = data.get("options") or []
+        if options and spot is not None:
+            atm_oi, atm_spread_pct = tradability_from_chain(spot, options)
+            atm_oi, gexd = gate_on_oi(symbol, spot, options,
+                                      gex_from_payload(pre, spot), atm_oi, logpath)
+            return spot, atm_oi, atm_spread_pct, len(options), gexd
+        log(logpath, f"{symbol}: pre-fetched chain empty -- refused")
+        return None, None, None, None, {}
+
     prefix = "_" if symbol.upper() in CASH_INDEX_SYMBOLS else ""
     url = CBOE_URL.format(sym=f"{prefix}{symbol.upper()}")
     payload = None
@@ -276,21 +333,72 @@ def fetch_cboe_tradability(symbol, logpath):
             break
         except Exception as e:
             log(logpath, f"{symbol}: Cboe fetch failed -- {e}")
-            return None, None, None, 0, {}
+            return None, None, None, None, {}
     if payload is None:
         log(logpath, f"{symbol}: Cboe still rate-limited after "
                      f"{len(CBOE_RETRY_WAITS_S)} retries -- options data left empty")
-        return None, None, None, 0, {}
+        return None, None, None, None, {}
 
     data = payload.get("data", {})
     spot = data.get("current_price")
     options = data.get("options", [])
     if not options or spot is None:
         log(logpath, f"{symbol}: Cboe payload empty -- refused")
-        return None, None, None, 0, {}
+        return None, None, None, None, {}
 
     atm_oi, atm_spread_pct = tradability_from_chain(spot, options)
-    return spot, atm_oi, atm_spread_pct, len(options), gex_from_payload(payload, spot)
+    atm_oi, gexd = gate_on_oi(symbol, spot, options,
+                              gex_from_payload(payload, spot), atm_oi, logpath)
+    return spot, atm_oi, atm_spread_pct, len(options), gexd
+
+
+def oi_integrity(spot, options, today=None):
+    """(n_zero_live, n_near) over the SAME contracts tradability_from_chain
+    uses -- the ten nearest spot on the standard monthly nearest 30 days.
+
+    Deliberately NOT measured over the whole chain. Far-from-the-money strikes
+    carry a market-maker quote and no open interest as a matter of course, so a
+    whole-chain ratio flags everything: across these 127 names it ran 39% to
+    98% with no separation between a name that is fine and a name that is
+    broken. Near the money, on an expiry that has been listed for months, the
+    same reading is not explicable that way."""
+    if not options or spot is None:
+        return 0, 0
+    today = today or datetime.now(timezone.utc).date()
+    parsed = [(o, parse_option(o)) for o in options]
+    parsed = [(o, p) for o, p in parsed if p is not None]
+    expiry = pick_expiry({p[0] for _, p in parsed}, today)
+    if expiry is None:
+        return 0, 0
+    same = [(o, p[1]) for o, p in parsed if p[0] == expiry]
+    near = [o for o, _ in sorted(same, key=lambda x: abs(x[1] - spot))[:NEAR_CONTRACTS_N]]
+    zero_live = sum(1 for o in near
+                    if (o.get("bid") or 0) > 0 and (o.get("ask") or 0) > 0
+                    and float(o.get("open_interest") or 0) == 0)
+    return zero_live, len(near)
+
+
+# Everything downstream of open interest. Gamma exposure is LINEAR in it, so a
+# name missing part of its open interest reports a net gex, a flip and walls
+# that are all wrong by an unknown amount -- and wrong quietly, which is worse
+# than absent. atm_iv_30 and atm_spread_pct are quote-derived and survive.
+OI_DERIVED = ("net_gex_musd", "gamma_flip", "call_wall", "put_wall",
+              "wall_fallback")
+
+
+def gate_on_oi(symbol, spot, options, gexd, atm_oi, logpath, today=None):
+    """Withhold open-interest-derived figures when open interest is suspect.
+
+    Returns (atm_oi, gexd). Conditional by design: if the feed reports open
+    interest correctly this changes nothing, so the same code is right whether
+    the defect is upstream or gets fixed."""
+    zero_live, n_near = oi_integrity(spot, options, today=today)
+    if n_near and zero_live > OI_ZERO_LIVE_MAX:
+        log(logpath, f"{symbol}: {zero_live}/{n_near} near-ATM contracts have a "
+                     f"live market and zero OI -- OI untrusted, withholding "
+                     f"atm_oi and {', '.join(OI_DERIVED)}")
+        return None, {k: (None if k in OI_DERIVED else v) for k, v in (gexd or {}).items()}
+    return atm_oi, gexd
 
 
 def parse_stooq_csv(text):
@@ -449,11 +557,19 @@ def main():
     p.add_argument("--source", choices=["yfinance", "stooq"], default="yfinance",
                    help="price history source; stooq is the old path, kept "
                         "only as a manual fallback (it was 404ing as of 2026-10-06)")
+    p.add_argument("--chains", default=None,
+                   help="JSON of pre-fetched option chains from sector_chains.py "
+                        "(Schwab, via the container). Without it the Cboe path is "
+                        "tried, which has been blocked since 2026-11-20.")
     p.add_argument("--dry-run", action="store_true")
     args = p.parse_args()
 
     os.makedirs(args.outdir, exist_ok=True)
     logpath = os.path.join(args.outdir, "technicals_capture.log")
+
+    if args.chains:
+        global PRELOADED_CHAINS
+        PRELOADED_CHAINS = load_chains(args.chains, logpath)
     fund_csv = os.path.join(args.outdir, "sector_fundamentals.csv")
     out_path = os.path.join(args.outdir, "sector_technicals.csv")
 
@@ -492,7 +608,16 @@ def main():
         if row:
             rows.append(row)
 
-    log(logpath, f"=== technicals capture done: {len(rows)}/{len(pairs)} names captured ===")
+    # Counting names ATTEMPTED was how two full days (484 rows) of empty
+    # options data got written and reported as "121/121 names captured", with
+    # every ticker logging a 403 immediately above that line. Count what
+    # actually arrived.
+    with_opts = sum(1 for r in rows if r.get("atm_oi") is not None)
+    log(logpath, f"=== technicals capture done: {len(rows)}/{len(pairs)} names captured, "
+                 f"{with_opts} with options data ===")
+    if rows and not with_opts:
+        log(logpath, "=== WARNING: NOT ONE name has options data -- the chain "
+                     "source is unusable this run, the rows are price-only ===")
 
     if args.dry_run:
         print(pd.DataFrame(rows).head(20).to_string())
