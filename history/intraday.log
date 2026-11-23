@@ -54923,3 +54923,4 @@ requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://cdn-
 2026-11-23T21:52:01+00:00  RV TLT: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
 2026-11-23T21:52:01+00:00  --- intraday done  ok=0  skipped=0  failed=9
 2026-11-23T21:52:07+00:00  --- runner: capture at 21:52 UTC exited 1
+2026-11-23T21:52:09+00:00  --- runner: session complete, 13 capture(s) by this link
