@@ -16,6 +16,7 @@ import argparse
 import glob
 import html
 import json
+import math
 import os
 from datetime import datetime, timezone
 
@@ -739,6 +740,17 @@ def main():
     a = p.parse_args()
     build(a.histdir, a.docsdir, charts=not a.no_charts)
 
+def _json_finite(value):
+    """Recursively replace non-finite floats with None, for valid JSON."""
+    if isinstance(value, float):
+        return value if math.isfinite(value) else None
+    if isinstance(value, dict):
+        return {k: _json_finite(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_json_finite(v) for v in value]
+    return value
+
+
 def build_latest_json(histdir, docsdir):
     """
     Build lightweight JSON feed for the trading agent.
@@ -914,8 +926,17 @@ def build_latest_json(histdir, docsdir):
         encoding="utf-8"
     ) as fh:
 
+        # NaN/Infinity are NOT valid JSON. Python emits them as bare tokens and
+        # its own json.loads accepts them back, so this file looked healthy from
+        # every Python consumer while being unparseable to everything else --
+        # Dart's jsonDecode threw on "flip":NaN and took the phone app's Market
+        # tab down on 2026-11-23. The API layer sanitizes on the way out
+        # (_json_safe in api_response_v1.py), but the published feed is read
+        # directly by other things too, so it must be valid at the source.
+        # allow_nan=False would raise instead; null is what a number that could
+        # not be computed should look like.
         json.dump(
-            output,
+            _json_finite(output),
             fh,
             indent=2
         )
