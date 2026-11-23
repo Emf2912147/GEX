@@ -4,3 +4,12 @@
 # defined by `git config merge.ours.driver true`, which both workflows run.
 docs/index.html merge=ours
 docs/latest.json merge=ours
+
+# Append-only capture output. Both the PC job and (historically) the
+# GitHub runner append to these every cycle, so a rebase across a
+# concurrent push conflicts on them every single time -- it stranded the
+# first live Schwab intraday commit on 2026-11-23. union keeps both
+# sides' lines instead of asking: for a log and an append-only state
+# series that is the correct resolution, never a lossy one.
+history/intraday.log merge=union
+history/vix_state.csv merge=union
