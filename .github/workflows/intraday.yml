@@ -28,17 +28,32 @@ name: GEX intraday capture
 # missed slot leaves a longer gap, and intraday.log says which.
 
 on:
-  schedule:
-    # REPAIR ONLY. The chain does not need these. They exist for the one
-    # failure it cannot fix itself: a link that died without starting its
-    # successor (runner lost mid-job, or a GitHub incident at the moment of
-    # a handoff). Any one that fires starts a new link -- or, if a link is
-    # alive, waits behind it as a spare and takes over the instant it ends.
-    #
-    # Hourly through both clock regimes' session hours, and three times a
-    # day otherwise so a chain broken on a Saturday is mended before Monday.
-    - cron: '53 12-21 * * 1-5'
-    - cron: '23 2,6,10 * * *'
+  # ======================================================================
+  # SCHEDULE DISABLED 2026-11-23.
+  #
+  # Cboe's free options endpoint began returning 403 on 2026-11-20 at
+  # 09:07 ET. Every run since has been ok=0 / failed=9 -- 86 consecutive
+  # cycles that still committed a fresh timestamp, which is how three-day-
+  # old gamma came to be served as live. It is not datacenter blocking: a
+  # residential IP gets the same 403 following the cdn.cboe.com ->
+  # cdn-api.cboe.com redirect. The free chain feed is gone.
+  #
+  # The capture now runs on the EMFS PC against Schwab, via
+  # schwab_intraday_auto.bat and gex_intraday.py --pull. Schwab and
+  # tastytrade credentials cannot live on a public runner, which is the
+  # reason the job had to move rather than just change its URL.
+  #
+  # Left dispatch-only rather than deleted, so the relay can be restarted
+  # by hand if a cloud-reachable chain source ever appears.
+  #
+  # NOTE: this workflow is a SELF-RESTARTING RELAY -- a live link starts
+  # its successor through the dispatch API, so removing the cron does not
+  # stop a chain that is already running. Disable the workflow in the
+  # Actions UI, or cancel the running job, to actually stop it.
+  # ======================================================================
+  #  schedule:
+  #    - cron: '53 12-21 * * 1-5'
+  #    - cron: '23 2,6,10 * * *'
   workflow_dispatch:
     inputs:
       test_links:

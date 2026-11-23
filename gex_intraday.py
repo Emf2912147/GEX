@@ -237,6 +237,8 @@ STATE_COLUMNS = [
 # Plain index quotes, not the options-chain endpoint -- underscore-prefixed
 # symbol convention (_VIX, _VIX9D). History CSVs are read fresh each run and
 # never stored; see the VIX CAPTURE docstring section above for why.
+_PULL_CACHE: dict = {}
+
 VIX_QUOTE_URL = "https://cdn.cboe.com/api/global/delayed_quotes/quotes/_{sym}.json"
 VIX_HISTORY_URL = "https://cdn.cboe.com/api/global/us_indices/daily_prices/VIX_History.csv"
 
@@ -1072,7 +1074,8 @@ def fetch_valid_chain(symbol, args, logpath, now):
                          f"not missing")
             time.sleep(args.integrity_retry_wait)
 
-        payload = gx.fetch_chain(symbol)
+        payload = (chain_payload_from_pull(args.pull, symbol)
+                   if getattr(args, "pull", None) else gx.fetch_chain(symbol))
         df, spot, feed_ts = parse_chain_full(payload)
         df = gx.normalize_iv(df, quiet=True)
         metric_chain = df[df["dte"] <= args.max_dte]
@@ -1096,6 +1099,41 @@ def fetch_valid_chain(symbol, args, logpath, now):
         return df, spot, feed_ts, g_fill, iv_fill
 
     raise err
+
+
+def chain_payload_from_pull(path, symbol):
+    """One symbol's chain out of a schwab_fetch.py pull, Cboe-shaped.
+
+    schwab_daily.to_cboe_payload already does this conversion for the daily
+    capture, so the intraday path reuses it rather than growing a second,
+    divergent parser. The file is cached per (path, mtime): one pull holds
+    every symbol, and re-reading a multi-megabyte JSON nine times a cycle is
+    pure waste.
+    """
+    import json
+    import os as _os
+
+    import schwab_daily as _sd
+
+    key = (path, _os.path.getmtime(path))
+    cached = _PULL_CACHE.get("key"), _PULL_CACHE.get("doc")
+    if cached[0] != key:
+        with open(path, encoding="utf-8") as fh:
+            _PULL_CACHE["doc"] = json.load(fh)
+        _PULL_CACHE["key"] = key
+    doc = _PULL_CACHE["doc"]
+
+    block = (doc.get("symbols") or {}).get(symbol.upper())
+    if not block:
+        raise ChainIntegrityError(f"{symbol}: not in pull {_os.path.basename(path)}")
+    if not block.get("ok"):
+        raise ChainIntegrityError(
+            f"{symbol}: pull block not ok ({block.get('error') or 'no reason given'})")
+
+    # feed_ts is the pull's own fetch time: when these quotes were taken.
+    # check_feed_freshness() then applies the same staleness gate it applies
+    # to a Cboe timestamp, so a stalled pull is caught rather than published.
+    return _sd.to_cboe_payload(block, doc.get("fetched_utc") or "unknown")
 
 
 def capture_symbol(symbol, args, logpath, now):
@@ -1224,6 +1262,13 @@ def append_state(state_path, rows):
 def main():
     p = argparse.ArgumentParser(description="Capture intraday GEX / flow snapshots.")
     p.add_argument("--symbols", nargs="+", default=DEFAULT_SYMBOLS)
+    p.add_argument("--pull", default=None,
+                   help="a schwab_fetch.py pull JSON to read chains from "
+                        "instead of Cboe. Cboe's free options endpoint began "
+                        "returning 403 on 2026-11-20 (from datacenters AND "
+                        "residential IPs), which killed the intraday capture. "
+                        "The pull is converted to the same payload shape, so "
+                        "every downstream metric is computed identically.")
     p.add_argument("--outdir", default=None)
     p.add_argument("--dte-window", type=float, default=45,
                    help="DTE ceiling for the stored slim snapshot (default 45)")
