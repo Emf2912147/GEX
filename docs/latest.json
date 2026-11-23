@@ -1,6 +1,6 @@
 {
   "generated_utc": "2026-11-21T19:28:33.006547+00:00",
-  "published_utc": "2026-11-23T18:52:04.966837+00:00",
+  "published_utc": "2026-11-23T18:58:07.661111+00:00",
   "SPX": {
     "spot": 6910.39,
     "flip": 7191.5649,
@@ -4068,13 +4068,13 @@
       ]
     },
     "vix": {
-      "asof": "2026-11-23T18:36:46",
-      "vix": 26.47,
-      "vix9d": 28.14,
-      "term_spread_9d_vs_30d": 1.67,
+      "asof": "2026-11-23T18:43:01",
+      "vix": 26.87,
+      "vix9d": 28.61,
+      "term_spread_9d_vs_30d": 1.74,
       "term_state": "backwardation(short-rich)",
-      "vix_chg_1d_pct": -0.262469,
-      "vix_20d_change_pct": 0.510845
+      "vix_chg_1d_pct": -0.251323,
+      "vix_20d_change_pct": 0.533676
     },
     "long_vol": {
       "tenors": {
