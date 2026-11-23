@@ -54,3 +54,17 @@ history/flow_15m.csv
 # Scratch and notes.
 Claude outputs/
 *.docx
+robinhood_*.bat
+robinhood_login_status.txt
+history/.robinhood_env
+tastytrade_*.py
+tastytrade_*.bat
+history/.tastytrade_env
+history/tastytrade_oi_snapshot.json
+_TASTYTRADE_NEEDS_ATTENTION.txt
+_test_*.py
+copy_of_pull.json
+test_pull.json
+.agent-deps/
+.agent-tmp/
+.agent-pipcache/

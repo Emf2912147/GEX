@@ -765,9 +765,32 @@ def build_latest_json(histdir, docsdir):
         .tail(1)
     )
 
+    # generated_utc must describe the DATA, not the moment this file was
+    # written. It used to be datetime.now(), so a feed whose captures had all
+    # failed still advertised itself as current: the Cboe intraday job died
+    # 2026-11-20 and kept committing every 15 min with a fresh timestamp, and
+    # gex-trading-agent's is_stale (age vs generated_utc) therefore never
+    # fired -- three-day-old gamma read as live on the phone. The newest
+    # quote time actually represented in the file is the honest answer.
+    def _feed_ts_utc(value):
+        # feed_ts may carry a source prefix: "schwab:2026-11-21T10:37:40+00:00"
+        text = str(value)
+        if text[:4].isdigit() is False and ":" in text:
+            text = text.split(":", 1)[1]
+        return pd.to_datetime(text, utc=True, errors="coerce")
+
+    _data_ts = latest["feed_ts"].map(_feed_ts_utc).dropna()
+    _published = datetime.now(timezone.utc).isoformat()
+
     output = {
+        # Newest quote time in this file. None only if no row parsed.
         "generated_utc":
-        datetime.now(timezone.utc).isoformat()
+            _data_ts.max().isoformat() if len(_data_ts) else None,
+
+        # When the file itself was written -- what generated_utc used to
+        # report. Kept so a publish can still be traced.
+        "published_utc":
+            _published,
     }
 
     # Market-wide stress read for the calendar gate: VIX9D above VIX.
