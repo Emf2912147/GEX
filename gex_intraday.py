@@ -543,7 +543,12 @@ def elapsed_seconds(prev_capture_ts, now):
         return ""
     try:
         prev = datetime.fromisoformat(prev_capture_ts)
-    except ValueError:
+    except (ValueError, TypeError):
+        # TypeError: pd.read_csv(dtype=str) still yields NaN (a float) for
+        # an empty field, and fromisoformat rejects a non-str. One
+        # unreadable previous row took the whole VIX capture down on
+        # 2026-11-23 (failed=1 for that cycle). elapsed_s is provenance,
+        # not a metric -- losing it is never worth losing the row.
         return ""
     if prev.tzinfo is None:
         prev = prev.replace(tzinfo=timezone.utc)
