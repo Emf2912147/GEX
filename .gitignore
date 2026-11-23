@@ -69,3 +69,4 @@ test_pull.json
 .agent-tmp/
 .agent-pipcache/
 schwab_tt_last.txt
+schwab_ttfull_last.txt
