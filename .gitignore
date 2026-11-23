@@ -70,3 +70,14 @@ test_pull.json
 .agent-pipcache/
 schwab_tt_last.txt
 schwab_ttfull_last.txt
+
+# Timestamped backups of the schwab_* scripts, which are deliberately
+# untracked. Neither existing pattern caught these: *.bak.* needs
+# something AFTER .bak, and schwab_*.py needs the name to END in .py,
+# so schwab_daily.py.<stamp>.bak was committable to a public repo.
+_backup/
+
+# Capitalised, space-separated variants of the credential scripts above.
+# robinhood_*.bat and schwab_*.bat do not match these names.
+Save Tokens*
+Renew *.bat
