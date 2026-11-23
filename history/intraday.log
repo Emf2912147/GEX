@@ -52017,3 +52017,291 @@ requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://cdn-
 2026-11-23T18:37:02+00:00  RV TLT: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
 2026-11-23T18:37:02+00:00  --- intraday done  ok=0  skipped=0  failed=9  vix=written
 2026-11-23T18:37:08+00:00  --- runner: capture at 18:37 UTC exited 1
+2026-11-23T18:51:28+00:00  --- intraday capture  symbols=SPX SPY QQQ IWM XLK SMH XLF GLD TLT
+2026-11-23T18:51:28+00:00  SPX: FAILED -- Expecting value: line 1 column 1 (char 0)
+Traceback (most recent call last):
+  File "C:\Users\EMFS\GEX\gex_intraday.py", line 1396, in one
+    _, state = capture_symbol(sym, args, logpath, now)
+               ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\EMFS\GEX\gex_intraday.py", line 1147, in capture_symbol
+    df, spot, feed_ts, g_fill, iv_fill = fetch_valid_chain(
+                                         ~~~~~~~~~~~~~~~~~^
+        symbol, args, logpath, now)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\EMFS\GEX\gex_intraday.py", line 1082, in fetch_valid_chain
+    payload = (chain_payload_from_pull(args.pull, symbol)
+               ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\EMFS\GEX\gex_intraday.py", line 1127, in chain_payload_from_pull
+    _PULL_CACHE["doc"] = json.load(fh)
+                         ~~~~~~~~~^^^^
+  File "C:\Users\EMFS\AppData\Local\Python\pythoncore-3.14-64\Lib\json\__init__.py", line 298, in load
+    return loads(fp.read(),
+        cls=cls, object_hook=object_hook,
+        parse_float=parse_float, parse_int=parse_int,
+        parse_constant=parse_constant, object_pairs_hook=object_pairs_hook, **kw)
+  File "C:\Users\EMFS\AppData\Local\Python\pythoncore-3.14-64\Lib\json\__init__.py", line 352, in loads
+    return _default_decoder.decode(s)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "C:\Users\EMFS\AppData\Local\Python\pythoncore-3.14-64\Lib\json\decoder.py", line 345, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\EMFS\AppData\Local\Python\pythoncore-3.14-64\Lib\json\decoder.py", line 363, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+
+2026-11-23T18:51:28+00:00  SPY: FAILED -- Expecting value: line 1 column 1 (char 0)
+Traceback (most recent call last):
+  File "C:\Users\EMFS\GEX\gex_intraday.py", line 1396, in one
+    _, state = capture_symbol(sym, args, logpath, now)
+               ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\EMFS\GEX\gex_intraday.py", line 1147, in capture_symbol
+    df, spot, feed_ts, g_fill, iv_fill = fetch_valid_chain(
+                                         ~~~~~~~~~~~~~~~~~^
+        symbol, args, logpath, now)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\EMFS\GEX\gex_intraday.py", line 1082, in fetch_valid_chain
+    payload = (chain_payload_from_pull(args.pull, symbol)
+               ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\EMFS\GEX\gex_intraday.py", line 1127, in chain_payload_from_pull
+    _PULL_CACHE["doc"] = json.load(fh)
+                         ~~~~~~~~~^^^^
+  File "C:\Users\EMFS\AppData\Local\Python\pythoncore-3.14-64\Lib\json\__init__.py", line 298, in load
+    return loads(fp.read(),
+        cls=cls, object_hook=object_hook,
+        parse_float=parse_float, parse_int=parse_int,
+        parse_constant=parse_constant, object_pairs_hook=object_pairs_hook, **kw)
+  File "C:\Users\EMFS\AppData\Local\Python\pythoncore-3.14-64\Lib\json\__init__.py", line 352, in loads
+    return _default_decoder.decode(s)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "C:\Users\EMFS\AppData\Local\Python\pythoncore-3.14-64\Lib\json\decoder.py", line 345, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\EMFS\AppData\Local\Python\pythoncore-3.14-64\Lib\json\decoder.py", line 363, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+
+2026-11-23T18:51:28+00:00  QQQ: FAILED -- Expecting value: line 1 column 1 (char 0)
+Traceback (most recent call last):
+  File "C:\Users\EMFS\GEX\gex_intraday.py", line 1396, in one
+    _, state = capture_symbol(sym, args, logpath, now)
+               ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\EMFS\GEX\gex_intraday.py", line 1147, in capture_symbol
+    df, spot, feed_ts, g_fill, iv_fill = fetch_valid_chain(
+                                         ~~~~~~~~~~~~~~~~~^
+        symbol, args, logpath, now)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\EMFS\GEX\gex_intraday.py", line 1082, in fetch_valid_chain
+    payload = (chain_payload_from_pull(args.pull, symbol)
+               ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\EMFS\GEX\gex_intraday.py", line 1127, in chain_payload_from_pull
+    _PULL_CACHE["doc"] = json.load(fh)
+                         ~~~~~~~~~^^^^
+  File "C:\Users\EMFS\AppData\Local\Python\pythoncore-3.14-64\Lib\json\__init__.py", line 298, in load
+    return loads(fp.read(),
+        cls=cls, object_hook=object_hook,
+        parse_float=parse_float, parse_int=parse_int,
+        parse_constant=parse_constant, object_pairs_hook=object_pairs_hook, **kw)
+  File "C:\Users\EMFS\AppData\Local\Python\pythoncore-3.14-64\Lib\json\__init__.py", line 352, in loads
+    return _default_decoder.decode(s)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "C:\Users\EMFS\AppData\Local\Python\pythoncore-3.14-64\Lib\json\decoder.py", line 345, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\EMFS\AppData\Local\Python\pythoncore-3.14-64\Lib\json\decoder.py", line 363, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+
+2026-11-23T18:51:28+00:00  IWM: FAILED -- Expecting value: line 1 column 1 (char 0)
+Traceback (most recent call last):
+  File "C:\Users\EMFS\GEX\gex_intraday.py", line 1396, in one
+    _, state = capture_symbol(sym, args, logpath, now)
+               ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\EMFS\GEX\gex_intraday.py", line 1147, in capture_symbol
+    df, spot, feed_ts, g_fill, iv_fill = fetch_valid_chain(
+                                         ~~~~~~~~~~~~~~~~~^
+        symbol, args, logpath, now)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\EMFS\GEX\gex_intraday.py", line 1082, in fetch_valid_chain
+    payload = (chain_payload_from_pull(args.pull, symbol)
+               ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\EMFS\GEX\gex_intraday.py", line 1127, in chain_payload_from_pull
+    _PULL_CACHE["doc"] = json.load(fh)
+                         ~~~~~~~~~^^^^
+  File "C:\Users\EMFS\AppData\Local\Python\pythoncore-3.14-64\Lib\json\__init__.py", line 298, in load
+    return loads(fp.read(),
+        cls=cls, object_hook=object_hook,
+        parse_float=parse_float, parse_int=parse_int,
+        parse_constant=parse_constant, object_pairs_hook=object_pairs_hook, **kw)
+  File "C:\Users\EMFS\AppData\Local\Python\pythoncore-3.14-64\Lib\json\__init__.py", line 352, in loads
+    return _default_decoder.decode(s)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "C:\Users\EMFS\AppData\Local\Python\pythoncore-3.14-64\Lib\json\decoder.py", line 345, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\EMFS\AppData\Local\Python\pythoncore-3.14-64\Lib\json\decoder.py", line 363, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+
+2026-11-23T18:51:28+00:00  XLK: FAILED -- Expecting value: line 1 column 1 (char 0)
+Traceback (most recent call last):
+  File "C:\Users\EMFS\GEX\gex_intraday.py", line 1396, in one
+    _, state = capture_symbol(sym, args, logpath, now)
+               ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\EMFS\GEX\gex_intraday.py", line 1147, in capture_symbol
+    df, spot, feed_ts, g_fill, iv_fill = fetch_valid_chain(
+                                         ~~~~~~~~~~~~~~~~~^
+        symbol, args, logpath, now)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\EMFS\GEX\gex_intraday.py", line 1082, in fetch_valid_chain
+    payload = (chain_payload_from_pull(args.pull, symbol)
+               ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\EMFS\GEX\gex_intraday.py", line 1127, in chain_payload_from_pull
+    _PULL_CACHE["doc"] = json.load(fh)
+                         ~~~~~~~~~^^^^
+  File "C:\Users\EMFS\AppData\Local\Python\pythoncore-3.14-64\Lib\json\__init__.py", line 298, in load
+    return loads(fp.read(),
+        cls=cls, object_hook=object_hook,
+        parse_float=parse_float, parse_int=parse_int,
+        parse_constant=parse_constant, object_pairs_hook=object_pairs_hook, **kw)
+  File "C:\Users\EMFS\AppData\Local\Python\pythoncore-3.14-64\Lib\json\__init__.py", line 352, in loads
+    return _default_decoder.decode(s)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "C:\Users\EMFS\AppData\Local\Python\pythoncore-3.14-64\Lib\json\decoder.py", line 345, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\EMFS\AppData\Local\Python\pythoncore-3.14-64\Lib\json\decoder.py", line 363, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+
+2026-11-23T18:51:28+00:00  SMH: FAILED -- Expecting value: line 1 column 1 (char 0)
+Traceback (most recent call last):
+  File "C:\Users\EMFS\GEX\gex_intraday.py", line 1396, in one
+    _, state = capture_symbol(sym, args, logpath, now)
+               ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\EMFS\GEX\gex_intraday.py", line 1147, in capture_symbol
+    df, spot, feed_ts, g_fill, iv_fill = fetch_valid_chain(
+                                         ~~~~~~~~~~~~~~~~~^
+        symbol, args, logpath, now)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\EMFS\GEX\gex_intraday.py", line 1082, in fetch_valid_chain
+    payload = (chain_payload_from_pull(args.pull, symbol)
+               ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\EMFS\GEX\gex_intraday.py", line 1127, in chain_payload_from_pull
+    _PULL_CACHE["doc"] = json.load(fh)
+                         ~~~~~~~~~^^^^
+  File "C:\Users\EMFS\AppData\Local\Python\pythoncore-3.14-64\Lib\json\__init__.py", line 298, in load
+    return loads(fp.read(),
+        cls=cls, object_hook=object_hook,
+        parse_float=parse_float, parse_int=parse_int,
+        parse_constant=parse_constant, object_pairs_hook=object_pairs_hook, **kw)
+  File "C:\Users\EMFS\AppData\Local\Python\pythoncore-3.14-64\Lib\json\__init__.py", line 352, in loads
+    return _default_decoder.decode(s)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "C:\Users\EMFS\AppData\Local\Python\pythoncore-3.14-64\Lib\json\decoder.py", line 345, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\EMFS\AppData\Local\Python\pythoncore-3.14-64\Lib\json\decoder.py", line 363, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+
+2026-11-23T18:51:28+00:00  XLF: FAILED -- Expecting value: line 1 column 1 (char 0)
+Traceback (most recent call last):
+  File "C:\Users\EMFS\GEX\gex_intraday.py", line 1396, in one
+    _, state = capture_symbol(sym, args, logpath, now)
+               ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\EMFS\GEX\gex_intraday.py", line 1147, in capture_symbol
+    df, spot, feed_ts, g_fill, iv_fill = fetch_valid_chain(
+                                         ~~~~~~~~~~~~~~~~~^
+        symbol, args, logpath, now)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\EMFS\GEX\gex_intraday.py", line 1082, in fetch_valid_chain
+    payload = (chain_payload_from_pull(args.pull, symbol)
+               ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\EMFS\GEX\gex_intraday.py", line 1127, in chain_payload_from_pull
+    _PULL_CACHE["doc"] = json.load(fh)
+                         ~~~~~~~~~^^^^
+  File "C:\Users\EMFS\AppData\Local\Python\pythoncore-3.14-64\Lib\json\__init__.py", line 298, in load
+    return loads(fp.read(),
+        cls=cls, object_hook=object_hook,
+        parse_float=parse_float, parse_int=parse_int,
+        parse_constant=parse_constant, object_pairs_hook=object_pairs_hook, **kw)
+  File "C:\Users\EMFS\AppData\Local\Python\pythoncore-3.14-64\Lib\json\__init__.py", line 352, in loads
+    return _default_decoder.decode(s)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "C:\Users\EMFS\AppData\Local\Python\pythoncore-3.14-64\Lib\json\decoder.py", line 345, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\EMFS\AppData\Local\Python\pythoncore-3.14-64\Lib\json\decoder.py", line 363, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+
+2026-11-23T18:51:28+00:00  GLD: FAILED -- Expecting value: line 1 column 1 (char 0)
+Traceback (most recent call last):
+  File "C:\Users\EMFS\GEX\gex_intraday.py", line 1396, in one
+    _, state = capture_symbol(sym, args, logpath, now)
+               ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\EMFS\GEX\gex_intraday.py", line 1147, in capture_symbol
+    df, spot, feed_ts, g_fill, iv_fill = fetch_valid_chain(
+                                         ~~~~~~~~~~~~~~~~~^
+        symbol, args, logpath, now)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\EMFS\GEX\gex_intraday.py", line 1082, in fetch_valid_chain
+    payload = (chain_payload_from_pull(args.pull, symbol)
+               ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\EMFS\GEX\gex_intraday.py", line 1127, in chain_payload_from_pull
+    _PULL_CACHE["doc"] = json.load(fh)
+                         ~~~~~~~~~^^^^
+  File "C:\Users\EMFS\AppData\Local\Python\pythoncore-3.14-64\Lib\json\__init__.py", line 298, in load
+    return loads(fp.read(),
+        cls=cls, object_hook=object_hook,
+        parse_float=parse_float, parse_int=parse_int,
+        parse_constant=parse_constant, object_pairs_hook=object_pairs_hook, **kw)
+  File "C:\Users\EMFS\AppData\Local\Python\pythoncore-3.14-64\Lib\json\__init__.py", line 352, in loads
+    return _default_decoder.decode(s)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "C:\Users\EMFS\AppData\Local\Python\pythoncore-3.14-64\Lib\json\decoder.py", line 345, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\EMFS\AppData\Local\Python\pythoncore-3.14-64\Lib\json\decoder.py", line 363, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+
+2026-11-23T18:51:28+00:00  TLT: FAILED -- Expecting value: line 1 column 1 (char 0)
+Traceback (most recent call last):
+  File "C:\Users\EMFS\GEX\gex_intraday.py", line 1396, in one
+    _, state = capture_symbol(sym, args, logpath, now)
+               ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\EMFS\GEX\gex_intraday.py", line 1147, in capture_symbol
+    df, spot, feed_ts, g_fill, iv_fill = fetch_valid_chain(
+                                         ~~~~~~~~~~~~~~~~~^
+        symbol, args, logpath, now)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\EMFS\GEX\gex_intraday.py", line 1082, in fetch_valid_chain
+    payload = (chain_payload_from_pull(args.pull, symbol)
+               ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\EMFS\GEX\gex_intraday.py", line 1127, in chain_payload_from_pull
+    _PULL_CACHE["doc"] = json.load(fh)
+                         ~~~~~~~~~^^^^
+  File "C:\Users\EMFS\AppData\Local\Python\pythoncore-3.14-64\Lib\json\__init__.py", line 298, in load
+    return loads(fp.read(),
+        cls=cls, object_hook=object_hook,
+        parse_float=parse_float, parse_int=parse_int,
+        parse_constant=parse_constant, object_pairs_hook=object_pairs_hook, **kw)
+  File "C:\Users\EMFS\AppData\Local\Python\pythoncore-3.14-64\Lib\json\__init__.py", line 352, in loads
+    return _default_decoder.decode(s)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "C:\Users\EMFS\AppData\Local\Python\pythoncore-3.14-64\Lib\json\decoder.py", line 345, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\EMFS\AppData\Local\Python\pythoncore-3.14-64\Lib\json\decoder.py", line 363, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+
+2026-11-23T18:51:29+00:00  VIX: 26.42 (-26.4% 1d, +50.8% 20d)  VIX9D: 28.09  term backwardation(short-rich) -> vix_state.csv
+2026-11-23T18:51:29+00:00  RV QQQ: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
+2026-11-23T18:51:29+00:00  RV XLK: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
+2026-11-23T18:51:29+00:00  RV SMH: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
+2026-11-23T18:51:29+00:00  RV XLF: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
+2026-11-23T18:51:29+00:00  RV GLD: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
+2026-11-23T18:51:29+00:00  RV TLT: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
+2026-11-23T18:51:29+00:00  --- intraday done  ok=0  skipped=0  failed=9  vix=written
