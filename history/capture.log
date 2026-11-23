@@ -3291,3 +3291,14 @@ requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://cdn-
 2026-11-21T20:41:51+00:00  appended 1 metric row(s) (Schwab)
 2026-11-21T20:41:51+00:00  === schwab_daily done  ok=1  skipped=0  failed=0
 2026-11-22T18:36:36+00:00  === capture skipped  2026-11-22 Sun: 2026-11-21 was not a trading session
+2026-11-23T17:00:17+00:00  === schwab_daily start session=2026-11-20 symbols=SPX SPY QQQ IWM XLK SMH XLF GLD TLT  (dry run)
+2026-11-23T17:07:04+00:00  SPX: session 2026-11-20 already captured, skipping
+2026-11-23T17:07:04+00:00  SPY: session 2026-11-20 already captured, skipping
+2026-11-23T17:07:04+00:00  QQQ: session 2026-11-20 already captured, skipping
+2026-11-23T17:07:04+00:00  IWM: session 2026-11-20 already captured, skipping
+2026-11-23T17:07:04+00:00  XLK: session 2026-11-20 already captured, skipping
+2026-11-23T17:07:04+00:00  SMH: session 2026-11-20 already captured, skipping
+2026-11-23T17:07:04+00:00  XLF: session 2026-11-20 already captured, skipping
+2026-11-23T17:07:04+00:00  GLD: session 2026-11-20 already captured, skipping
+2026-11-23T17:07:04+00:00  TLT: session 2026-11-20 already captured, skipping
+2026-11-23T17:07:04+00:00  === schwab_daily done  ok=0  skipped=9  failed=0  (dry run)
