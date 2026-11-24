@@ -54924,3 +54924,44 @@ requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://cdn-
 2026-11-23T21:52:01+00:00  --- intraday done  ok=0  skipped=0  failed=9
 2026-11-23T21:52:07+00:00  --- runner: capture at 21:52 UTC exited 1
 2026-11-23T21:52:09+00:00  --- runner: session complete, 13 capture(s) by this link
+2026-11-24T14:41:47+00:00  --- intraday capture  symbols=SPX SPY QQQ IWM XLK SMH XLF GLD TLT
+2026-11-24T14:41:47+00:00  SPX: greek fill gamma 99.9% / iv 100.0%
+2026-11-24T14:41:47+00:00  SPX: 11,726 contracts -> SPX__170000.parquet
+2026-11-24T14:41:47+00:00  SPX: spot 7,158.15  netGEX(win) -41.47Bn  flip 7391.0511  walls 7800.0/7000.0  negative  RR25 -0.101487 (STEEP)  P/C 
+2026-11-24T14:41:47+00:00  SPY: greek fill gamma 54.2% / iv 100.0%
+2026-11-24T14:41:48+00:00  SPY: 3,930 contracts -> SPY__170000.parquet
+2026-11-24T14:41:48+00:00  SPY: spot 713.71  netGEX(win) -6.51Bn  flip 731.8705  walls 750.0/700.0  negative  RR25 -0.08453 (STEEP)  P/C 1.4177
+2026-11-24T14:41:48+00:00  QQQ: greek fill gamma 59.5% / iv 100.0%
+2026-11-24T14:41:48+00:00  QQQ: 3,518 contracts -> QQQ__170000.parquet
+2026-11-24T14:41:48+00:00  QQQ: spot 636.80  netGEX(win) -2.62Bn  flip 655.7212  walls 680.0/630.0  negative  RR25 -0.09011 (STEEP)  P/C 1.1724
+2026-11-24T14:41:48+00:00  IWM: greek fill gamma 64.8% / iv 100.0%
+2026-11-24T14:41:48+00:00  IWM: 1,680 contracts -> IWM__170000.parquet
+2026-11-24T14:41:48+00:00  IWM: spot 265.62  netGEX(win) -2.11Bn  flip 285.122  walls 285.0/260.0  negative  RR25 -0.06867 (STEEP)  P/C 0.8545
+2026-11-24T14:41:48+00:00  XLK: greek fill gamma 79.0% / iv 100.0%
+2026-11-24T14:41:48+00:00  XLK: 504 contracts -> XLK__170000.parquet
+2026-11-24T14:41:48+00:00  XLK: spot 157.01  netGEX(win) -0.02Bn  flip 164.4535  walls 172.5/155.0  negative  RR25 -0.10359 (STEEP)  P/C 1.6351
+2026-11-24T14:41:48+00:00  SMH: greek fill gamma 62.2% / iv 100.0%
+2026-11-24T14:41:48+00:00  SMH: 964 contracts -> SMH__170000.parquet
+2026-11-24T14:41:48+00:00  SMH: spot 433.20  netGEX(win) -0.13Bn  flip 461.0298  walls 475.0/420.0  negative  RR25 -0.08398 (STEEP)  P/C 6.9313
+2026-11-24T14:41:48+00:00  XLF: greek fill gamma 96.9% / iv 100.0%
+2026-11-24T14:41:48+00:00  XLF: 590 contracts -> XLF__170000.parquet
+2026-11-24T14:41:48+00:00  XLF: spot 55.65  netGEX(win) -0.14Bn  flip 59.9288  walls 59.0/54.0  negative  RR25 -0.02243 (STEEP)  P/C 0.1561
+2026-11-24T14:41:48+00:00  GLD: greek fill gamma 62.5% / iv 100.0%
+2026-11-24T14:41:48+00:00  GLD: 2,094 contracts -> GLD__170000.parquet
+2026-11-24T14:41:48+00:00  GLD: spot 331.71  netGEX(win) -0.15Bn  flip 335.3049  walls 350.0/325.0  negative  RR25 -0.009 (FLAT)  P/C 1.6709
+2026-11-24T14:41:48+00:00  TLT: greek fill gamma 87.2% / iv 100.0%
+2026-11-24T14:41:48+00:00  TLT: 736 contracts -> TLT__170000.parquet
+2026-11-24T14:41:48+00:00  TLT: spot 81.72  netGEX(win) 0.96Bn  flip 79.0977  walls 83.0/78.0  positive  RR25 0.0219 (FLAT)  P/C 0.6697
+2026-11-24T14:41:48+00:00  appended 9 state row(s)
+2026-11-24T14:41:49+00:00  VIX: VIX9D has not printed this session yet (last 2026-11-23T21:15:01), row deferred (VIX 29.34)
+2026-11-24T14:41:49+00:00  RV SPX: HV20 31.85%  down/up 0.94x  through 2026-11-24  (1,255 closes)
+2026-11-24T14:41:50+00:00  RV SPY (via SPX): HV20 31.85%  down/up 0.94x  through 2026-11-24  (1,255 closes)
+2026-11-24T14:41:50+00:00  RV QQQ: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
+2026-11-24T14:41:50+00:00  RV IWM (via RUT): HV20 30.80%  down/up 1.37x  through 2026-11-23  (1,254 closes)
+2026-11-24T14:41:50+00:00  RV XLK: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
+2026-11-24T14:41:50+00:00  RV SMH: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
+2026-11-24T14:41:50+00:00  RV XLF: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
+2026-11-24T14:41:50+00:00  RV GLD: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
+2026-11-24T14:41:50+00:00  RV TLT: no free Cboe daily-close series for this symbol, skipped (see RV_HISTORY)
+2026-11-24T14:41:50+00:00  appended 3 realized-vol row(s) -> realized_vol.csv
+2026-11-24T14:41:50+00:00  --- intraday done  ok=9  skipped=0  failed=0  rv=3
