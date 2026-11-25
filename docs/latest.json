@@ -1,6 +1,6 @@
 {
   "generated_utc": "2026-11-25T12:00:06.680966+00:00",
-  "published_utc": "2026-11-25T15:51:58.738493+00:00",
+  "published_utc": "2026-11-25T16:07:02.386208+00:00",
   "SPX": {
     "spot": 7201.09,
     "flip": 7384.8209,
@@ -15,7 +15,7 @@
       "term_ratio": 1.0424,
       "skew_25d": 0.0999,
       "vol_trigger": 7472.2362,
-      "rv_20d": 0.3295,
+      "rv_20d": 0.3298,
       "iv_rv_ratio": 0.72,
       "iv_extrapolated": 1,
       "rv_source": "cboe_history:SPX",
@@ -967,16 +967,16 @@
     },
     "flow_intensity": {
       "session_date": "2026-11-24",
-      "score": 7.6,
-      "grade": "F",
-      "label": "very weak",
+      "score": 25.7,
+      "grade": "D",
+      "label": "weak",
       "direction": "mixed",
       "charm_usd_day": 12124272102,
       "charm_pct": 11.7,
       "vanna_usd_per_volpt": 8462528394,
-      "vol_gap_pts": -2.8,
-      "vanna_potential_usd": -23707146263,
-      "vanna_pct": 3.4,
+      "vol_gap_pts": -8.12,
+      "vanna_potential_usd": -68695639712,
+      "vanna_pct": 39.8,
       "opex_date": "2026-12-18",
       "sessions_to_opex": 17,
       "opex_oi_share": 0.746,
@@ -986,14 +986,14 @@
         "expiry": "2026-12-18",
         "charm_usd_day": 11728020899,
         "vanna_usd_per_volpt": 7797800619,
-        "vanna_potential_usd": -21841639534,
+        "vanna_potential_usd": -63302545425,
         "oi_share_monthly": 0.7463
       },
       "next": {
         "expiry": "2027-01-15",
         "charm_usd_day": 396251203,
         "vanna_usd_per_volpt": 664727775,
-        "vanna_potential_usd": -1861902498,
+        "vanna_potential_usd": -5396260077,
         "oi_share_monthly": 0.0
       },
       "history_sessions": 46,
@@ -1029,7 +1029,7 @@
       "term_ratio": 1.1237,
       "skew_25d": 0.0715,
       "vol_trigger": 731.9035,
-      "rv_20d": 0.3296,
+      "rv_20d": 0.3297,
       "iv_rv_ratio": 0.751,
       "iv_extrapolated": 0,
       "rv_source": "cboe_history:SPX",
@@ -2103,8 +2103,8 @@
       "term_ratio": 1.0652,
       "skew_25d": 0.0644,
       "vol_trigger": 286.1821,
-      "rv_20d": 0.3097,
-      "iv_rv_ratio": 0.858,
+      "rv_20d": 0.3052,
+      "iv_rv_ratio": 0.871,
       "iv_extrapolated": 0,
       "rv_source": "cboe_history:RUT",
       "rv_proxy": true,
@@ -4169,7 +4169,7 @@
   },
   "market": {
     "flow_intensity": {
-      "score": 21.7,
+      "score": 27.7,
       "grade": "D",
       "label": "weak",
       "direction": "mixed",
@@ -4180,13 +4180,13 @@
       ]
     },
     "vix": {
-      "asof": "2026-11-25T15:36:46",
-      "vix": 32.34,
-      "vix9d": 34.98,
-      "term_spread_9d_vs_30d": 2.64,
+      "asof": "2026-11-25T15:51:46",
+      "vix": 33.53,
+      "vix9d": 36.64,
+      "term_spread_9d_vs_30d": 3.11,
       "term_state": "backwardation(short-rich)",
-      "vix_chg_1d_pct": 0.226859,
-      "vix_20d_change_pct": 0.880232
+      "vix_chg_1d_pct": 0.272003,
+      "vix_20d_change_pct": 0.949419
     },
     "long_vol": {
       "tenors": {
