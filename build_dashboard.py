@@ -693,7 +693,7 @@ function gbToggle(btn){{
     <b>Dates are session dates.</b> A file fetched on the 5th carries the
     4th session's settled open interest, and is shown as the 4th.<br>
     <b>Open interest settles overnight</b>, so this is prior-close
-    positioning, not live. The Cboe feed is ~15 minutes delayed.<br>
+    positioning, not live. Chains come from Schwab.<br>
     <b>Dealers assumed long calls, short puts</b> &mdash; the standard public
     convention, not a measurement of real positioning.<br>
     <b>Walls ignore strikes within 0.4% of spot.</b> Gamma peaks at the money,
@@ -715,7 +715,7 @@ function gbToggle(btn){{
     Sector Monitor&rsquo;s 75 / 60 / 45: A strong, B solid, C moderate,
     D weak (no history caps at B). &ldquo;d&rdquo; is distance in daily moves
     (IV30&divide;16). Levels are prior-close positioning, like the walls.<br>
-    <b>Chart panels use different gamma sources</b> &mdash; bars from Cboe's
+    <b>Chart panels use different gamma sources</b> &mdash; bars from the chain's
     reported gamma, the profile from Black-Scholes with IV held fixed. The
     flip location is robust; the profile's magnitudes are not comparable to
     the bars.
@@ -779,7 +779,7 @@ def build_latest_json(histdir, docsdir):
 
     # generated_utc must describe the DATA, not the moment this file was
     # written. It used to be datetime.now(), so a feed whose captures had all
-    # failed still advertised itself as current: the Cboe intraday job died
+    # failed still advertised itself as current: the old intraday job died
     # 2026-11-20 and kept committing every 15 min with a fresh timestamp, and
     # gex-trading-agent's is_stale (age vs generated_utc) therefore never
     # fired -- three-day-old gamma read as live on the phone. The newest

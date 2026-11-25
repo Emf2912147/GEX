@@ -2,9 +2,9 @@
 """NYSE trading calendar. Pure stdlib -- no pandas, no network, no new deps.
 
 WHY THIS EXISTS
-    The daily capture reads a Cboe file that reflects the PRIOR session's
-    settled open interest. Cboe re-stamps that file with a fresh feed_ts every
-    time it is served, including on weekends, so the feed_ts dedupe in
+    The daily capture reads a chain that reflects the PRIOR session's
+    settled open interest. The original feed re-stamped that file with a fresh
+    feed_ts every time it was served, including on weekends, so the feed_ts dedupe in
     gex_capture.already_captured() never fires on a weekend re-serve. Result:
     Friday's chain was written three times (Sat 9/19, Sun 9/20, Mon 9/21) under
     three different feed_dates, each carrying Friday's stale spot of 7650.50

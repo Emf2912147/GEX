@@ -8,7 +8,7 @@ auditable.
 WHAT IT FIXES
 
   1. daily_metrics.csv -- calendar duplicates.
-     The Cboe file re-stamps feed_ts on every serve, so already_captured()
+     The original feed re-stamped feed_ts on every serve, so already_captured()
      never fired on a weekend re-serve and one session got written up to three
      times. Rows are regrouped by the session they ACTUALLY describe --
      prev_trading_day(capture date) -- and the earliest capture per

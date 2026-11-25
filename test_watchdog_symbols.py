@@ -24,7 +24,7 @@ def test_full_coverage_is_quiet():
 
 def test_symbol_missing_all_day_is_flagged_when_expected():
     gaps = symbol_gaps(rows({"SPX": 12}), 12, expected={"SPX", "TLT"})
-    assert gaps == ["TLT captured in only 0 of 12 cycles today (Cboe serving its chain late or empty -- see history/intraday.log)"]
+    assert gaps == ["TLT captured in only 0 of 12 cycles today (its chain served late or empty -- see history/intraday.log)"]
 
 
 def test_too_few_cycles_to_judge():

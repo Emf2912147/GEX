@@ -1,18 +1,19 @@
-# Schwab fallback (Cboe deprecated 2026-11-20)
+# Schwab data path
 
-Cboe's `cdn-api.cboe.com` delayed-quote JSON feed — the only thing this
-pipeline ever depended on — is blocked (see README `## Status`). This doc
-covers the Schwab connector that replaced it: what already exists, the one
-constraint that rules out a GitHub-Actions-style unattended pipeline, and
-what still needs to be built to automate the rest.
+Schwab is this pipeline's option-chain source. The original free delayed-quote
+feed was blocked on 2026-11-20 and has been removed from the code (2026-11-25);
+references to it below are history -- measurements and decisions made while
+it was the baseline -- not live code paths. This doc covers the Schwab
+connector: what exists, the one constraint that rules out a
+GitHub-Actions-style unattended pipeline, and what was built around it.
 
 ## What already exists
 
 - **Schwab Trader API access** runs through the `gex-trading-agent` Docker
   container on the PC (`C:\Users\EMFS\PROJECTS\gex-trading-agent`), which is
   the only thing in this whole setup that can reach both Schwab and (for
-  intraday work) the market. The cloud sandbox/VM cannot reach Schwab or
-  Cboe at all — only that container can.
+  intraday work) the market. The cloud sandbox/VM cannot reach Schwab at
+  all — only that container can.
 - **Credentials and login are shared** with the NMT monitor
   (`C:\Users\EMFS\NMT GEX\secrets\schwab_app.json` + `schwab_token.json`),
   bind-mounted into the container at `/schwab`
@@ -238,9 +239,8 @@ the scheduled path does not need one.
 **6. The jobs commit, then rebase, then push -- in that order.** A bare
 push from the PC is rejected as non-fast-forward whenever anything else has
 landed on `main` since this clone last pulled, and something else lands
-constantly: the sector-agent workflows push on their own schedules, and
-`capture.yml` / `intraday.yml` still fire and still commit their Cboe failure
-logs. Observed for real on 2026-11-21. Committing before the rebase is what
+constantly: the sector-agent workflows push on their own schedules.
+Observed for real on 2026-11-21. Committing before the rebase is what
 leaves the working tree clean enough for the rebase to be permitted.
 
 A rebase conflict is possible on `history/capture.log` and
@@ -249,12 +249,8 @@ leave that for a human (`_GEX_PUSH_BLOCKED.txt`) rather than resolving it
 blind; the capture is already committed locally either way, so the data is
 never at risk -- only its publication is delayed.
 
-**Worth considering:** `capture.yml` and `intraday.yml` can now only fail,
-since Cboe is blocked, and every failed run still commits a log. Disabling
-them would stop that noise *and* remove most of the push contention these
-jobs now have to rebase around. Left enabled deliberately -- it is a CI
-change and Eugenio's call -- but there is no longer an argument for keeping
-them running.
+`capture.yml` and `intraday.yml` were deleted on 2026-11-25: with the old
+feed gone they could only fail.
 
 **7. The vintage check compares like-for-like across shared expirations, not
 totals.** Comparing totals is structurally broken across an expiration
@@ -285,14 +281,6 @@ old). On the Schwab path `feed_ts` is *our own fetch time*, so the lag is
 always ~0 and the check always passes. It is not catching anything for Schwab
 rows -- it has not been removed, but do not read a pass as evidence of
 freshness here.
-
-- **Known gap, not faked**: VIX/VIX9D state and realized-vol capture
-  (`gex_intraday.py`'s `capture_vix` / `capture_realized_vol`) read separate
-  Cboe endpoints (`quotes/_VIX.json`, `us_indices/daily_prices`) that
-  `schwab_fetch.py` does not pull. Not wired into the Schwab path -- those
-  two series simply stop updating while Cboe is blocked, same as before this
-  work, rather than being filled with a substitute. Phone/alert wiring beyond
-  the `_SCHWAB_LOGIN_NEEDS_RENEWAL.txt` flag file is also not wired in yet.
 
 ## VIX / VIX9D and realized vol: restored from Yahoo (2026-11-22)
 

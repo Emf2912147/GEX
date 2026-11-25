@@ -130,9 +130,9 @@ def test_every_symbol_has_a_vol_block(feed):
             assert key in vol, (sym, key)
 
 
-def test_rv_prefers_cboe_history_and_falls_back_to_captured_closes(feed):
-    assert feed["SPX"]["vol"]["rv_source"] == "cboe_history:SPX"
-    # No free Nasdaq-100 history at Cboe: QQQ uses this repo's own closes.
+def test_rv_prefers_index_history_and_falls_back_to_captured_closes(feed):
+    assert feed["SPX"]["vol"]["rv_source"] == "index_history:SPX"
+    # No Nasdaq-100 series in index_history: QQQ uses this repo's own closes.
     assert feed["QQQ"]["vol"]["rv_source"] == "captured_closes"
     assert feed["QQQ"]["vol"]["rv_20d"] is not None
 
@@ -174,7 +174,7 @@ def test_smile_strikes_stay_inside_the_band():
     assert len(sm["strikes"]) == len(sm["put_iv"]) == len(sm["call_iv"])
 
 
-def test_smile_carries_cboe_iv_unchanged():
+def test_smile_carries_source_iv_unchanged():
     df, spot = chain("TLT")
     sm = vm.smile(df, spot)
     i = sm["strikes"].index(79.0)

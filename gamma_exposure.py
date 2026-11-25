@@ -2,18 +2,20 @@
 """
 Gamma exposure (GEX) chart builder.
 
-Pulls a full option chain from Cboe's free delayed-quote endpoint, computes
-dealer gamma exposure by strike, and finds the gamma flip (zero-gamma) level.
+Reads one symbol's option chain out of a Schwab pull (schwab_fetch.py, in
+gex-trading-agent), computes dealer gamma exposure by strike, and finds the
+gamma flip (zero-gamma) level. This module does no network I/O of its own --
+the chain parser and GEX math here are shared by the daily and intraday
+captures, which supply the payload.
 
-    pip install requests pandas numpy matplotlib
+    pip install pandas numpy matplotlib
 
-    python gamma_exposure.py SPX
-    python gamma_exposure.py SPY --max-dte 7
-    python gamma_exposure.py QQQ --max-dte 45 --plot-window 0.08
+    python gamma_exposure.py SPX --pull pull.json
+    python gamma_exposure.py SPY --pull pull.json --max-dte 7
+    python gamma_exposure.py QQQ --pull pull.json --max-dte 45 --plot-window 0.08
 
 Data notes / known limits -- read these before trusting a number:
-  - Cboe delays this feed ~15 minutes. It is free and needs no API key.
-    This is NOT a real-time read.
+  - The chain is only as current as the pull it came from.
   - Open interest is settled overnight by the OCC, so intraday it reflects
     YESTERDAY'S CLOSE. On 0DTE-heavy days that is a material distortion.
     --use-volume weights by today's volume instead, but volume measures
@@ -38,17 +40,12 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import requests
 
 try:
     from zoneinfo import ZoneInfo
     _ET = ZoneInfo("America/New_York")
 except Exception:                                    # pragma: no cover
     _ET = None
-
-CBOE_URL = "https://cdn.cboe.com/api/global/delayed_quotes/options/{sym}.json"
-# Cboe prefixes cash indices with an underscore.
-INDEX_SYMBOLS = {"SPX", "NDX", "RUT", "VIX", "XSP", "DJX"}
 
 OPT_RE = re.compile(r"^(?P<root>[A-Z0-9^]+?)(?P<ymd>\d{6})(?P<cp>[CP])(?P<strike>\d{8})$")
 CONTRACT_SIZE = 100
@@ -66,22 +63,19 @@ COLOR_LINE = "#2c3e50"
 # Data
 # --------------------------------------------------------------------------
 
-def fetch_chain(symbol: str) -> dict:
-    sym = symbol.upper()
-    cboe_sym = f"_{sym}" if sym in INDEX_SYMBOLS else sym
-    url = CBOE_URL.format(sym=cboe_sym)
-    try:
-        r = requests.get(url, timeout=20, headers={"User-Agent": "gex-script/1.0"})
-    except requests.exceptions.RequestException as e:
-        sys.exit(
-            f"Could not reach Cboe: {e}\n"
-            "If you are behind a corporate proxy or a sandbox with restricted\n"
-            "egress, this endpoint has to be reachable for the script to work."
-        )
-    if r.status_code == 404:
-        sys.exit(f"Cboe has no chain for '{sym}'. Check the ticker.")
-    r.raise_for_status()
-    return r.json()
+def load_pull_payload(path: str, symbol: str) -> dict:
+    """One symbol's chain from a schwab_fetch.py pull, as the payload
+    parse_chain() expects. The conversion lives in schwab_daily.py (kept on
+    the PC with the rest of the Schwab code), imported lazily so the GEX math
+    in this module stays importable anywhere."""
+    import json
+    import schwab_daily as _sd
+    with open(path, encoding="utf-8") as fh:
+        doc = json.load(fh)
+    block = (doc.get("symbols") or {}).get(symbol.upper())
+    if not block or not block.get("ok"):
+        sys.exit(f"{symbol}: not in pull {path} (or its block is not ok).")
+    return _sd.to_chain_payload(block, doc.get("fetched_utc") or "unknown")
 
 
 def _expiry_dt(ymd: str) -> datetime:
@@ -97,7 +91,7 @@ def parse_chain(payload: dict) -> tuple[pd.DataFrame, float, str]:
     data = payload.get("data", {})
     spot = data.get("current_price") or data.get("close")
     if not spot:
-        sys.exit("No spot price in the Cboe response.")
+        sys.exit("No spot price in the chain payload.")
 
     asof = payload.get("timestamp", "unknown")
     rows = []
@@ -121,7 +115,7 @@ def parse_chain(payload: dict) -> tuple[pd.DataFrame, float, str]:
         })
 
     if not rows:
-        sys.exit("Parsed zero contracts. Cboe may have changed their schema.")
+        sys.exit("Parsed zero contracts. Check the pull and the payload conversion.")
 
     df = pd.DataFrame(rows)
     now = datetime.now(timezone.utc)
@@ -135,8 +129,9 @@ def parse_chain(payload: dict) -> tuple[pd.DataFrame, float, str]:
 
 def normalize_iv(df: pd.DataFrame, quiet: bool = False) -> pd.DataFrame:
     """
-    Cboe has shipped IV as a decimal (0.18) historically, but a schema change to
-    percent (18.0) would silently corrupt every Black-Scholes gamma downstream.
+    Sources disagree on IV units: decimal (0.18) or percent (18.0, as Schwab
+    sends it). Reading the wrong one would silently corrupt every
+    Black-Scholes gamma downstream.
     Detect and correct rather than trust.
     """
     live = df.loc[df["iv"] > 0, "iv"]
@@ -359,7 +354,7 @@ def plot(symbol, asof, spot, calls, puts, grid, net, flip, outfile, weight_label
 
     binned = f", binned to {bin_size:g}" if bin_size else ""
     ax1.set_title(
-        f"{symbol} gamma exposure by strike   |   Cboe delayed (~15m), {asof}\n"
+        f"{symbol} gamma exposure by strike   |   Schwab pull, {asof}\n"
         f"weighted by {weight_label}{binned}",
         fontsize=13, weight="bold")
     ax1.set_ylabel("$Bn gamma per 1% move")
@@ -392,6 +387,8 @@ def plot(symbol, asof, spot, calls, puts, grid, net, flip, outfile, weight_label
 def main():
     p = argparse.ArgumentParser(description="Build a gamma exposure chart.")
     p.add_argument("symbol", nargs="?", default="SPX")
+    p.add_argument("--pull", required=True,
+                   help="schwab_fetch.py pull JSON to read the chain from")
     p.add_argument("--max-dte", type=float, default=30,
                    help="only include expiries within this many days (default 30)")
     p.add_argument("--plot-window", "--strike-window", type=float, default=0.10,
@@ -421,7 +418,7 @@ def main():
     args = p.parse_args()
 
     sym = args.symbol.upper()
-    payload = fetch_chain(sym)
+    payload = load_pull_payload(args.pull, sym)
     df, spot, asof = parse_chain(payload)
     df = normalize_iv(df)
 
@@ -453,7 +450,7 @@ def main():
     total_full = full_per_strike.sum()
     total_win = per_strike.sum()
 
-    print(f"\n{sym}  spot {spot:,.2f}   as of {asof}  (Cboe, ~15 min delayed)")
+    print(f"\n{sym}  spot {spot:,.2f}   as of {asof}  (Schwab pull)")
     print(f"weighting      {weight_label}")
     print(f"contracts      {len(chain):,} within {args.max_dte:g} DTE "
           f"({len(windowed):,} inside the +/-{args.plot_window:.0%} plot window)")

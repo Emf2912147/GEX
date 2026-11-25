@@ -144,7 +144,7 @@ def _iv30(raw: pd.DataFrame, spot: float) -> float | None:
 
 
 def _rv20(histdir: str, metrics: pd.DataFrame | None, symbol: str, session: str) -> float | None:
-    """20d realized vol as of `session`: realized_vol.csv (Cboe daily history)
+    """20d realized vol as of `session`: realized_vol.csv (index_history daily closes)
     when it has a reading within RV_MAX_AGE_DAYS, else this pipeline's own
     captured closes up to the session."""
     path = os.path.join(histdir, "realized_vol.csv")

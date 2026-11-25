@@ -26,8 +26,8 @@ FEED_LAG_LIMIT_MIN = 15
 # Must match gex_intraday.SYMBOL_MAX_FEED_LAG (seconds there, minutes here).
 SYMBOL_FEED_LAG_LIMIT_MIN = {"XLK": 30}
 
-# Sessions with no data that are permanent and understood. Cboe serves no
-# history, so these can never be filled. Listing them here keeps the check
+# Sessions with no data that are permanent and understood. No source serves
+# past chains, so these can never be filled. Listing them here keeps the check
 # actionable -- a known hole must not fail forever, or the failure stops
 # meaning anything. Add a date ONLY after establishing why it is empty.
 KNOWN_GAPS = {
@@ -58,7 +58,7 @@ def main():
     print(f"intraday_state.csv  {len(s):>5} rows\n")
 
     print("DAILY")
-    # One session captured twice used to happen every weekend: Cboe re-stamps
+    # One session captured twice used to happen every weekend: the old feed re-stamped
     # feed_ts on each serve, so the old feed_ts dedupe never fired.
     check("no duplicate (symbol, session)",
           d.duplicated(["symbol", "session_date"]).sum() == 0,
@@ -69,8 +69,8 @@ def main():
     check("every session_date is an NYSE session", not bad, str(bad))
 
     # spot drives the grid, the walls, flip, and net GEX (which scales with
-    # spot SQUARED). The Cboe feed's spot is a pre-market quote from the
-    # morning AFTER the session -- up to 1.09% wrong on the ETFs.
+    # spot SQUARED). A morning capture's live spot is a pre-market quote from
+    # the morning AFTER the session -- up to 1.09% wrong on the ETFs.
     if "spot_source" in d.columns:
         counts = d.spot_source.value_counts().to_dict()
         check("spot anchored on a real close", counts.get("feed", 0) <= 5,

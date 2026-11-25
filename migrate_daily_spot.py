@@ -3,7 +3,7 @@
 
 THE BUG
     The daily file carries the prior session's settled open interest, but
-    Cboe's `spot` field is whatever the quote feed says when the file is
+    the feed's `spot` field is whatever the quote says when the file is
     served. An 11:30 UTC run is reading a PRE-MARKET quote from the next
     morning. Session 2026-09-24, captured 2026-09-25 11:39Z:
 
@@ -24,7 +24,7 @@ THE BUG
 WHAT THIS DOES
     For each daily row, takes the session close from intraday_state.csv,
     reloads that row's stored raw chain, and recomputes every spot-dependent
-    metric at the live defaults. Adds `feed_spot` (what Cboe said) and
+    metric at the live defaults. Adds `feed_spot` (what the feed said) and
     `spot_source` so the correction is visible rather than silent.
 
     Rows whose session has no intraday coverage keep the feed spot and are

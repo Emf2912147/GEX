@@ -36,7 +36,7 @@ Method notes, read before trusting a number:
     way to avoid calendar arbitrage in the interpolation. Outside the listed
     range the nearest expiry is used and `*_extrapolated` is flagged.
   - Contracts with zero IV, zero open interest AND zero volume are ignored.
-  - IV is whatever Cboe reports. It is a model value from mid quotes, not a
+  - IV is whatever the chain source reports. It is a model value from mid quotes, not a
     traded price.
   - rv_20d needs 21 consecutive closes. Symbols added recently (GLD, TLT on
     2026-10-08; SMH, XLF, XLK mid-October) return None until they have them.
@@ -156,7 +156,7 @@ def skew_25d(df: pd.DataFrame, days: float = 30.0) -> float | None:
 # The agent prices its wall-anchored spreads from this, so its credit /
 # width filter can run. Only the expiry nearest SMILE_TARGET_DTE is
 # published (the agent's trade tenor), only strikes within SMILE_BAND of
-# spot, and only IVs Cboe actually quotes on contracts with open interest
+# spot, and only IVs the source actually quotes on contracts with open interest
 # or volume. A strike with no usable quote on one side is null on that
 # side: the agent then reports the spread as unpriced rather than guess.
 
@@ -320,7 +320,7 @@ def _rv_from_file(histdir: str, symbol: str, session_date: str):
     if age > RV_MAX_AGE_DAYS or pd.isna(last.get("hv20")):
         return None
     proxy = str(last.get("rv_proxy")).lower() == "true"
-    return float(last["hv20"]), f"cboe_history:{last['rv_source']}", proxy
+    return float(last["hv20"]), f"index_history:{last['rv_source']}", proxy
 
 
 def symbol_vol_block(histdir: str, raw: pd.DataFrame, row,
@@ -386,8 +386,8 @@ def vix_block(histdir: str) -> dict | None:
 # --------------------------------------------------------------------------
 #
 # Additive like everything above. The per-symbol block is computed from the
-# stored chain; the market-wide long-dated block reads Cboe's VIX3M / VIX6M /
-# VIX1Y daily history fresh and stores nothing but its result in latest.json.
+# stored chain; the market-wide long-dated block reads VIX3M / VIX6M /
+# VIX1Y daily history (index_history, Yahoo) fresh and stores nothing but its result in latest.json.
 
 import vol_surface as vs
 
@@ -400,7 +400,6 @@ SURFACE_TENORS = (7, 14, 30, 60, 90, 180)
 SURFACE_MAX_DTE = 250
 
 LONG_VOL_SYMBOLS = {"vix": "VIX", "vix3m": "VIX3M", "vix6m": "VIX6M", "vix1y": "VIX1Y"}
-LONG_VOL_URL = "https://cdn.cboe.com/api/global/us_indices/daily_prices/{sym}_History.csv"
 LONG_VOL_MAX_AGE_H = 6.0
 
 
@@ -508,8 +507,7 @@ def symbol_surface_block(raw: pd.DataFrame, row, stress: bool = False) -> dict |
 def _fetch_closes(symbol: str):
     """Daily closes, oldest first, with the last date. (None, None) if short.
 
-    Was Cboe's history CSV; blocked since 2026-11-20, so this reads
-    index_history (Yahoo) instead.
+    Read from index_history (Yahoo).
 
     VIX1Y IS EXPECTED TO COME BACK EMPTY. Yahoo serves its current level but
     no usable history, so there is nothing to place it against. A percentile
@@ -560,7 +558,7 @@ def long_vol_block(docsdir: str | None = None, fetch=None, now=None) -> dict | N
                 asof = last if asof is None else min(asof, last or asof)
         out = vs.long_vol_state(closes)
         out.update({"asof": asof, "fetched_utc": now.isoformat(), "stale": False,
-                    "source": "cboe daily history (read fresh, not stored)"})
+                    "source": "index_history daily closes (read fresh, not stored)"})
         return out
     except Exception as ex:                          # network, schema, anything
         print(f"latest.json: long-vol fetch failed ({ex})")

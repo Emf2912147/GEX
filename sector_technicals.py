@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Sector Agent -- technicals capture (Cboe delayed quotes + Stooq daily history).
+Sector Agent -- technicals capture (Schwab option chains + daily price history).
 
 SCOPE
     Feeds the sector long/short screening agent only. Writes exclusively to
@@ -16,19 +16,14 @@ SCOPE (2026-10-10)
     Whatever the latest fundamentals capture holds: the top 30 holdings of
     XLF, XLV, XLK and XLP, 120 names. See sector_fundamentals.py.
 
-SOURCES (both free, both keyless)
-    Options tradability : Cboe's delayed-quotes endpoint, per symbol -- the
-                           same endpoint Agent007's off-pipeline read already
-                           uses successfully for arbitrary symbols. Different
-                           from the indices-only daily-price-history endpoint
-                           that 403s on SPY/individual names, so no new risk
-                           carried over from that earlier finding.
-    Price / momentum     : Stooq's per-symbol daily CSV feed. Free and
-                           keyless, but its usage terms are not as clearly
-                           published as EDGAR's -- treat it as provisional
-                           until it has run clean for a few weeks, the same
-                           posture this project took with Cboe's own history
-                           schema before it was proven out.
+SOURCES
+    Options tradability : Schwab option chains, pre-fetched on the PC by
+                           sector_chains.py (inside the gex-trading-agent
+                           container, which holds the Schwab login) and passed
+                           in with --chains. Without that file no name gets
+                           options data, and the run says so.
+    Price / momentum     : yfinance daily history (Stooq kept as a manual
+                           fallback via --source stooq).
 
 UNIVERSE
     Reads (ticker, sector_etf) pairs from the most recent
@@ -47,9 +42,7 @@ import numpy as np
 import pandas as pd
 import requests
 
-CBOE_URL = "https://cdn.cboe.com/api/global/delayed_quotes/options/{sym}.json"
 STOOQ_URL = "https://stooq.com/q/d/l/?s={sym}.us&i=d"
-CASH_INDEX_SYMBOLS = {"SPX", "NDX", "RUT", "VIX", "XSP", "DJX"}
 
 TECH_COLUMNS = [
     "capture_ts", "sector_etf", "ticker", "spot",
@@ -64,12 +57,6 @@ SCHEMA_VERSION = 4   # 2: atm_oi/atm_spread_pct measured on one monthly expiry
                      # 4: gamma/IV from the same chain -- atm_iv_30, call_wall,
                      #    put_wall, wall_fallback, gamma_flip, net_gex_musd
 STOOQ_MIN_INTERVAL_S = 0.5
-# Cboe rate-limits this endpoint. At 0.3s spacing with no retry, 39% of
-# names on 2026-10-07 and 72% on 2026-10-08 came back "429 Too Many
-# Requests" with no options data at all. 120 names at 1.2s is under three
-# minutes, and a 429 is retried after a backoff instead of recorded as empty.
-CBOE_MIN_INTERVAL_S = 1.2
-CBOE_RETRY_WAITS_S = (5, 15, 45)
 EXPECTED_UNIVERSE = 120
 # Tradability is read off one expiry: the standard monthly nearest
 # TARGET_DTE days out and at least MIN_DTE away, ATM +/- a few strikes.
@@ -83,13 +70,13 @@ NEAR_CONTRACTS_N = 10   # five strikes, call and put
 # figure derived from it is withheld rather than published wrong.
 #
 # Threshold set from measurement, not taste (2026-11-22, 127 names, Schwab
-# chains vs this repo's last Cboe session):
+# chains vs this repo's prior options session):
 #     >=2  flags 61 names, catches 24 of 25 known-bad   (31 false positives)
 #     >=3  flags 42 names, catches 24 of 25             (18 false positives)
 #     >=4  flags 30 names, catches 24 of 25             <-- chosen
 #     >=5  flags 22 names, catches 20 of 25             (5 missed)
 #     >=6  flags 13 names, catches 13 of 25             (12 missed)
-# The single name >=4 misses is LRCX, at 0.41x Cboe with ZERO zeros in the
+# The single name >=4 misses is LRCX, at 0.41x the prior session with ZERO zeros in the
 # window -- that gap is the 5.6% spot move between the two sessions moving the
 # ten-nearest window onto different strikes, not a feed defect.
 OI_ZERO_LIVE_MAX = 3
@@ -142,7 +129,7 @@ OPTION_SYMBOL_RE = re.compile(r"^(.+?)(\d{6})([CP])(\d{8})$")
 
 
 def parse_option(opt):
-    """Cboe option symbol -> (expiry date, strike), e.g.
+    """OCC option symbol -> (expiry date, strike), e.g.
     JPM261120C00335000 -> (2026-11-20, 335.0). None on anything unexpected."""
     try:
         m = OPTION_SYMBOL_RE.match(opt["option"])
@@ -230,7 +217,7 @@ GEX_FLIP_WINDOW = 0.15
 
 
 def gex_from_payload(payload, spot, options_today=None):
-    """Cboe payload -> {atm_iv_30, call_wall, put_wall, wall_fallback,
+    """Chain payload -> {atm_iv_30, call_wall, put_wall, wall_fallback,
     gamma_flip, net_gex_musd}. Any failure returns all-None rather than
     stopping the run: gamma is context, not a requirement for scoring."""
     empty = {k: None for k in ("atm_iv_30", "call_wall", "put_wall",
@@ -276,18 +263,16 @@ def gex_from_payload(payload, spot, options_today=None):
     return out
 
 
-# Chains pre-fetched from Schwab and handed in with --chains. Cboe has been
-# blocked since 2026-11-20, and this job is the one place that needs a chain
-# for 121 arbitrary names rather than a fixed nine, so they are fetched once
-# through the container (which holds the Schwab login) and passed in as a
-# file. Empty when the job runs anywhere without that file -- then the Cboe
-# path below is tried, and failing that the name simply has no options data,
-# which is now REPORTED rather than silently written as zero.
+# Chains pre-fetched from Schwab and handed in with --chains. This job needs a
+# chain for 121 arbitrary names rather than a fixed nine, so they are fetched
+# once through the container (which holds the Schwab login) and passed in as a
+# file. Empty when the job runs anywhere without that file -- then no name has
+# options data, which is REPORTED rather than silently written as zero.
 PRELOADED_CHAINS: dict = {}
 
 
 def load_chains(path, logpath):
-    """{TICKER: cboe-shaped payload} written by sector_chains.py."""
+    """{TICKER: chain payload} written by sector_chains.py."""
     import json
     try:
         with open(path, encoding="utf-8") as fh:
@@ -303,52 +288,21 @@ def load_chains(path, logpath):
     return {k.upper(): v for k, v in chains.items()}
 
 
-def fetch_cboe_tradability(symbol, logpath):
+def fetch_tradability(symbol, logpath):
+    """(spot, atm_oi, atm_spread_pct, n_contracts, gex) from the pre-fetched
+    Schwab chain. All-None when the name has no chain -- never zero."""
     pre = PRELOADED_CHAINS.get(symbol.upper())
-    if pre is not None:
-        data = pre.get("data") or {}
-        spot = data.get("current_price")
-        options = data.get("options") or []
-        if options and spot is not None:
-            atm_oi, atm_spread_pct = tradability_from_chain(spot, options)
-            atm_oi, gexd = gate_on_oi(symbol, spot, options,
-                                      gex_from_payload(pre, spot), atm_oi, logpath)
-            return spot, atm_oi, atm_spread_pct, len(options), gexd
+    if pre is None:
+        return None, None, None, None, {}
+    data = pre.get("data") or {}
+    spot = data.get("current_price")
+    options = data.get("options") or []
+    if not options or spot is None:
         log(logpath, f"{symbol}: pre-fetched chain empty -- refused")
         return None, None, None, None, {}
-
-    prefix = "_" if symbol.upper() in CASH_INDEX_SYMBOLS else ""
-    url = CBOE_URL.format(sym=f"{prefix}{symbol.upper()}")
-    payload = None
-    for attempt, wait in enumerate((0,) + CBOE_RETRY_WAITS_S):
-        time.sleep(CBOE_MIN_INTERVAL_S + wait)
-        try:
-            resp = requests.get(url, timeout=20)
-            if resp.status_code == 429 and attempt < len(CBOE_RETRY_WAITS_S):
-                log(logpath, f"{symbol}: Cboe 429, retrying in "
-                             f"{CBOE_RETRY_WAITS_S[attempt]}s")
-                continue
-            resp.raise_for_status()
-            payload = resp.json()
-            break
-        except Exception as e:
-            log(logpath, f"{symbol}: Cboe fetch failed -- {e}")
-            return None, None, None, None, {}
-    if payload is None:
-        log(logpath, f"{symbol}: Cboe still rate-limited after "
-                     f"{len(CBOE_RETRY_WAITS_S)} retries -- options data left empty")
-        return None, None, None, None, {}
-
-    data = payload.get("data", {})
-    spot = data.get("current_price")
-    options = data.get("options", [])
-    if not options or spot is None:
-        log(logpath, f"{symbol}: Cboe payload empty -- refused")
-        return None, None, None, None, {}
-
     atm_oi, atm_spread_pct = tradability_from_chain(spot, options)
     atm_oi, gexd = gate_on_oi(symbol, spot, options,
-                              gex_from_payload(payload, spot), atm_oi, logpath)
+                              gex_from_payload(pre, spot), atm_oi, logpath)
     return spot, atm_oi, atm_spread_pct, len(options), gexd
 
 
@@ -504,7 +458,7 @@ def momentum(closes, n):
 
 def capture_one(ticker, sector_etf, sector_mom, logpath, closes=None, run_ts=None,
                 adv_usd=None):
-    spot, atm_oi, atm_spread_pct, n_contracts, gexd = fetch_cboe_tradability(ticker, logpath)
+    spot, atm_oi, atm_spread_pct, n_contracts, gexd = fetch_tradability(ticker, logpath)
     if closes is None:
         closes = fetch_stooq_history(ticker, logpath)
     mom20 = momentum(closes, 20)
@@ -552,15 +506,15 @@ def append_rows(out_path, rows):
 
 
 def main():
-    p = argparse.ArgumentParser(description="Sector agent -- technicals capture (Cboe + Stooq).")
+    p = argparse.ArgumentParser(description="Sector agent -- technicals capture (Schwab chains + price history).")
     p.add_argument("--outdir", default="history/sector")
     p.add_argument("--source", choices=["yfinance", "stooq"], default="yfinance",
                    help="price history source; stooq is the old path, kept "
                         "only as a manual fallback (it was 404ing as of 2026-10-06)")
     p.add_argument("--chains", default=None,
                    help="JSON of pre-fetched option chains from sector_chains.py "
-                        "(Schwab, via the container). Without it the Cboe path is "
-                        "tried, which has been blocked since 2026-11-20.")
+                        "(Schwab, via the container). Without it no name gets "
+                        "options data.")
     p.add_argument("--dry-run", action="store_true")
     args = p.parse_args()
 

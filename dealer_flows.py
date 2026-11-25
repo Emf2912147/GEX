@@ -25,7 +25,7 @@ Per symbol (contracts with 0.5 to 30 days to expiry, the GEX window):
                          weaker than normal (post-expiration roll-off).
     history_sessions     how many prior sessions the ratio used.
 
-Black-Scholes greeks at each contract's Cboe IV; r = 4%, dividend
+Black-Scholes greeks at each contract's quoted IV; r = 4%, dividend
 yields as in the agent's pricing. Normalising by OI notional rather
 than by net GEX keeps the numbers stable near the gamma flip, where
 net GEX goes to zero.

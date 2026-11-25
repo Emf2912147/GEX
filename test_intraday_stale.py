@@ -21,6 +21,7 @@ def run(monkeypatch, tmp_path, behaviour, symbols=("SPX", "XLK")):
     monkeypatch.setattr(gi.time, "sleep", lambda s: calls.append(f"sleep {s:.0f}"))
     monkeypatch.setattr(sys, "argv", ["gex_intraday.py", "--symbols", *symbols,
                                       "--outdir", str(tmp_path), "--dry-run",
+                                      "--pull", str(tmp_path / "pull.json"),
                                       "--ignore-calendar", "--no-vix", "--no-rv"])
     return gi.main(), calls
 

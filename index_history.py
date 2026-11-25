@@ -5,20 +5,9 @@ index_history.py
 Daily closes and current levels for the cash indices this repo reads --
 VIX, VIX9D, VIX3M, VIX6M, VIX1Y, SPX, RUT, XSP, VXN.
 
-WHY THIS EXISTS
-    These came from Cboe's free endpoints until 2026-11-20, when Cloudflare
-    began blocking them from every network tried (see SCHWAB_FALLBACK.md).
-    Two separate feeds went with it:
-
-        quotes/_{SYM}.json                  the VIX / VIX9D levels
-        us_indices/daily_prices/{SYM}_History.csv
-                                            the close history behind the 20d
-                                            change, realized vol and the
-                                            long_vol percentiles
-
-    Both are replaced here by Yahoo's chart API, which carries all of them
-    and needs no key. Availability was probed on 2026-11-22 before any of
-    this was written:
+SOURCE
+    Yahoo's chart API, which carries every series above and needs no key.
+    Availability was probed on 2026-11-22 before any of this was written:
 
         VIX 1257 bars   VIX9D 1255   VIX3M 1255   VIX6M 1255
         SPX 1255        RUT 1255     XSP 1255     VXN 1255
@@ -41,10 +30,8 @@ needs hiding -- which is why it is committed, unlike the broker scripts.
 
 from __future__ import annotations
 
-import re
 from datetime import datetime, timezone
 
-import pandas as pd
 import requests
 
 CHART_URL = "https://query1.finance.yahoo.com/v8/finance/chart/{sym}"
@@ -62,19 +49,6 @@ YAHOO = {
 # percentile is arithmetic, not information.
 MIN_PERCENTILE_BARS = 60
 
-_HIST_SYM_RE = re.compile(r"/([A-Z0-9]+)_History\.csv", re.I)
-
-
-def symbol_from_history_url(url: str) -> str | None:
-    """'.../daily_prices/VIX_History.csv' -> 'VIX'.
-
-    Callers still hold Cboe-shaped URLs built from module constants; resolving
-    the symbol here keeps their signatures unchanged.
-    """
-    m = _HIST_SYM_RE.search(url or "")
-    return m.group(1).upper() if m else None
-
-
 def _chart(symbol: str, rng: str) -> dict | None:
     ysym = YAHOO.get(symbol.upper())
     if not ysym:
@@ -89,8 +63,7 @@ def _chart(symbol: str, rng: str) -> dict | None:
 def daily_closes(symbol: str, rng: str = "5y", min_bars: int = 2):
     """(dates, closes) oldest first, ISO date strings. (None, None) if short.
 
-    Same shape gex_intraday.fetch_history_closes returned from the Cboe CSV,
-    so its callers are untouched. min_bars is the caller's honesty gate: ask
+    The shape gex_intraday.fetch_history_closes returns. min_bars is the caller's honesty gate: ask
     for what your statistic actually needs.
     """
     q = _chart(symbol, rng)
@@ -111,7 +84,7 @@ def daily_closes(symbol: str, rng: str = "5y", min_bars: int = 2):
 
 def quote(symbol: str) -> dict:
     """{current_price, prev_day_close, last_trade_time} -- the field names
-    gex_intraday.capture_vix already reads off the Cboe quotes endpoint.
+    gex_intraday.capture_vix reads.
 
     prev_day_close IS DERIVED FROM THE BARS, NOT FROM meta.chartPreviousClose.
     That meta field is the close preceding the REQUESTED RANGE, not the

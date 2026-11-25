@@ -431,7 +431,7 @@ short also loses up to half for the dividend it pays (8%+ costs the half).</li>
 <p><span class='gr gr-a'>A</span> &ge; 75 &nbsp; <span class='gr gr-b'>B</span> 60&ndash;74
 &nbsp; <span class='gr gr-c'>C</span> 45&ndash;59 &nbsp; <span class='gr gr-d'>D</span> &lt; 45</p>
 <p class="fine">Fundamentals are annual (latest fiscal year vs prior) from
-Yahoo Finance; options from Cboe delayed quotes; earnings dates are estimates.
+Yahoo Finance; options from Schwab option chains; earnings dates are estimates.
 Screening output, not a recommendation.</p>
 </details>"""
 

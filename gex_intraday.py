@@ -26,7 +26,7 @@ does not:
     snapshot per day and makes volume deltas impossible to reconstruct.
     This writes one file per feed timestamp.
 
- 2. Unchanged bars are skipped, on TWO tests. The Cboe delayed feed does not
+ 2. Unchanged bars are skipped, on TWO tests. A feed does not always
     refresh on our cadence. Capturing it again would create a phantom bar
     with zero volume delta and a real elapsed time, which reads as "flow
     stopped" when nothing happened at all. The obvious guard is the feed
@@ -40,8 +40,8 @@ does not:
     than assume a 15-minute bar.
 
  4. A chain with no Greeks in it is RETRIED, then REFUSED -- never stored.
-    Cboe serves a structurally valid payload with every gamma and every IV
-    zeroed on the first post-open cycle, most days; every metric downstream
+    The old delayed feed served a structurally valid payload with every gamma
+    and every IV zeroed on the first post-open cycle, most days; every metric downstream
     then degrades silently into a normal-looking row (net GEX exactly 0,
     flip pinned to the search grid's floor, both walls on one strike).
     See check_chain_integrity() and fetch_valid_chain().
@@ -67,11 +67,8 @@ WHAT THIS SCRIPT REFUSES TO DO
     _RADER_NEEDS_ATTENTION.txt.
 
 VIX CAPTURE
-    Same 15-minute cycle also pulls VIX and VIX9D -- Cboe's own quotes
-    endpoint, not the options-chain one, so it needs its own parser and its
-    own file (history/vix_state.csv). Verified live 2026-09-10: VIX closed
-    17.84 (+8.4% on the day, +21.9% over the trailing 20 sessions -- a fresh
-    20-day high made that same day); VIX9D closed 17.70 (+13.5%).
+    Same 15-minute cycle also records VIX and VIX9D, from index_history
+    (Yahoo daily/quote data), into its own file (history/vix_state.csv).
 
     DEDUPE HERE IS CONTENT-ONLY. That is a simplification rather than a fix --
     an earlier note in this file claimed the quotes endpoint's last_trade_time
@@ -86,17 +83,17 @@ VIX CAPTURE
     to "unreliable(vix9d-stale)" in that situation; see term_structure_state().
 
     True VX futures term structure (front-two-month slope) is NOT available
-    this way -- the same endpoint pattern for VX itself returns a flat 403.
+    from this source.
     VIX9D vs VIX30 is used as the term-structure proxy instead: it answers
     the same shape question (short-dated vol richer or cheaper than 30-day)
     without needing futures settlements. It is a substitute, not the real
     thing, and is labelled as such in the output.
 
-    The 20d change is computed fresh each run from Cboe's full VIX_History.csv
-    (1990-present, ~470KB) rather than stored -- keeping 36 years of daily
-    closes in a git repo just to read the last 20 rows would be exactly the
-    kind of unbounded growth gex_intraday.py's slim-snapshot design exists to
-    avoid. Only the derived scalar is written to disk.
+    The 20d change is computed fresh each run from the full VIX daily
+    history rather than stored -- keeping decades of daily closes in a git
+    repo just to read the last 20 rows would be exactly the kind of unbounded
+    growth gex_intraday.py's slim-snapshot design exists to avoid. Only the
+    derived scalar is written to disk.
 
 REALIZED VOL CAPTURE
     WHY THIS EXISTS
@@ -106,36 +103,20 @@ REALIZED VOL CAPTURE
         and ask a human for an HV20 number off a broker screen. That works,
         but it is manual, it is unrepeatable, and it cannot be backtested.
 
-        The blocker was never the data. Cboe publishes free daily closes; the
-        earlier attempts failed because they went through a fetch-and-
-        summarise path that silently truncated a multi-decade file and
-        reported 1984 rows as "the last 45 sessions". Read the same file with
-        an ordinary HTTP client and parse it deterministically and the
-        problem disappears entirely -- which is exactly how the VIX 20d change
-        above already works.
+        The blocker was never the data: free daily closes exist. Earlier
+        attempts failed because they went through a fetch-and-summarise path
+        that silently truncated a multi-decade file. Fetch the series with an
+        ordinary HTTP client and parse it deterministically and the problem
+        disappears -- which is exactly how the VIX 20d change above works.
 
-    TWO SCHEMAS, NOT ONE -- verified live 2026-09-11
-        VIX / VXN / XSP   ->  DATE,OPEN,HIGH,LOW,CLOSE
-        SPX / RUT         ->  DATE,SPX       (date and close only, the price
-                                              column named for the symbol)
-        A CLOSE-only reader silently returns nothing on the second family, so
-        fetch_history_closes() handles both and refuses anything it cannot
-        identify rather than guessing at a column.
-
-    WHAT IS AND IS NOT AVAILABLE -- verified live 2026-09-11
-        SPX, RUT, XSP, VIX, VXN   200
-        SPY, NDX, _NDX            403
-        Cboe publishes S&P and Russell series and its own volatility indices
-        for free; Nasdaq-owned series are not theirs to republish. So:
+    SOURCE AND PROXIES
+        Daily closes come from index_history (Yahoo): SPX, RUT and VIX.
           SPX -> its own series
           SPY -> SPX      (SPY tracks the S&P 500; a constant scale factor
                            cancels out of log returns, so realized vol is the
                            same series)
           IWM -> RUT      (same reasoning, Russell 2000)
-          QQQ -> nothing. No free Nasdaq-100 price history exists here, and
-                 VXN is an IMPLIED vol index, not prices, so it cannot stand
-                 in. QQQ simply gets no row and the agent still asks. Three of
-                 four automated honestly beats four of four with one invented.
+          everything else -> no row; the agent computes RV from broker bars.
         Every proxied read is written with rv_proxy=True and rv_source naming
         the series actually used, so a substitute can never be mistaken for a
         direct reading -- the same discipline the VIX9D term-structure proxy
@@ -146,8 +127,8 @@ REALIZED VOL CAPTURE
         15 minutes. So this fetches at most ONCE PER SYMBOL PER UTC DAY, on
         the first cycle of the day, and skips without touching the network
         afterwards. A row is written on every such first cycle even when
-        rv_asof_date has not advanced (a holiday, or Cboe not having posted
-        yet): the alternative -- skip and retry -- re-fetches a multi-MB file
+        rv_asof_date has not advanced (a holiday, or the source not having
+        posted yet): the alternative -- skip and retry -- re-fetches the series
         every 15 minutes all day on exactly the days the data is not there.
         rv_asof_date states what the numbers are actually through, so a
         repeated as-of date is visible rather than hidden.
@@ -183,7 +164,6 @@ from datetime import datetime, timezone
 
 import numpy as np
 import pandas as pd
-import requests
 
 import gamma_exposure as gx
 import index_history as ixh
@@ -194,7 +174,7 @@ SCHEMA_VERSION = 1
 
 
 class StaleFeedError(Exception):
-    """Cboe served a chain far older than the moment we asked for it."""
+    """The chain is far older than the moment we asked for it."""
 
 
 class ChainIntegrityError(Exception):
@@ -207,7 +187,7 @@ class ChainIntegrityError(Exception):
     """
 
 # Keep in step with gex_capture.DEFAULT_SYMBOLS. GLD and TLT added 2026-10-08,
-# SMH and XLF 2026-10-15, XLK 2026-10-16; none has an entry in RV_HISTORY below (no free Cboe
+# SMH and XLF 2026-10-15, XLK 2026-10-16; none has an entry in RV_HISTORY below (no free
 # daily-close series), so their realized vol is skipped and logged, the same
 # as QQQ.
 DEFAULT_SYMBOLS = ["SPX", "SPY", "QQQ", "IWM", "XLK", "SMH", "XLF", "GLD", "TLT"]
@@ -234,13 +214,9 @@ STATE_COLUMNS = [
 ]
 
 # ---- VIX capture ----------------------------------------------------------
-# Plain index quotes, not the options-chain endpoint -- underscore-prefixed
-# symbol convention (_VIX, _VIX9D). History CSVs are read fresh each run and
-# never stored; see the VIX CAPTURE docstring section above for why.
+# Index quotes and daily history come from index_history (Yahoo). History is
+# read fresh each run and never stored; see the VIX CAPTURE docstring section.
 _PULL_CACHE: dict = {}
-
-VIX_QUOTE_URL = "https://cdn.cboe.com/api/global/delayed_quotes/quotes/_{sym}.json"
-VIX_HISTORY_URL = "https://cdn.cboe.com/api/global/us_indices/daily_prices/VIX_History.csv"
 
 VIX_COLUMNS = [
     "feed_ts", "feed_date", "capture_ts", "elapsed_s",
@@ -251,16 +227,13 @@ VIX_COLUMNS = [
 ]
 
 # ---- realized vol ---------------------------------------------------------
-HISTORY_URL = "https://cdn.cboe.com/api/global/us_indices/daily_prices/{sym}_History.csv"
-
 # Trading days per year, for annualising. 252 is the convention the decision
 # table's RICH/CHEAP axis assumes when it compares ATM IV against HV.
 TRADING_DAYS = 252
 
-# symbol -> (history series to read, is_proxy). EVERY ENTRY HERE WAS FETCHED
-# LIVE 2026-09-11 and returned 200 with a parseable schema. Do not add a symbol
-# without actually fetching it first -- SPY and NDX both look like they belong
-# and both return 403. See the REALIZED VOL CAPTURE docstring section.
+# symbol -> (index_history series to read, is_proxy). Every source here must be
+# a key of index_history.YAHOO; do not add one without fetching it first. See
+# the REALIZED VOL CAPTURE docstring section.
 RV_HISTORY = {
     "SPX": ("SPX", False),
     "SPY": ("SPX", True),      # SPY tracks the S&P 500
@@ -268,8 +241,7 @@ RV_HISTORY = {
     "RUT": ("RUT", False),
     "XSP": ("XSP", False),
     "VIX": ("VIX", False),
-    # QQQ deliberately absent -- no free Nasdaq-100 price history on this
-    # endpoint. Leaving it out makes the gap explicit in the data instead of
+    # QQQ deliberately absent -- no Nasdaq-100 series in index_history. Leaving it out makes the gap explicit in the data instead of
     # filling it with a series that is not the Nasdaq-100.
 }
 
@@ -309,7 +281,7 @@ def parse_chain_full(payload):
     data = payload.get("data", {})
     spot = data.get("current_price") or data.get("close")
     if not spot:
-        sys.exit("No spot price in the Cboe response.")
+        sys.exit("No spot price in the chain payload.")
 
     feed_ts = payload.get("timestamp", "unknown")
     rows = []
@@ -339,7 +311,7 @@ def parse_chain_full(payload):
         })
 
     if not rows:
-        sys.exit("Parsed zero contracts. Cboe may have changed their schema.")
+        sys.exit("Parsed zero contracts. Check the pull and the payload conversion.")
 
     df = pd.DataFrame(rows)
     now = datetime.now(timezone.utc)
@@ -439,7 +411,7 @@ def check_feed_freshness(symbol, feed_ts, now, max_lag_s, max_skew_s):
 
     CLOCK SKEW
         Two stored rows show feed_ts slightly AHEAD of capture_ts (to -1.4
-        min): Cboe's clock and the runner's disagree a little. A small
+        min): the feed's clock and the runner's disagree a little. A small
         negative lag is normal and must not be treated as an error; a large
         one means something is genuinely wrong with one of the two clocks.
     """
@@ -464,7 +436,7 @@ def check_feed_freshness(symbol, feed_ts, now, max_lag_s, max_skew_s):
     return lag
 
 
-# Per-symbol freshness limits, in seconds, for symbols whose Cboe chain is
+# Per-symbol freshness limits, in seconds, for symbols whose chain has been
 # routinely served late. XLK (captured from 2026-10-16) arrived 15-30 min
 # behind in about two thirds of its misses and was refused in roughly a third
 # of all cycles under the 15-minute limit; on 2026-10-21 Eugenio chose to
@@ -483,7 +455,7 @@ def check_chain_integrity(symbol, chain, min_fill):
     """Refuse a chain whose Greeks came back empty. Raises ChainIntegrityError.
 
     WHY THIS EXISTS
-        2026-09-10 13:45:29: Cboe served SPX and QQQ chains with every gamma and
+        2026-09-10 13:45:29: the delayed feed served SPX and QQQ chains with every gamma and
         every IV zeroed. SPY and IWM were fine in the same cycle, so this is
         per-symbol and not a whole-feed outage. It recurred the very next
         session at 13:46:09, that time hitting SPX and SPY -- same cycle
@@ -560,49 +532,31 @@ def elapsed_seconds(prev_capture_ts, now):
 
 
 def fetch_vix_quote(symbol):
-    """The VIX / VIX9D level, as {current_price, prev_day_close, last_trade_time}.
-
-    Was Cboe's plain index-quote endpoint (verified live 2026-09-10 on _VIX9D:
-    current_price 17.70, prev_day_close 15.59, last_trade_time
-    "2026-09-10T16:15:02"). That endpoint has been blocked since 2026-11-20,
-    so the levels now come from index_history (Yahoo) in the same field names
-    -- capture_vix reads exactly what it always read.
-    """
+    """The VIX / VIX9D level, as {current_price, prev_day_close,
+    last_trade_time}, from index_history (Yahoo)."""
     return ixh.quote(symbol)
 
 
-def fetch_history_closes(hist_url):
-    """(dates, closes) for a daily-close history, oldest first.
+def fetch_history_closes(symbol):
+    """(dates, closes) for a daily-close history, oldest first, from
+    index_history (Yahoo).
 
-    Still takes the Cboe-shaped URL its callers build from module constants;
-    the symbol is resolved out of it and the series fetched from
-    index_history (Yahoo), because the Cboe CSVs have been blocked since
-    2026-11-20.
-
-    The old two-schema CSV reader lived here -- Cboe served DATE,OPEN,HIGH,
-    LOW,CLOSE for VIX/VXN/XSP but DATE,SPX for SPX/RUT, and a reader that
-    knew only the first returned nothing at all on the second, silently.
-    That hazard is gone with the CSVs; the principle it was written for is
-    not. index_history returns (None, None) rather than a number it had to
-    guess at, for the same reason: a wrong realized vol flows straight into
-    the RICH/CHEAP axis of the decision table, and absent beats wrong.
+    index_history returns (None, None) rather than a number it had to guess
+    at: a wrong realized vol flows straight into the RICH/CHEAP axis of the
+    decision table, and absent beats wrong.
     """
-    sym = ixh.symbol_from_history_url(hist_url)
-    if not sym:
-        return None, None
-    return ixh.daily_closes(sym)
+    return ixh.daily_closes(symbol)
 
 
-def fetch_20d_change(hist_url, today_price):
-    """20-session change and fresh-20d-high flag, from the full history CSV.
+def fetch_20d_change(symbol, today_price):
+    """20-session change and fresh-20d-high flag, from the daily history.
 
     closes[-20] is the close from 20 sessions ago relative to today (the
-    history file is settled EOD data and does not yet contain today's
-    still-forming session). Returns (None, None) rather than guessing if the
-    column layout does not match what was verified live -- a silently wrong
-    number is worse than a blank one.
+    history is settled EOD data and does not yet contain today's
+    still-forming session). Returns (None, None) rather than guessing when
+    the history is short -- a silently wrong number is worse than a blank one.
     """
-    _, closes = fetch_history_closes(hist_url)
+    _, closes = fetch_history_closes(symbol)
     if not closes or len(closes) < 20:
         return None, None
     look = closes[-20:]
@@ -656,8 +610,7 @@ VIX_STALE_LEG_MOVE = 0.005
 def term_structure_state(vix_chg_1d, vix9d_chg_1d, term_spread):
     """contango / backwardation -- or a refusal to call it.
 
-    The two legs come from two separate files on a CDN and do not update in
-    lockstep. Observed 2026-09-11: VIX had moved -10.1% on the day while
+    The two legs are separate quotes and do not always update in lockstep. Observed 2026-09-11: VIX had moved -10.1% on the day while
     vix9d_chg_1d was EXACTLY 0.0 -- VIX9D had not begun ticking. Comparing a
     live leg against a stale one flipped the reading from contango (yesterday)
     to backwardation, purely as an artifact of which file had refreshed.
@@ -694,7 +647,7 @@ def capture_vix(args, logpath, now):
     feed_ts = vix_data.get("last_trade_time") or vix_data.get("timestamp") or "unknown"
 
     # ---- wait for VIX9D's first print of the session ---------------------
-    # VIX is calculated in Cboe's overnight session, VIX9D only from the
+    # VIX is calculated in the overnight session, VIX9D only from the
     # 9:30 open, and the feed runs ~15 minutes behind. So the 9:07, 9:22 and
     # 9:37 ET cycles paired a live VIX with VIX9D still at YESTERDAY's close
     # (last_trade_time 16:15 the prior day): three rows a morning, every
@@ -752,7 +705,7 @@ def capture_vix(args, logpath, now):
 
     chg_20d, is_20d_high = None, None
     try:
-        chg_20d, is_20d_high = fetch_20d_change(VIX_HISTORY_URL, vix)
+        chg_20d, is_20d_high = fetch_20d_change("VIX", vix)
     except Exception as e:
         log(logpath, f"VIX: 20d-change lookup failed ({e}), leaving blank")
 
@@ -915,7 +868,7 @@ def capture_realized_vol(args, logpath, now):
         sym = sym.upper()
         mapping = RV_HISTORY.get(sym)
         if mapping is None:
-            log(logpath, f"RV {sym}: no free Cboe daily-close series for this "
+            log(logpath, f"RV {sym}: no daily-close series mapped for this "
                          f"symbol, skipped (see RV_HISTORY)")
             continue
         if captured_today(rv_path, sym, now) and not args.force:
@@ -923,14 +876,14 @@ def capture_realized_vol(args, logpath, now):
 
         source, is_proxy = mapping
         try:
-            dates, closes = fetch_history_closes(HISTORY_URL.format(sym=source))
+            dates, closes = fetch_history_closes(source)
         except Exception as e:
             log(logpath, f"RV {sym}: history fetch failed ({e}), skipped")
             continue
 
         if not closes:
-            log(logpath, f"RV {sym}: {source}_History.csv returned no usable "
-                         f"closes (schema change?), skipped")
+            log(logpath, f"RV {sym}: {source} history returned no usable "
+                         f"closes, skipped")
             continue
 
         rets = log_returns(closes)
@@ -1064,7 +1017,7 @@ def fetch_valid_chain(symbol, args, logpath, now):
         waiting a few seconds and asking again most likely gets it. So: retry,
         then refuse only if the second look is empty too.
 
-        The wait is a starting guess, not a measurement -- how long Cboe takes
+        The wait is a starting guess, not a measurement -- how long the feed takes
         to populate them has not been observed. Both outcomes are logged
         ("RECOVERED on attempt N" / "REFUSED"), so the right value can be read
         off a few weeks of logs instead of argued about.
@@ -1079,8 +1032,7 @@ def fetch_valid_chain(symbol, args, logpath, now):
                          f"not missing")
             time.sleep(args.integrity_retry_wait)
 
-        payload = (chain_payload_from_pull(args.pull, symbol)
-                   if getattr(args, "pull", None) else gx.fetch_chain(symbol))
+        payload = chain_payload_from_pull(args.pull, symbol)
         df, spot, feed_ts = parse_chain_full(payload)
         df = gx.normalize_iv(df, quiet=True)
         metric_chain = df[df["dte"] <= args.max_dte]
@@ -1107,9 +1059,10 @@ def fetch_valid_chain(symbol, args, logpath, now):
 
 
 def chain_payload_from_pull(path, symbol):
-    """One symbol's chain out of a schwab_fetch.py pull, Cboe-shaped.
+    """One symbol's chain out of a schwab_fetch.py pull, as the payload
+    gx.parse_chain expects.
 
-    schwab_daily.to_cboe_payload already does this conversion for the daily
+    schwab_daily.to_chain_payload already does this conversion for the daily
     capture, so the intraday path reuses it rather than growing a second,
     divergent parser. The file is cached per (path, mtime): one pull holds
     every symbol, and re-reading a multi-megabyte JSON nine times a cycle is
@@ -1137,8 +1090,8 @@ def chain_payload_from_pull(path, symbol):
 
     # feed_ts is the pull's own fetch time: when these quotes were taken.
     # check_feed_freshness() then applies the same staleness gate it applies
-    # to a Cboe timestamp, so a stalled pull is caught rather than published.
-    return _sd.to_cboe_payload(block, doc.get("fetched_utc") or "unknown")
+    # to any chain, so a stalled pull is caught rather than published.
+    return _sd.to_chain_payload(block, doc.get("fetched_utc") or "unknown")
 
 
 def capture_symbol(symbol, args, logpath, now):
@@ -1267,13 +1220,9 @@ def append_state(state_path, rows):
 def main():
     p = argparse.ArgumentParser(description="Capture intraday GEX / flow snapshots.")
     p.add_argument("--symbols", nargs="+", default=DEFAULT_SYMBOLS)
-    p.add_argument("--pull", default=None,
-                   help="a schwab_fetch.py pull JSON to read chains from "
-                        "instead of Cboe. Cboe's free options endpoint began "
-                        "returning 403 on 2026-11-20 (from datacenters AND "
-                        "residential IPs), which killed the intraday capture. "
-                        "The pull is converted to the same payload shape, so "
-                        "every downstream metric is computed identically.")
+    p.add_argument("--pull", required=True,
+                   help="the schwab_fetch.py pull JSON to read chains from "
+                        "(written each cycle by schwab_intraday_auto.bat)")
     p.add_argument("--outdir", default=None)
     p.add_argument("--dte-window", type=float, default=45,
                    help="DTE ceiling for the stored slim snapshot (default 45)")
@@ -1328,7 +1277,7 @@ def main():
     logpath = os.path.join(args.outdir, "intraday.log")
     now = datetime.now(timezone.utc)
 
-    # On a closed day Cboe serves the prior session's file, so every symbol
+    # On a closed day a feed serves the prior session's file, so every symbol
     # would fail the freshness guard -- four hard failures and a red run every
     # 15 minutes, all day. The cron is already Mon-Fri; this covers holidays.
     if not cal.is_trading_day(now.date()) and not args.ignore_calendar:
@@ -1407,7 +1356,7 @@ def main():
                 f"{state['regime']}  RR25 {state['rr25']} "
                 f"({state['skew_state']})  P/C {state['session_pc_volume']}")
         except StaleFeedError as e:
-            # One symbol's chain served late by Cboe while the others in the
+            # One symbol's chain served late while the others in the
             # same cycle are current (XLK from 2026-10-16: 15 to 240 min
             # behind, about half its cycles). The 15-minute guard is right to
             # refuse it -- a late chain is never written as current -- but it

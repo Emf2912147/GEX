@@ -77,7 +77,7 @@ Confirm the header reads `84 official closes on file` (or more) and that
 is in the wrong folder — see step 3.
 
 The migration is safe to re-run. It reads `feed_spot`, which always holds the
-original Cboe value, so corrections never compound.
+original feed value, so corrections never compound.
 
 ```
 python migrate_daily_spot.py
@@ -124,7 +124,6 @@ addresses them:
   than everything this runbook corrects.
 - Open interest settles overnight, so intraday readings are yesterday's
   positioning repriced against today's spot.
-- The Cboe feed is ~15 minutes delayed.
 - SPX needs no spot correction and never has — index settlement is fixed
   overnight. All ETF drift comes from the quote feed being live while the open
   interest is not.

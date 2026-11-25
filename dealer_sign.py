@@ -50,7 +50,7 @@ standing as G7, G9 and the Flow line.
 
 WHAT IT IS NOT
 --------------
-Not signed trade data.  Cboe/OCC open-close volume is the real answer and is
+Not signed trade data.  Exchange/OCC open-close volume is the real answer and is
 not reachable from here.  This infers direction from daily EOD snapshots with
 no trade prints: a proxy, meaningful only in aggregate.
 

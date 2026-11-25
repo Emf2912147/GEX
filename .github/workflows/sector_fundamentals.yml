@@ -33,11 +33,8 @@ permissions:
   contents: write
 
 concurrency:
-  # Joins the trading pipeline's own group (capture.yml / intraday.yml) so a
-  # sector-agent push can never race theirs -- GitHub Actions serializes
-  # everything in a shared group instead of letting two jobs push at once.
-  # This is pure push-sequencing, not data sharing: it changes nothing about
-  # which files each job touches.
+  # Shared push-sequencing group, kept so any two Actions jobs in this repo
+  # never push at once. The trading captures themselves now run on the PC.
   group: gex-capture
   cancel-in-progress: false
 

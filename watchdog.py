@@ -9,7 +9,7 @@ WHY THIS EXISTS
 
         2026-09-23  intraday stopped after one 13:14 cycle, resumed 17:43 the
                     NEXT day. ~28 hours. Session 2026-09-23 is permanently
-                    lost; Cboe serves no history.
+                    lost; the chain feed serves no history.
         2026-10-05  intraday stopped at 18:36 after 13 cycles. The last 85
                     minutes of the session, including the close, are gone.
 
@@ -95,7 +95,7 @@ def symbol_gaps(today_rows, cycles, expected=()):
         n = counts.get(sym, 0)
         if n < cycles * MIN_SYMBOL_FRACTION:
             out.append(f"{sym} captured in only {n} of {cycles} cycles today "
-                       f"(Cboe serving its chain late or empty -- see "
+                       f"(its chain served late or empty -- see "
                        f"history/intraday.log)")
     return out
 
@@ -115,7 +115,7 @@ def main():
     # after 8 PM ET (midnight UTC) asked about "today" -- tomorrow in New
     # York, with no session yet -- and reported "0 intraday cycles today"
     # for a session that had in fact captured 32 of 32 (seen 2026-10-15).
-    # The daily checks stay on the UTC date: capture.yml is scheduled in UTC.
+    # The daily checks stay on the UTC date, as they always have.
     et_today = et_now.date()
     print(f"watchdog {now:%Y-%m-%d %H:%M} UTC ({today:%a}) = "
           f"{et_now:%Y-%m-%d %H:%M} ET\n")
@@ -194,8 +194,8 @@ def main():
         print(f"{len(problems)} PROBLEM(S):")
         for x in problems:
             print(f"  - {x}")
-        print("\nCheck the Actions tab. Data not captured cannot be "
-              "recovered -- Cboe serves no history.")
+        print("\nCheck history/capture.log and history/intraday.log. Data not "
+              "captured cannot be recovered -- no source serves past chains.")
         return 1
     print("pipeline healthy")
     return 0

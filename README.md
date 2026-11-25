@@ -1,30 +1,18 @@
 # GEX
 
 Daily gamma-exposure history for SPX, SPY, QQQ, IWM, XLK, SMH, XLF, GLD and TLT,
-built from Cboe's
-free delayed-quote endpoint.
+built from Schwab option chains.
 
-## Status (2026-11-21)
+## Status (2026-11-25)
 
-**Cboe's free delayed-quote endpoint (`cdn-api.cboe.com`) is blocked and is
-being treated as permanently unavailable to this pipeline, not a transient
-outage.** Confirmed blocked from the GitHub Actions runner, the PC, a phone
-network, and a real browser session (direct hit and an in-page `fetch()` off
-Cboe's own dashboard) as of 2026-11-21. Cboe's own retail dashboard no longer
-calls this endpoint client-side either — it now renders server-side. This
-was never a licensed/documented Cboe API; it was the undocumented JSON feed
-behind their public dashboard pages, and it reads as deliberately closed off,
-not a bug on our end.
+**Schwab is the data source**, via the `gex-trading-agent` Docker container's
+Schwab Trader API connection (shared login with the NMT monitor). Both
+captures run on the PC as Windows scheduled tasks, not on GitHub Actions:
+Schwab and tastytrade credentials cannot live on a public runner. See
+`SCHWAB_FALLBACK.md` for the architecture.
 
-**Schwab is now the primary data source**, via the `gex-trading-agent` Docker
-container's existing Schwab Trader API connection (shared login with the NMT
-monitor). See `SCHWAB_FALLBACK.md` for the architecture, the constraints that
-rule out a GitHub-Actions-style unattended pipeline, and what's needed to
-automate the parts that can be automated.
-
-`capture.yml` / `intraday.yml` still run on their existing schedule and will
-keep failing against Cboe until they're repointed or paused — see
-`SCHWAB_FALLBACK.md` before changing them.
+VIX, VIX9D and the index daily closes behind realized vol and the long-vol
+block come from Yahoo (`index_history.py`).
 
 **Dashboard:** enable GitHub Pages (Settings -> Pages -> Deploy from a branch
 -> `main` / `/docs`), then the page lives at
@@ -32,12 +20,12 @@ keep failing against Cboe until they're repointed or paused — see
 
 ## What runs
 
-`.github/workflows/capture.yml` fires daily at 11:30 UTC. It captures each
-symbol's full option chain, stores it raw, appends a row of derived metrics,
-rebuilds the dashboard, and commits. **As of 2026-11-20 this fails every run**
-because the Cboe endpoint it depends on is blocked (see Status above) — the
-daily row is currently produced by a manual/semi-automated Schwab capture
-instead; see `SCHWAB_FALLBACK.md`.
+- **Daily** (`schwab_capture_auto.bat` -> `schwab_daily.py`, ~7am ET on the
+  PC): each symbol's chain from Schwab, stored raw, one row of derived
+  metrics appended, dashboard rebuilt, committed and pushed.
+- **Intraday** (`schwab_intraday_auto.bat` -> `gex_intraday.py --pull`,
+  every 15 min in session on the PC): slim snapshot, state vector, VIX state.
+- **GitHub Actions**: only the pipeline watchdog and the sector-agent jobs.
 
 ## Layout
 
@@ -74,7 +62,7 @@ One record per symbol for the trading agent (gex-trading-agent): `spot`,
 | `term_ratio` | `atm_iv_7d / atm_iv_30d`; above 1 = inverted front end |
 | `skew_25d` | 25-delta put IV minus 25-delta call IV, ~30-day expiry |
 | `vol_trigger` | price where the dealer gamma profile recovers to 25% of its peak; below it long-gamma support is weak or gone |
-| `rv_20d`, `rv_source`, `rv_proxy` | 20-session realized vol: `realized_vol.csv` (Cboe history) when fresh, else this repo's own closes |
+| `rv_20d`, `rv_source`, `rv_proxy` | 20-session realized vol: `realized_vol.csv` (index_history daily closes) when fresh, else this repo's own closes |
 | `iv_rv_ratio` | `atm_iv_30d / rv_20d`; above 1 = options rich to recent movement |
 | `smile` | put/call IV by strike for the expiry nearest 7 days, strikes within 8% of spot; the agent prices its spreads from it (model value, not a fill) |
 
@@ -134,7 +122,7 @@ Also a top-level `market.vix` block from `vix_state.csv` (VIX, VIX9D, term
 spread and state, 1d and 20d change), and `market.long_vol`: VIX3M, VIX6M and
 VIX1Y with their percentile over the last year and five years and a
 CHEAP (30th or below) / NEUTRAL / RICH (70th or above) state, for timing
-staged long-dated tranches. Its Cboe history is read fresh at most every six
+staged long-dated tranches. Its daily history is read fresh at most every six
 hours and not stored. All additive: a reader that ignores them is unaffected.
 Apart from `long_vol`, nothing new is fetched, and nothing new is stored.
 Tests: `python -m pytest test_vol_metrics.py test_vol_surface.py test_rsi_divergence.py test_flow_intensity.py test_flow_outcomes.py`.
@@ -146,15 +134,15 @@ the honest read of the backtest are in the module docstring.
 
 ## Known limits
 
-- Cboe's feed is ~15 minutes delayed. Nothing here is real-time.
+- Intraday rows are as current as the 15-minute Schwab pull. Nothing here is tick-level.
 - Open interest settles overnight, so a morning capture is the *prior*
-  session's positioning. `feed_date` is the date on the Cboe file, not the
+  session's positioning. `feed_date` is the date on the source file, not the
   trading session — a file dated the 5th carries the 4th's settled OI.
 - Dealers are assumed long calls / short puts. Standard public convention,
   not a measurement of real positioning.
 - Walls ignore strikes within 1% of spot: gamma peaks at the money, so
   without that exclusion the "wall" is just the ATM strike.
-- The chart's two panels use different gamma sources — bars from Cboe's
+- The chart's two panels use different gamma sources — bars from the chain's
   reported gamma, the profile from Black-Scholes with IV held fixed. The
   flip *location* is robust; the profile's magnitudes are not comparable
   to the bars.
@@ -185,7 +173,6 @@ and open PRs, so it is a deliberate owner decision.
 
 ## Data
 
-Public market data from Cboe's delayed-quote endpoint, normally. Since
-2026-11-20, Cboe is blocked (see Status above) and daily rows come from
-Schwab option-chain data instead — see `SCHWAB_FALLBACK.md`. Nothing here is
+Public market data: Schwab option chains (tastytrade open-interest patch),
+Yahoo index levels. Nothing here is
 account or position information.

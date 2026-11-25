@@ -18,7 +18,7 @@ SCOPE NARROWED 2026-10-10
     fund's top 30 is picked up automatically. The 11-sector, ~517-name
     history collected before this date was deleted: the fundamentals run
     had been crashing since 2026-10-06, technicals had lost most of its
-    options data to Cboe rate limits, and candidates had never produced a
+    options data to the old feed's rate limits, and candidates had never produced a
     single pair.
 
 CADENCE
