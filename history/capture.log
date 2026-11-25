@@ -3497,3 +3497,70 @@ Traceback (most recent call last):
 requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://cdn-api.cboe.com/api/global/delayed_quotes/options/TLT.json
 
 2026-11-24T21:25:30+00:00  === capture done  ok=0  failed=9
+2026-11-25T12:05:43+00:00  === schwab_daily start session=2026-11-24 symbols=SPX SPY QQQ IWM XLK SMH XLF GLD TLT
+2026-11-25T12:13:12+00:00  SPX: vintage check PASS -- <=30DTE OI 10,672,602; 1.03x 2026-11-23 over 20 shared expiries, 401,344 OI rolled off since
+2026-11-25T12:13:12+00:00  SPX: 14,086 contracts (Schwab) -> SPX.parquet
+2026-11-25T12:13:12+00:00  
+2026-11-25T12:13:12+00:00  *** THIN CHAIN *** SPX: 14,086 contracts vs trailing median 31,081 (45% of normal)
+2026-11-25T12:13:12+00:00  *** SPX: below 75% of the trailing median, so open interest is INCOMPLETE and net GEX, walls and flip are all understated. The usual cause is a capture taken after the session's expiry had already stripped contracts out of the chain -- check whether this run is late for session 2026-11-24.
+2026-11-25T12:13:12+00:00  
+2026-11-25T12:13:12+00:00  SPX: OI zero near-ATM -- ITM 1257/4797 (26%), OTM 353/4797 (7%), traded-but-zero 0
+2026-11-25T12:13:12+00:00  SPX: spot 7,201.09  netGEX -54.96Bn  flip 7384.8209  walls 7800.0/7000.0  negative  [schwab]
+2026-11-25T12:13:12+00:00  SPY: tastytrade OI patch -- 4800/6664 contracts matched and replaced, 1864 kept Schwab's OI (no tastytrade match)
+2026-11-25T12:13:12+00:00  SPY: vintage check PASS -- <=30DTE OI 7,424,319; 1.04x 2026-11-23 over 12 shared expiries, 4,212,789 OI rolled off since
+2026-11-25T12:13:12+00:00  SPY: spot 705.2200 from Schwab is -1.80% off the 2026-11-24 close 718.1200 (session_close) -- using the close
+2026-11-25T12:13:12+00:00  SPY: 6,664 contracts (Schwab) -> SPY.parquet
+2026-11-25T12:13:12+00:00  
+2026-11-25T12:13:12+00:00  *** THIN CHAIN *** SPY: 6,664 contracts vs trailing median 12,585 (53% of normal)
+2026-11-25T12:13:12+00:00  *** SPY: below 75% of the trailing median, so open interest is INCOMPLETE and net GEX, walls and flip are all understated. The usual cause is a capture taken after the session's expiry had already stripped contracts out of the chain -- check whether this run is late for session 2026-11-24.
+2026-11-25T12:13:12+00:00  
+2026-11-25T12:13:12+00:00  SPY: OI zero near-ATM -- ITM 465/1377 (34%), OTM 124/1377 (9%), traded-but-zero 0
+2026-11-25T12:13:12+00:00  SPY: spot 718.12  netGEX -5.22Bn  flip 726.6186  walls 740.0/700.0  negative  [schwab]
+2026-11-25T12:13:12+00:00  QQQ: tastytrade OI patch -- 5180/6832 contracts matched and replaced, 1652 kept Schwab's OI (no tastytrade match)
+2026-11-25T12:13:12+00:00  QQQ: vintage check PASS -- <=30DTE OI 6,337,419; 1.07x 2026-11-23 over 12 shared expiries, 3,348,901 OI rolled off since
+2026-11-25T12:13:12+00:00  QQQ: spot 619.4600 from Schwab is -2.81% off the 2026-11-24 close 637.3400 (session_close) -- using the close
+2026-11-25T12:13:12+00:00  QQQ: 6,832 contracts (Schwab) -> QQQ.parquet
+2026-11-25T12:13:12+00:00  
+2026-11-25T12:13:12+00:00  *** THIN CHAIN *** QQQ: 6,832 contracts vs trailing median 10,463 (65% of normal)
+2026-11-25T12:13:12+00:00  *** QQQ: below 75% of the trailing median, so open interest is INCOMPLETE and net GEX, walls and flip are all understated. The usual cause is a capture taken after the session's expiry had already stripped contracts out of the chain -- check whether this run is late for session 2026-11-24.
+2026-11-25T12:13:12+00:00  
+2026-11-25T12:13:12+00:00  QQQ: OI zero near-ATM -- ITM 342/1274 (27%), OTM 123/1274 (10%), traded-but-zero 0
+2026-11-25T12:13:12+00:00  QQQ: spot 637.34  netGEX -2.14Bn  flip 646.1379  walls 680.0/620.0  negative  [schwab]
+2026-11-25T12:13:12+00:00  IWM: tastytrade OI patch -- 2354/2926 contracts matched and replaced, 572 kept Schwab's OI (no tastytrade match)
+2026-11-25T12:13:12+00:00  IWM: vintage check PASS -- <=30DTE OI 4,565,981; 1.02x 2026-11-23 over 12 shared expiries, 1,830,832 OI rolled off since
+2026-11-25T12:13:12+00:00  IWM: spot 263.7900 from Schwab is -1.12% off the 2026-11-24 close 266.7900 (session_close) -- using the close
+2026-11-25T12:13:12+00:00  IWM: 2,926 contracts (Schwab) -> IWM.parquet
+2026-11-25T12:13:12+00:00  
+2026-11-25T12:13:12+00:00  *** THIN CHAIN *** IWM: 2,926 contracts vs trailing median 5,021 (58% of normal)
+2026-11-25T12:13:12+00:00  *** IWM: below 75% of the trailing median, so open interest is INCOMPLETE and net GEX, walls and flip are all understated. The usual cause is a capture taken after the session's expiry had already stripped contracts out of the chain -- check whether this run is late for session 2026-11-24.
+2026-11-25T12:13:12+00:00  
+2026-11-25T12:13:12+00:00  IWM: OI zero near-ATM -- ITM 192/574 (33%), OTM 72/574 (13%), traded-but-zero 0
+2026-11-25T12:13:12+00:00  IWM: spot 266.79  netGEX -2.37Bn  flip 283.8578  walls 285.0/260.0  negative  [schwab]
+2026-11-25T12:13:12+00:00  XLK: tastytrade OI patch -- 980/1568 contracts matched and replaced, 588 kept Schwab's OI (no tastytrade match)
+2026-11-25T12:13:13+00:00  XLK: vintage check REJECT -- OI 312,698 is 1.70x the 2026-11-20 book (183,627) over 5 shared expiries, 119,857 OI rolled off since -- outside 0.6x-1.6x
+2026-11-25T12:13:13+00:00  SMH: tastytrade OI patch -- 2908/3848 contracts matched and replaced, 940 kept Schwab's OI (no tastytrade match)
+2026-11-25T12:13:13+00:00  SMH: vintage check REJECT -- OI 909,881 is 2.19x the 2026-11-20 book (416,126) over 8 shared expiries, 464,059 OI rolled off since -- outside 0.6x-1.6x
+2026-11-25T12:13:13+00:00  XLF: tastytrade OI patch -- 916/1174 contracts matched and replaced, 258 kept Schwab's OI (no tastytrade match)
+2026-11-25T12:13:13+00:00  XLF: vintage check PASS -- <=30DTE OI 1,646,753; 1.02x 2026-11-23 over 10 shared expiries, 1,632,377 OI rolled off since
+2026-11-25T12:13:13+00:00  XLF: spot 55.8000 from Schwab is -0.57% off the 2026-11-24 close 56.1200 (session_close) -- using the close
+2026-11-25T12:13:13+00:00  XLF: 1,174 contracts (Schwab) -> XLF.parquet
+2026-11-25T12:13:13+00:00  
+2026-11-25T12:13:13+00:00  *** THIN CHAIN *** XLF: 1,174 contracts vs trailing median 1,822 (64% of normal)
+2026-11-25T12:13:13+00:00  *** XLF: below 75% of the trailing median, so open interest is INCOMPLETE and net GEX, walls and flip are all understated. The usual cause is a capture taken after the session's expiry had already stripped contracts out of the chain -- check whether this run is late for session 2026-11-24.
+2026-11-25T12:13:13+00:00  
+2026-11-25T12:13:13+00:00  XLF: OI zero near-ATM -- ITM 113/220 (51%), OTM 40/220 (18%), traded-but-zero 0  <-- OI SUSPECT, net gex understated
+2026-11-25T12:13:13+00:00  XLF: spot 56.12  netGEX -0.16Bn  flip 59.2126  walls 59.0/54.0  negative  [schwab]
+2026-11-25T12:13:13+00:00  GLD: tastytrade OI patch -- 3806/4838 contracts matched and replaced, 1032 kept Schwab's OI (no tastytrade match)
+2026-11-25T12:13:13+00:00  GLD: vintage check REJECT -- OI 1,227,898 is 1.70x the 2026-11-20 book (721,986) over 10 shared expiries, 1,420,538 OI rolled off since -- outside 0.6x-1.6x
+2026-11-25T12:13:13+00:00  TLT: tastytrade OI patch -- 956/1324 contracts matched and replaced, 368 kept Schwab's OI (no tastytrade match)
+2026-11-25T12:13:13+00:00  TLT: vintage check PASS -- <=30DTE OI 3,300,237; 1.02x 2026-11-23 over 10 shared expiries, 4,139,594 OI rolled off since
+2026-11-25T12:13:13+00:00  TLT: spot 82.2000 from Schwab is +1.04% off the 2026-11-24 close 81.3500 (session_close) -- using the close
+2026-11-25T12:13:13+00:00  TLT: 1,324 contracts (Schwab) -> TLT.parquet
+2026-11-25T12:13:13+00:00  
+2026-11-25T12:13:13+00:00  *** THIN CHAIN *** TLT: 1,324 contracts vs trailing median 2,772 (48% of normal)
+2026-11-25T12:13:13+00:00  *** TLT: below 75% of the trailing median, so open interest is INCOMPLETE and net GEX, walls and flip are all understated. The usual cause is a capture taken after the session's expiry had already stripped contracts out of the chain -- check whether this run is late for session 2026-11-24.
+2026-11-25T12:13:13+00:00  
+2026-11-25T12:13:13+00:00  TLT: OI zero near-ATM -- ITM 104/270 (39%), OTM 31/270 (11%), traded-but-zero 0
+2026-11-25T12:13:13+00:00  TLT: spot 81.35  netGEX 0.68Bn  flip 79.2529  walls 83.0/80.0  positive  [schwab]
+2026-11-25T12:13:13+00:00  appended 6 metric row(s) (Schwab)
+2026-11-25T12:13:13+00:00  === schwab_daily done  ok=6  skipped=0  failed=3  THIN=6 (SPX,SPY,QQQ,IWM,XLF,TLT)
