@@ -41,7 +41,7 @@ import sys
 
 import pandas as pd
 
-from market_calendar import et_wall_clock, is_trading_day, should_capture
+from market_calendar import et_wall_clock, is_trading_day, session_for, should_capture
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 HIST = os.path.join(HERE, "history")
@@ -167,7 +167,7 @@ def main():
     # ---- daily -------------------------------------------------------------
     d = pd.read_csv(os.path.join(HIST, "daily_metrics.csv"))
     if should_capture(today):
-        session = str(today - dt.timedelta(days=1))
+        session = str(session_for(today))
         got = len(d[d["session_date"].astype(str) == session])
         if now.time() < dt.time(12, 30):
             ok(f"daily for session {session} not due yet")

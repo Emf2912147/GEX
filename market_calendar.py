@@ -159,21 +159,32 @@ def is_market_open(utc_dt):
 
 
 def should_capture(capture_date):
-    """True if the daily job should run on `capture_date`.
+    """True if the daily job should run on `capture_date`: NYSE trading days only.
 
-    The file served this morning reflects yesterday. Run only when yesterday
-    was a session; otherwise the feed serves a chain already on file.
+    Changed 2026-11-26. The rule used to be "yesterday was a session", which
+    ran Saturday mornings (for Friday) and the morning after a holiday's eve.
+    That suited Cboe's file. Broker data does not: settled open interest only
+    advances on OCC business days, so a Saturday Schwab pull (2026-11-21) came
+    back with 44-78% of near-dated contracts at zero OI, and the Thanksgiving
+    morning pull (2026-11-26) carried Tuesday's OI unchanged under Wednesday's
+    date. Capture on the next trading morning instead -- Monday for Friday,
+    the Friday after Thanksgiving for the Wednesday before it.
     """
-    return is_trading_day(capture_date - timedelta(days=1))
+    return is_trading_day(capture_date)
+
+
+def previous_session(d):
+    """The last NYSE trading day strictly before `d`."""
+    p = d - timedelta(days=1)
+    while not is_trading_day(p):
+        p -= timedelta(days=1)
+    return p
 
 
 def session_for(capture_date):
-    """The trading session the file served on `capture_date` belongs to.
-
-    This is what feed_date SHOULD have been recording. Always the previous
-    calendar day when should_capture() is True.
-    """
-    return capture_date - timedelta(days=1)
+    """The trading session whose settled open interest a capture on
+    `capture_date` carries: the previous trading day."""
+    return previous_session(capture_date)
 
 
 if __name__ == "__main__":
@@ -189,25 +200,27 @@ if __name__ == "__main__":
     assert date(2027, 12, 31) not in holidays(2027), "Dec 31 2027 stays open"
     assert not is_trading_day(date(2026, 9, 7)), "Labor Day"
 
-    # The exact failure this module was written for.
-    assert should_capture(date(2026, 9, 19)), "Sat captures Fri"
+    # Weekends: Monday captures Friday; Saturday and Sunday never run.
+    assert not should_capture(date(2026, 9, 19)), "Sat must not run"
     assert not should_capture(date(2026, 9, 20)), "Sun must not run"
-    assert not should_capture(date(2026, 9, 21)), "Mon must not run"
-    assert should_capture(date(2026, 9, 22)), "Tue captures Mon"
-    assert session_for(date(2026, 9, 19)) == date(2026, 9, 18)
-    assert session_for(date(2026, 9, 22)) == date(2026, 9, 21)
+    assert should_capture(date(2026, 9, 21)), "Mon captures Fri"
+    assert session_for(date(2026, 9, 21)) == date(2026, 9, 18)
+    assert session_for(date(2026, 9, 22)) == date(2026, 9, 21), "Tue captures Mon"
 
-    # Labor Day week 2026: Mon 9/7 closed.
-    assert should_capture(date(2026, 9, 5)), "Sat captures Fri 9/4"
-    assert not should_capture(date(2026, 9, 8)), "Tue: Mon was a holiday"
-    assert should_capture(date(2026, 9, 9)), "Wed captures Tue 9/8"
+    # Labor Day week 2026: Mon 9/7 closed -> Tue captures Fri 9/4.
+    assert not should_capture(date(2026, 9, 7)), "Labor Day: no run"
+    assert should_capture(date(2026, 9, 8))
+    assert session_for(date(2026, 9, 8)) == date(2026, 9, 4)
 
-    # Good Friday week 2026: Fri 4/3 closed.
-    assert should_capture(date(2026, 4, 3)), "Fri runs: Thu was a session"
-    assert session_for(date(2026, 4, 3)) == date(2026, 4, 2)
-    assert not should_capture(date(2026, 4, 4)), "Sat: Fri was a holiday"
-    assert not should_capture(date(2026, 4, 6)), "Mon: Sun"
-    assert should_capture(date(2026, 4, 7)), "Tue captures Mon 4/6"
+    # Good Friday 2026: Fri 4/3 closed -> Mon 4/6 captures Thu 4/2.
+    assert not should_capture(date(2026, 4, 3)), "Good Friday: no run"
+    assert session_for(date(2026, 4, 6)) == date(2026, 4, 2)
+
+    # Thanksgiving 2026 -- the failure that changed the rule: Thu 11/26 must
+    # not run; Fri 11/27 captures Wed 11/25.
+    assert not should_capture(date(2026, 11, 26)), "Thanksgiving: no run"
+    assert should_capture(date(2026, 11, 27))
+    assert session_for(date(2026, 11, 27)) == date(2026, 11, 25)
 
     # Eastern time. 2026: DST ends Sun 11/1, starts again Sun 2027-03-14.
     assert et_offset(date(2026, 10, 30)) == timedelta(hours=-4), "Fri before: EDT"

@@ -1,6 +1,6 @@
 {
   "generated_utc": "2026-11-25T12:00:06.680966+00:00",
-  "published_utc": "2026-11-26T01:18:28.814475+00:00",
+  "published_utc": "2026-11-26T16:15:14.594013+00:00",
   "SPX": {
     "spot": 7201.09,
     "flip": 7384.8209,
@@ -1570,15 +1570,15 @@
     },
     "sign_model": {
       "flip_naive": 726.6186,
-      "flip_signed": 722.8352,
-      "delta_pts": -3.7834,
-      "delta_pct": -0.5268,
-      "delta_dm": -0.19,
+      "flip_signed": 726.9083,
+      "delta_pts": 0.2897,
+      "delta_pct": 0.0403,
+      "delta_dm": 0.015,
       "regime_naive": "NEG",
       "regime_signed": "NEG",
       "agrees": true,
-      "buckets_significant": 2,
-      "bucket_sessions": 45,
+      "buckets_significant": 3,
+      "bucket_sessions": 46,
       "label": "regime agrees (NEG), flip stable",
       "info_only": true
     }
@@ -2096,16 +2096,16 @@
     },
     "sign_model": {
       "flip_naive": 646.1379,
-      "flip_signed": 625.0135,
-      "delta_pts": -21.1244,
-      "delta_pct": -3.3145,
-      "delta_dm": -0.778,
+      "flip_signed": 646.0377,
+      "delta_pts": -0.1001,
+      "delta_pct": -0.0157,
+      "delta_dm": -0.004,
       "regime_naive": "NEG",
-      "regime_signed": "POS",
-      "agrees": false,
-      "buckets_significant": 2,
-      "bucket_sessions": 45,
-      "label": "regime disagrees: naive NEG vs signed POS - lower confidence",
+      "regime_signed": "NEG",
+      "agrees": true,
+      "buckets_significant": 1,
+      "bucket_sessions": 46,
+      "label": "regime agrees (NEG), flip stable",
       "info_only": true
     }
   },
@@ -2465,20 +2465,6 @@
       "history_sessions": 45,
       "note": null,
       "status": "information only (untested)"
-    },
-    "sign_model": {
-      "flip_naive": 283.8578,
-      "flip_signed": 283.9218,
-      "delta_pts": 0.0639,
-      "delta_pct": 0.024,
-      "delta_dm": null,
-      "regime_naive": "NEG",
-      "regime_signed": "NEG",
-      "agrees": true,
-      "buckets_significant": 1,
-      "bucket_sessions": 45,
-      "label": "regime agrees (NEG), flip stable",
-      "info_only": true
     }
   },
   "XLF": {
@@ -2768,16 +2754,16 @@
     },
     "sign_model": {
       "flip_naive": 59.2126,
-      "flip_signed": 59.2126,
-      "delta_pts": 0.0,
-      "delta_pct": 0.0,
-      "delta_dm": 0.0,
+      "flip_signed": 61.0032,
+      "delta_pts": 1.7906,
+      "delta_pct": 3.1907,
+      "delta_dm": 1.484,
       "regime_naive": "NEG",
       "regime_signed": "NEG",
       "agrees": true,
-      "buckets_significant": 0,
-      "bucket_sessions": 21,
-      "label": "regime agrees (NEG), flip stable",
+      "buckets_significant": 1,
+      "bucket_sessions": 22,
+      "label": "regime agrees (NEG) but flip moves 1.48 DM - check G3",
       "info_only": true
     }
   },
@@ -3152,15 +3138,15 @@
     },
     "sign_model": {
       "flip_naive": 79.2529,
-      "flip_signed": 79.2529,
-      "delta_pts": 0.0,
-      "delta_pct": 0.0,
+      "flip_signed": 79.2791,
+      "delta_pts": 0.0261,
+      "delta_pct": 0.0321,
       "delta_dm": null,
       "regime_naive": "POS",
       "regime_signed": "POS",
       "agrees": true,
-      "buckets_significant": 0,
-      "bucket_sessions": 25,
+      "buckets_significant": 2,
+      "bucket_sessions": 26,
       "label": "regime agrees (POS), flip stable",
       "info_only": true
     }
@@ -3755,15 +3741,15 @@
     },
     "sign_model": {
       "flip_naive": 456.2064,
-      "flip_signed": 406.8436,
-      "delta_pts": -49.3629,
-      "delta_pct": -11.5672,
+      "flip_signed": 405.6901,
+      "delta_pts": -50.5164,
+      "delta_pct": -11.8375,
       "delta_dm": null,
       "regime_naive": "NEG",
       "regime_signed": "POS",
       "agrees": false,
-      "buckets_significant": 1,
-      "bucket_sessions": 21,
+      "buckets_significant": 2,
+      "bucket_sessions": 22,
       "label": "regime disagrees: naive NEG vs signed POS - lower confidence",
       "info_only": true
     }
@@ -4178,6 +4164,20 @@
       "history_sessions": 25,
       "note": "vanna not scored yet (10 of 15 sessions with an IV/RV reading); score is charm only",
       "status": "information only (untested)"
+    },
+    "sign_model": {
+      "flip_naive": 331.6945,
+      "flip_signed": 331.676,
+      "delta_pts": -0.0185,
+      "delta_pct": -0.0057,
+      "delta_dm": null,
+      "regime_naive": "NEG",
+      "regime_signed": "NEG",
+      "agrees": true,
+      "buckets_significant": 1,
+      "bucket_sessions": 26,
+      "label": "regime agrees (NEG), flip stable",
+      "info_only": true
     }
   },
   "market": {
@@ -4220,30 +4220,30 @@
           "state": "RICH",
           "tenor_days": 93,
           "ratio_to_vix": 0.93,
-          "ratio_pct_1y": 4.4
+          "ratio_pct_1y": 1.2
         },
         "vix6m": {
           "level": 26.9,
           "pct_1y": 95.2,
-          "pct_5y": 81.1,
+          "pct_5y": 81.2,
           "state": "RICH",
           "tenor_days": 184,
           "ratio_to_vix": 0.951,
-          "ratio_pct_1y": 3.2
+          "ratio_pct_1y": 2.0
         },
         "vix1y": {
           "level": 26.12,
           "pct_1y": 94.4,
-          "pct_5y": 75.0,
+          "pct_5y": 75.2,
           "state": "RICH",
           "tenor_days": 365,
           "ratio_to_vix": 0.923,
-          "ratio_pct_1y": 2.8
+          "ratio_pct_1y": 3.2
         }
       },
       "window_sessions": 252,
       "asof": "2026-11-25",
-      "fetched_utc": "2026-11-26T01:10:41.485279+00:00",
+      "fetched_utc": "2026-11-26T12:16:26.105529+00:00",
       "stale": false,
       "source": "index_history daily closes, tastytrade first (read fresh, not stored)"
     }
