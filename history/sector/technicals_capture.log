@@ -1320,3 +1320,10 @@
 2026-11-25T14:31:04.708393+00:00Z  CPB: Cboe fetch failed -- 403 Client Error: Forbidden for url: https://cdn-api.cboe.com/api/global/delayed_quotes/options/CPB.json
 2026-11-25T14:31:04.710077+00:00Z  === technicals capture done: 121/121 names captured, 0 with options data ===
 2026-11-25T14:31:04.710152+00:00Z  === WARNING: NOT ONE name has options data -- the chain source is unusable this run, the rows are price-only ===
+2026-11-26T09:28:33.016982+00:00Z  universe: 121 names from fundamentals 2026-11-21
+2026-11-26T09:28:33.017120+00:00Z  === technicals capture start (121 names) ===
+2026-11-26T09:28:37.736549+00:00Z  yfinance batch 1: 99/100 with history
+2026-11-26T09:28:38.836025+00:00Z  yfinance batch 2: 24/25 with history
+2026-11-26T09:28:38.836146+00:00Z  no usable history for 2 names -- ['C', 'VYLR']
+2026-11-26T09:28:38.836638+00:00Z  === technicals capture done: 121/121 names captured, 0 with options data ===
+2026-11-26T09:28:38.836675+00:00Z  === WARNING: NOT ONE name has options data -- the chain source is unusable this run, the rows are price-only ===
