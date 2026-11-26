@@ -67,8 +67,14 @@ WHAT THIS SCRIPT REFUSES TO DO
     _RADER_NEEDS_ATTENTION.txt.
 
 VIX CAPTURE
-    Same 15-minute cycle also records VIX and VIX9D, from index_history
-    (Yahoo daily/quote data), into its own file (history/vix_state.csv).
+    Same 15-minute cycle also records the VIX complex into its own file
+    (history/vix_state.csv). Source, in order (vix_source says which):
+      tastytrade  tastytrade_vix.py (PC-only, tastytrade DXLink): VIX, VIX9D,
+                  VIX3M, VVIX and the front two /VX futures. The preferred
+                  source (Eugenio, 2026-11-25).
+      yahoo       index_history: VIX and VIX9D only, no futures. Used when
+                  the tastytrade module is absent or its snapshot fails.
+    The 20-day change still reads the VIX daily history from index_history.
 
     DEDUPE HERE IS CONTENT-ONLY. That is a simplification rather than a fix --
     an earlier note in this file claimed the quotes endpoint's last_trade_time
@@ -82,8 +88,11 @@ VIX CAPTURE
     by nothing but which file had refreshed. term_state is therefore suppressed
     to "unreliable(vix9d-stale)" in that situation; see term_structure_state().
 
-    True VX futures term structure (front-two-month slope) is NOT available
-    from this source.
+    True VX futures term structure IS recorded when tastytrade supplies it:
+    vx1/vx2 (front two monthly /VX, two-sided mid where quoted), their slope
+    vx_slope_1_2 = vx2 - vx1, vx_term_state, and vx1_basis = vx1 - VIX.
+    term_state itself stays the VIX9D-vs-VIX reading below, so every reader
+    of it keeps its meaning; the futures curve sits beside it.
     VIX9D vs VIX30 is used as the term-structure proxy instead: it answers
     the same shape question (short-dated vol richer or cheaper than 30-day)
     without needing futures settlements. It is a substitute, not the real
@@ -224,6 +233,11 @@ VIX_COLUMNS = [
     "vix9d", "vix9d_chg_1d_pct",
     "term_spread_9d_vs_30d", "term_state",
     "schema_version",
+    # Added 2026-11-25 with the tastytrade source. Appended after
+    # schema_version so older rows simply read blank in these columns.
+    "vix_source", "vix3m", "vvix",
+    "vx1_symbol", "vx1_expiry", "vx1", "vx2_symbol", "vx2_expiry", "vx2",
+    "vx_slope_1_2", "vx_term_state", "vx1_basis",
 ]
 
 # ---- realized vol ---------------------------------------------------------
@@ -531,10 +545,52 @@ def elapsed_seconds(prev_capture_ts, now):
 # VIX / VIX9D
 
 
-def fetch_vix_quote(symbol):
-    """The VIX / VIX9D level, as {current_price, prev_day_close,
-    last_trade_time}, from index_history (Yahoo)."""
+def vix_snapshot(logpath):
+    """The VIX complex from tastytrade_vix.py, or None (then Yahoo is used).
+
+    tastytrade_vix lives on the PC only, next to the tastytrade login, so it
+    is imported lazily -- the same arrangement as schwab_daily for chains.
+    """
+    try:
+        import tastytrade_vix as tvx
+    except ImportError:
+        return None
+    try:
+        snap = tvx.snapshot()
+    except Exception as e:                    # login, network, feed -- anything
+        log(logpath, f"VIX: tastytrade snapshot failed ({type(e).__name__}: "
+                     f"{str(e)[:120]}), falling back to Yahoo")
+        return None
+    if not snap.get("indices", {}).get("VIX") or not snap["indices"].get("VIX9D"):
+        log(logpath, "VIX: tastytrade returned no VIX/VIX9D, falling back to Yahoo")
+        return None
+    return snap
+
+
+def fetch_vix_quote(symbol, snap=None):
+    """{current_price, prev_day_close, last_trade_time} for VIX / VIX9D /
+    VIX3M / VVIX: from the tastytrade snapshot when it has the symbol, else
+    index_history (Yahoo)."""
+    q = ((snap or {}).get("indices") or {}).get(symbol)
+    if q and q.get("current_price") is not None:
+        return q
     return ixh.quote(symbol)
+
+
+def vx_curve(snap):
+    """Front two /VX futures from the snapshot -> the vx_* columns, or {}."""
+    futs = (snap or {}).get("futures") or []
+    if len(futs) < 2:
+        return {}
+    f1, f2 = futs[0], futs[1]
+    slope = f2["price"] - f1["price"]
+    state = ("contango" if slope > 0.005 else
+             "backwardation" if slope < -0.005 else "flat")
+    return {"vx1_symbol": f1.get("symbol"), "vx1_expiry": f1.get("expiry"),
+            "vx1": round(f1["price"], 4),
+            "vx2_symbol": f2.get("symbol"), "vx2_expiry": f2.get("expiry"),
+            "vx2": round(f2["price"], 4),
+            "vx_slope_1_2": round(slope, 4), "vx_term_state": state}
 
 
 def fetch_history_closes(symbol):
@@ -632,8 +688,9 @@ def term_structure_state(vix_chg_1d, vix9d_chg_1d, term_spread):
 
 
 def capture_vix(args, logpath, now):
-    vix_data = fetch_vix_quote("VIX")
-    vix9d_data = fetch_vix_quote("VIX9D")
+    snap = vix_snapshot(logpath)
+    vix_data = fetch_vix_quote("VIX", snap)
+    vix9d_data = fetch_vix_quote("VIX9D", snap)
 
     vix = vix_data.get("current_price")
     vix9d = vix9d_data.get("current_price")
@@ -726,23 +783,58 @@ def capture_vix(args, logpath, now):
         "term_spread_9d_vs_30d": round(term_spread, 4),
         "term_state": term_state,
         "schema_version": SCHEMA_VERSION,
+        "vix_source": "tastytrade" if snap else "yahoo",
     }
+    if snap:
+        for key, sym in (("vix3m", "VIX3M"), ("vvix", "VVIX")):
+            q = snap["indices"].get(sym) or {}
+            if q.get("current_price") is not None:
+                row[key] = round(float(q["current_price"]), 4)
+        curve = vx_curve(snap)
+        if curve:
+            row.update(curve)
+            row["vx1_basis"] = round(curve["vx1"] - vix, 4)
 
     if not args.dry_run:
         append_vix_state(state_path, [row])
         d1 = f"{vix_chg_1d*100:+.1f}%" if vix_chg_1d is not None else "n/a"
         d20 = f"{chg_20d*100:+.1f}%" if chg_20d is not None else "n/a"
         log(logpath, f"VIX: {vix:.2f} ({d1} 1d, {d20} 20d)  VIX9D: {vix9d:.2f}  "
-                     f"term {term_state} -> vix_state.csv")
+                     f"term {term_state}{_vx_txt(row)} [{row['vix_source']}] -> vix_state.csv")
     else:
-        log(logpath, f"VIX: {vix:.2f}  VIX9D: {vix9d:.2f} (dry run, not written)")
+        log(logpath, f"VIX: {vix:.2f}  VIX9D: {vix9d:.2f}{_vx_txt(row)} "
+                     f"[{row['vix_source']}] (dry run, not written)")
 
     return row
+
+
+def _vx_txt(row):
+    if row.get("vx1") is None:
+        return ""
+    return (f"  VX {row['vx1']:.2f}/{row['vx2']:.2f} {row['vx_term_state']} "
+            f"(basis {row['vx1_basis']:+.2f})")
+
+
+def _migrate_vix_header(state_path):
+    """Widen an older vix_state.csv to VIX_COLUMNS, once. Every existing value
+    is kept as the exact text on file (read as strings); new columns are blank
+    for older rows. Readers all go by column name, so nothing shifts."""
+    with open(state_path, encoding="utf-8", newline="") as fh:
+        header = fh.readline().strip().split(",")
+    if header == VIX_COLUMNS:
+        return
+    old = pd.read_csv(state_path, dtype=str, keep_default_na=False)
+    missing = [c for c in old.columns if c not in VIX_COLUMNS]
+    if missing:
+        raise RuntimeError(f"vix_state.csv has columns this code does not know: {missing}")
+    old.reindex(columns=VIX_COLUMNS, fill_value="").to_csv(state_path, index=False)
 
 
 def append_vix_state(state_path, rows):
     df = pd.DataFrame(rows, columns=VIX_COLUMNS)
     header = not os.path.exists(state_path)
+    if not header:
+        _migrate_vix_header(state_path)
     df.to_csv(state_path, mode="a", header=header, index=False)
 
 

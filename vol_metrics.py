@@ -370,6 +370,10 @@ def vix_block(histdir: str) -> dict | None:
         val = last.get(key)
         return None if pd.isna(val) else float(val)
 
+    def text(key):
+        val = last.get(key)
+        return None if val is None or pd.isna(val) or str(val) == "" else str(val)
+
     return {
         "asof": str(last["feed_ts"]),
         "vix": num("vix"),
@@ -378,6 +382,17 @@ def vix_block(histdir: str) -> dict | None:
         "term_state": None if pd.isna(last.get("term_state")) else str(last["term_state"]),
         "vix_chg_1d_pct": num("vix_chg_1d_pct"),
         "vix_20d_change_pct": num("vix_20d_change_pct"),
+        # tastytrade-sourced since 2026-11-25; None on Yahoo rows and older ones
+        "source": text("vix_source"),
+        "vix3m": num("vix3m"),
+        "vvix": num("vvix"),
+        "vx1": num("vx1"),
+        "vx1_expiry": text("vx1_expiry"),
+        "vx2": num("vx2"),
+        "vx2_expiry": text("vx2_expiry"),
+        "vx_slope_1_2": num("vx_slope_1_2"),
+        "vx_term_state": text("vx_term_state"),
+        "vx1_basis": num("vx1_basis"),
     }
 
 
