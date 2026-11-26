@@ -75,7 +75,7 @@ def test_feed_carries_flows_block(tmp_path):
     bd.build_latest_json(HIST, str(tmp_path))
     feed = json.loads((tmp_path / "latest.json").read_text())
     for sym, rec in feed.items():
-        if sym in ("generated_utc", "market"):
+        if sym == "market" or not isinstance(rec, dict):   # skip metadata (generated_utc, published_utc)
             continue
         assert "flows" in rec, sym
         assert rec["flows"]["convention"].startswith("dealers long calls")

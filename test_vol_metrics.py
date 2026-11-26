@@ -113,7 +113,7 @@ def feed(tmp_path_factory):
 
 def test_existing_fields_are_untouched(feed):
     for sym, rec in feed.items():
-        if sym in ("generated_utc", "market"):
+        if sym == "market" or not isinstance(rec, dict):   # skip metadata (generated_utc, published_utc)
             continue
         for key in ("spot", "flip", "call_wall", "put_wall", "regime",
                     "net_gex_full", "flip_pct_vs_spot"):
@@ -122,7 +122,7 @@ def test_existing_fields_are_untouched(feed):
 
 def test_every_symbol_has_a_vol_block(feed):
     for sym, rec in feed.items():
-        if sym in ("generated_utc", "market"):
+        if sym == "market" or not isinstance(rec, dict):   # skip metadata (generated_utc, published_utc)
             continue
         vol = rec["vol"]
         for key in ("atm_iv_7d", "atm_iv_30d", "term_ratio", "skew_25d",
@@ -144,7 +144,7 @@ def test_missing_rv_is_reported_as_null_not_guessed(feed):
     # A symbol without 21 closes reports rv_20d as null, and then the ratio
     # is null too. (TLT, added 2026-10-08, was the example until it had them.)
     for sym, rec in feed.items():
-        if sym in ("generated_utc", "market"):
+        if sym == "market" or not isinstance(rec, dict):   # skip metadata (generated_utc, published_utc)
             continue
         if rec["vol"]["rv_20d"] is None:
             assert rec["vol"]["iv_rv_ratio"] is None, sym
@@ -186,7 +186,7 @@ def test_smile_carries_source_iv_unchanged():
 
 def test_every_symbol_has_a_smile_in_the_feed(feed):
     for sym, rec in feed.items():
-        if sym in ("generated_utc", "market"):
+        if sym == "market" or not isinstance(rec, dict):   # skip metadata (generated_utc, published_utc)
             continue
         sm = rec["vol"]["smile"]
         assert sm is not None and len(sm["strikes"]) >= 5, sym
