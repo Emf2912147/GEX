@@ -1,6 +1,6 @@
 {
   "generated_utc": "2026-11-25T12:00:06.680966+00:00",
-  "published_utc": "2026-11-26T17:15:08.959757+00:00",
+  "published_utc": "2026-11-26T19:50:48.883759+00:00",
   "SPX": {
     "spot": 7201.09,
     "flip": 7384.8209,
@@ -1088,21 +1088,21 @@
     }
   },
   "SPY": {
-    "spot": 718.12,
-    "flip": 726.6186,
+    "spot": 718.78,
+    "flip": 726.6182,
     "call_wall": 740.0,
     "put_wall": 700.0,
     "regime": "negative",
-    "net_gex_full": -5216432413.89,
-    "flip_pct_vs_spot": 0.011835,
+    "net_gex_full": -5226025316.18,
+    "flip_pct_vs_spot": 0.010905,
     "vol": {
-      "atm_iv_7d": 0.2271,
-      "atm_iv_30d": 0.2174,
-      "term_ratio": 1.0447,
+      "atm_iv_7d": 0.2339,
+      "atm_iv_30d": 0.2244,
+      "term_ratio": 1.0422,
       "skew_25d": 0.0715,
-      "vol_trigger": 731.9052,
+      "vol_trigger": 731.9054,
       "rv_20d": 0.3297,
-      "iv_rv_ratio": 0.659,
+      "iv_rv_ratio": 0.681,
       "iv_extrapolated": 0,
       "rv_source": "index_history:SPX",
       "rv_proxy": true,
@@ -1206,7 +1206,8 @@
           772.0,
           773.0,
           774.0,
-          775.0
+          775.0,
+          776.0
         ],
         "put_iv": [
           0.3449,
@@ -1289,6 +1290,7 @@
           null,
           null,
           0.1716,
+          null,
           null,
           null,
           null,
@@ -1404,20 +1406,21 @@
           0.1926,
           0.1957,
           0.1987,
-          0.1971
+          0.1971,
+          0.2001
         ]
       }
     },
     "surface": {
       "asof": "2026-11-24",
       "noisy": true,
-      "baseline_fwd": 0.2261,
+      "baseline_fwd": 0.2334,
       "cm_iv": {
-        "7": 0.2233,
-        "14": 0.2121,
-        "30": 0.2203,
-        "60": 0.1801,
-        "90": 0.1785,
+        "7": 0.2296,
+        "14": 0.2196,
+        "30": 0.2248,
+        "60": 0.179,
+        "90": 0.1775,
         "180": null
       },
       "expiries": {
@@ -1458,75 +1461,75 @@
           87.0
         ],
         "atm_iv": [
-          0.4461,
-          0.2449,
-          0.2155,
-          0.2233,
-          0.2291,
-          0.2327,
-          0.2365,
-          0.2074,
-          0.2121,
-          0.1763,
-          0.201,
-          0.2203,
-          0.192,
-          0.1836,
-          0.1813,
-          0.1785
+          0.4419,
+          0.2484,
+          0.2194,
+          0.2296,
+          0.236,
+          0.2404,
+          0.2459,
+          0.2264,
+          0.2196,
+          0.1688,
+          0.2317,
+          0.2248,
+          0.2208,
+          0.1823,
+          0.1803,
+          0.1775
         ],
         "fwd_iv": [
-          0.3789,
+          0.3753,
           null,
-          0.2438,
-          0.2251,
-          0.226,
-          0.2208,
-          0.2283,
+          0.2496,
+          0.2407,
+          0.2347,
+          0.232,
+          0.2472,
+          0.1928,
+          0.0802,
           null,
-          0.2261,
+          0.334,
+          0.198,
+          0.2196,
           null,
-          0.2473,
-          0.2893,
-          null,
-          0.1634,
-          0.1779,
-          0.1717
+          0.1778,
+          0.1712
         ],
         "rich_rel": [
           null,
           null,
-          -0.0693,
-          -0.0096,
-          0.033,
-          0.0578,
-          0.083,
-          0.022,
-          0.0055,
-          -0.201,
-          -0.0367,
-          0.1223,
-          -0.0268,
-          -0.0297,
-          -0.0055,
+          -0.1023,
+          -0.0295,
+          0.0127,
+          0.0275,
+          0.0489,
+          0.0352,
+          -0.0246,
+          -0.2959,
+          0.0159,
+          -0.0127,
+          0.0638,
+          -0.0801,
+          -0.0439,
           null
         ],
         "label": [
           null,
           null,
           "cheap",
+          "cheap",
           "fair",
           "rich",
           "rich",
-          "rich",
-          "rich",
-          "fair",
-          "cheap",
-          "cheap",
           "rich",
           "cheap",
           "cheap",
           "fair",
+          "fair",
+          "rich",
+          "cheap",
+          "cheap",
           null
         ],
         "event": [
@@ -1656,9 +1659,9 @@
     },
     "levels": {
       "session": "2026-11-24",
-      "spot": 718.12,
-      "band_lo": 670.1215,
-      "band_hi": 766.1185,
+      "spot": 718.78,
+      "band_lo": 670.7373,
+      "band_hi": 766.8227,
       "atm_iv": 0.2331,
       "sessions_used": 53,
       "support": [
@@ -1669,8 +1672,8 @@
           "strength": "steady",
           "wall": "put_wall",
           "score": 75.0,
-          "dist_pct": -2.52,
-          "sigma": -0.38
+          "dist_pct": -2.61,
+          "sigma": -0.39
         },
         {
           "strike": 675.0,
@@ -1679,8 +1682,8 @@
           "strength": "shifting",
           "wall": null,
           "score": 39.6,
-          "dist_pct": -6.0,
-          "sigma": -0.9
+          "dist_pct": -6.09,
+          "sigma": -0.91
         }
       ],
       "resistance": [
@@ -1691,8 +1694,8 @@
           "strength": "fresh",
           "wall": null,
           "score": 33.9,
-          "dist_pct": 1.65,
-          "sigma": 0.25
+          "dist_pct": 1.56,
+          "sigma": 0.23
         },
         {
           "strike": 740.0,
@@ -1701,8 +1704,8 @@
           "strength": "shifting",
           "wall": "call_wall",
           "score": 39.1,
-          "dist_pct": 3.05,
-          "sigma": 0.46
+          "dist_pct": 2.95,
+          "sigma": 0.44
         },
         {
           "strike": 750.0,
@@ -1711,28 +1714,28 @@
           "strength": "fresh",
           "wall": null,
           "score": 30.0,
-          "dist_pct": 4.44,
-          "sigma": 0.66
+          "dist_pct": 4.34,
+          "sigma": 0.65
         }
       ]
     }
   },
   "QQQ": {
-    "spot": 637.34,
+    "spot": 638.1,
     "flip": 646.1379,
     "call_wall": 680.0,
     "put_wall": 620.0,
     "regime": "negative",
-    "net_gex_full": -2144452706.11,
-    "flip_pct_vs_spot": 0.013804,
+    "net_gex_full": -2149570087.04,
+    "flip_pct_vs_spot": 0.012597,
     "vol": {
-      "atm_iv_7d": 0.3492,
-      "atm_iv_30d": 0.3068,
-      "term_ratio": 1.1383,
+      "atm_iv_7d": 0.3573,
+      "atm_iv_30d": 0.3147,
+      "term_ratio": 1.1352,
       "skew_25d": 0.0859,
-      "vol_trigger": 655.3931,
-      "rv_20d": 0.3576,
-      "iv_rv_ratio": 0.858,
+      "vol_trigger": 655.393,
+      "rv_20d": 0.3569,
+      "iv_rv_ratio": 0.882,
       "iv_extrapolated": 0,
       "rv_source": "captured_closes",
       "rv_proxy": false,
@@ -1822,7 +1825,8 @@
           685.0,
           686.0,
           687.0,
-          688.0
+          688.0,
+          689.0
         ],
         "put_iv": [
           0.4344,
@@ -1903,6 +1907,7 @@
           0.2758,
           0.2758,
           0.276,
+          null,
           null,
           null,
           null,
@@ -1992,20 +1997,21 @@
           0.2737,
           0.2733,
           0.2733,
-          0.273
+          0.273,
+          0.2732
         ]
       }
     },
     "surface": {
       "asof": "2026-11-24",
       "noisy": true,
-      "baseline_fwd": 0.3249,
+      "baseline_fwd": 0.3617,
       "cm_iv": {
-        "7": 0.3433,
-        "14": 0.2813,
-        "30": 0.3076,
-        "60": 0.2745,
-        "90": 0.258,
+        "7": 0.3495,
+        "14": 0.3002,
+        "30": 0.3156,
+        "60": 0.2777,
+        "90": 0.257,
         "180": null
       },
       "expiries": {
@@ -2046,57 +2052,57 @@
           87.0
         ],
         "atm_iv": [
-          0.6813,
-          0.3741,
-          0.3305,
-          0.3433,
-          0.352,
-          0.357,
-          0.3596,
-          0.3342,
-          0.2813,
-          0.2569,
-          0.2746,
+          0.6801,
+          0.3779,
+          0.3351,
+          0.3495,
+          0.3611,
+          0.3658,
+          0.3731,
+          0.3479,
+          0.3002,
+          0.2594,
+          0.2792,
+          0.3156,
           0.3076,
-          0.3,
-          0.2947,
-          0.2618,
-          0.258
+          0.3021,
+          0.2607,
+          0.257
         ],
         "fwd_iv": [
-          0.5787,
+          0.5776,
           null,
-          0.3764,
-          0.3499,
-          0.3463,
-          0.3352,
-          0.3249,
-          0.3089,
+          0.3841,
+          0.3617,
+          0.3681,
+          0.3409,
+          0.3682,
+          0.3302,
           null,
-          0.0585,
-          0.309,
-          0.4201,
-          0.2874,
-          0.2855,
-          0.0242,
-          0.2495
+          null,
+          0.3178,
+          0.438,
+          0.293,
+          0.2926,
+          null,
+          0.249
         ],
         "rich_rel": [
           null,
           null,
-          -0.1015,
-          -0.0278,
-          0.0256,
-          0.0636,
-          0.091,
-          0.1132,
-          -0.1164,
-          -0.2112,
-          -0.1433,
-          0.009,
-          -0.009,
-          0.0384,
-          -0.0731,
+          -0.1125,
+          -0.0381,
+          0.0219,
+          0.0585,
+          0.1016,
+          0.1288,
+          -0.0796,
+          -0.2285,
+          -0.155,
+          0.0098,
+          -0.0099,
+          0.0563,
+          -0.0874,
           null
         ],
         "label": [
@@ -2195,16 +2201,16 @@
     },
     "flow_intensity": {
       "session_date": "2026-11-24",
-      "score": 34.0,
+      "score": 32.2,
       "grade": "D",
       "label": "weak",
       "direction": "mixed",
       "charm_usd_day": 1221552429,
       "charm_pct": 28.3,
       "vanna_usd_per_volpt": 1060542685,
-      "vol_gap_pts": -5.09,
-      "vanna_potential_usd": -5394928309,
-      "vanna_pct": 39.7,
+      "vol_gap_pts": -5.01,
+      "vanna_potential_usd": -5317771139,
+      "vanna_pct": 36.2,
       "opex_date": "2026-12-18",
       "sessions_to_opex": 17,
       "opex_oi_share": 0.465,
@@ -2214,14 +2220,14 @@
         "expiry": "2026-12-18",
         "charm_usd_day": 1110537993,
         "vanna_usd_per_volpt": 726740564,
-        "vanna_potential_usd": -3696929249,
+        "vanna_potential_usd": -3643877188,
         "oi_share_monthly": 0.4648
       },
       "next": {
         "expiry": "2027-01-15",
         "charm_usd_day": 111014436,
         "vanna_usd_per_volpt": 333802121,
-        "vanna_potential_usd": -1698051390,
+        "vanna_potential_usd": -1673683835,
         "oi_share_monthly": 0.2194
       },
       "history_sessions": 45,
@@ -2244,10 +2250,10 @@
     },
     "levels": {
       "session": "2026-11-24",
-      "spot": 637.34,
-      "band_lo": 585.6596,
-      "band_hi": 689.0204,
-      "atm_iv": 0.2828,
+      "spot": 638.1,
+      "band_lo": 576.6897,
+      "band_hi": 699.5103,
+      "atm_iv": 0.3357,
       "sessions_used": 52,
       "support": [
         {
@@ -2257,8 +2263,8 @@
           "strength": "fresh",
           "wall": "put_wall",
           "score": 42.7,
-          "dist_pct": -2.72,
-          "sigma": -0.34
+          "dist_pct": -2.84,
+          "sigma": -0.29
         },
         {
           "strike": 610.0,
@@ -2267,8 +2273,8 @@
           "strength": "fresh",
           "wall": null,
           "score": 32.6,
-          "dist_pct": -4.29,
-          "sigma": -0.53
+          "dist_pct": -4.4,
+          "sigma": -0.46
         },
         {
           "strike": 600.0,
@@ -2277,8 +2283,8 @@
           "strength": "fresh",
           "wall": null,
           "score": 30.6,
-          "dist_pct": -5.86,
-          "sigma": -0.72
+          "dist_pct": -5.97,
+          "sigma": -0.62
         }
       ],
       "resistance": [
@@ -2289,18 +2295,8 @@
           "strength": "fresh",
           "wall": null,
           "score": 31.8,
-          "dist_pct": 1.99,
-          "sigma": 0.24
-        },
-        {
-          "strike": 670.0,
-          "grade": "D",
-          "label": "weak",
-          "strength": "fresh",
-          "wall": null,
-          "score": 29.0,
-          "dist_pct": 5.12,
-          "sigma": 0.63
+          "dist_pct": 1.86,
+          "sigma": 0.19
         },
         {
           "strike": 680.0,
@@ -2309,28 +2305,38 @@
           "strength": "shifting",
           "wall": "call_wall",
           "score": 51.1,
-          "dist_pct": 6.69,
-          "sigma": 0.83
+          "dist_pct": 6.57,
+          "sigma": 0.68
+        },
+        {
+          "strike": 690.0,
+          "grade": "D",
+          "label": "weak",
+          "strength": "fresh",
+          "wall": null,
+          "score": 36.0,
+          "dist_pct": 8.13,
+          "sigma": 0.85
         }
       ]
     }
   },
   "IWM": {
-    "spot": 266.79,
-    "flip": 283.8578,
+    "spot": 267.14,
+    "flip": 283.8577,
     "call_wall": 285.0,
     "put_wall": 260.0,
     "regime": "negative",
-    "net_gex_full": -2368423228.12,
-    "flip_pct_vs_spot": 0.063975,
+    "net_gex_full": -2374641541.21,
+    "flip_pct_vs_spot": 0.06258,
     "vol": {
-      "atm_iv_7d": 0.2316,
-      "atm_iv_30d": 0.2524,
-      "term_ratio": 0.9179,
+      "atm_iv_7d": 0.2388,
+      "atm_iv_30d": 0.2578,
+      "term_ratio": 0.9262,
       "skew_25d": 0.0644,
-      "vol_trigger": 286.9095,
+      "vol_trigger": 286.9094,
       "rv_20d": 0.3052,
-      "iv_rv_ratio": 0.827,
+      "iv_rv_ratio": 0.845,
       "iv_extrapolated": 0,
       "rv_source": "index_history:RUT",
       "rv_proxy": true,
@@ -2450,13 +2456,13 @@
     "surface": {
       "asof": "2026-11-24",
       "noisy": true,
-      "baseline_fwd": 0.2518,
+      "baseline_fwd": 0.2555,
       "cm_iv": {
-        "7": 0.2248,
-        "14": 0.242,
-        "30": 0.2527,
-        "60": 0.2279,
-        "90": 0.2274,
+        "7": 0.2329,
+        "14": 0.2469,
+        "30": 0.258,
+        "60": 0.2299,
+        "90": 0.2301,
         "180": null
       },
       "expiries": {
@@ -2495,53 +2501,53 @@
           87.0
         ],
         "atm_iv": [
-          0.4381,
-          0.2359,
-          0.2075,
-          0.2248,
-          0.235,
-          0.243,
-          0.2519,
-          0.2377,
-          0.242,
-          0.2379,
-          0.2634,
-          0.2527,
-          0.25,
-          0.2324,
-          0.2274
+          0.4395,
+          0.2406,
+          0.2182,
+          0.2329,
+          0.2417,
+          0.2489,
+          0.2574,
+          0.2428,
+          0.2469,
+          0.2452,
+          0.2679,
+          0.258,
+          0.2558,
+          0.2342,
+          0.2301
         ],
         "fwd_iv": [
-          0.3721,
+          0.3733,
           null,
-          0.2343,
-          0.2624,
-          0.2518,
-          0.2542,
-          0.2726,
-          0.2454,
-          0.2481,
-          0.1849,
-          0.3123,
-          0.2071,
-          0.2583,
-          0.1847,
-          0.2245
+          0.2596,
+          0.2602,
+          0.2514,
+          0.2555,
+          0.2753,
+          0.2498,
+          0.2507,
+          0.2014,
+          0.3117,
+          0.2172,
+          0.2664,
+          0.1721,
+          0.2288
         ],
         "rich_rel": [
           null,
           null,
-          -0.0818,
-          -0.0315,
-          -0.0135,
-          -0.0086,
+          -0.053,
+          -0.0187,
+          -0.0085,
+          -0.0069,
           0.0065,
-          0.0022,
-          0.0014,
-          -0.0623,
-          0.0485,
-          -0.0014,
-          0.0375,
+          0.0024,
+          0.0006,
+          -0.0515,
+          0.0442,
+          -0.0006,
+          0.049,
           null,
           null
         ],
@@ -2549,7 +2555,7 @@
           null,
           null,
           "cheap",
-          "cheap",
+          "fair",
           "fair",
           "fair",
           "fair",
@@ -2674,9 +2680,9 @@
     },
     "levels": {
       "session": "2026-11-24",
-      "spot": 266.79,
-      "band_lo": 247.0328,
-      "band_hi": 286.5472,
+      "spot": 267.14,
+      "band_lo": 247.3569,
+      "band_hi": 286.9231,
       "atm_iv": 0.2583,
       "sessions_used": 52,
       "support": [
@@ -2687,8 +2693,8 @@
           "strength": "strong",
           "wall": null,
           "score": 91.7,
-          "dist_pct": -0.67,
-          "sigma": -0.09
+          "dist_pct": -0.8,
+          "sigma": -0.11
         },
         {
           "strike": 260.0,
@@ -2697,8 +2703,8 @@
           "strength": "strong",
           "wall": "put_wall",
           "score": 100.0,
-          "dist_pct": -2.55,
-          "sigma": -0.34
+          "dist_pct": -2.67,
+          "sigma": -0.36
         },
         {
           "strike": 255.0,
@@ -2707,8 +2713,8 @@
           "strength": "shifting",
           "wall": null,
           "score": 52.1,
-          "dist_pct": -4.42,
-          "sigma": -0.6
+          "dist_pct": -4.54,
+          "sigma": -0.61
         }
       ],
       "resistance": [
@@ -2719,8 +2725,8 @@
           "strength": "fresh",
           "wall": null,
           "score": 48.4,
-          "dist_pct": 3.08,
-          "sigma": 0.42
+          "dist_pct": 2.94,
+          "sigma": 0.4
         },
         {
           "strike": 280.0,
@@ -2729,8 +2735,8 @@
           "strength": "fresh",
           "wall": null,
           "score": 23.6,
-          "dist_pct": 4.95,
-          "sigma": 0.67
+          "dist_pct": 4.81,
+          "sigma": 0.65
         },
         {
           "strike": 285.0,
@@ -2739,28 +2745,28 @@
           "strength": "fresh",
           "wall": "call_wall",
           "score": 27.2,
-          "dist_pct": 6.83,
-          "sigma": 0.92
+          "dist_pct": 6.69,
+          "sigma": 0.9
         }
       ]
     }
   },
   "XLF": {
-    "spot": 56.12,
-    "flip": 59.2126,
+    "spot": 56.11,
+    "flip": 59.2127,
     "call_wall": 59.0,
     "put_wall": 54.0,
     "regime": "negative",
-    "net_gex_full": -161548674.6,
-    "flip_pct_vs_spot": 0.055106,
+    "net_gex_full": -161491107.14,
+    "flip_pct_vs_spot": 0.055296,
     "vol": {
       "atm_iv_7d": 0.1921,
-      "atm_iv_30d": 0.1957,
-      "term_ratio": 0.9817,
+      "atm_iv_30d": 0.1952,
+      "term_ratio": 0.9839,
       "skew_25d": 0.0467,
-      "vol_trigger": 59.6372,
-      "rv_20d": 0.229,
-      "iv_rv_ratio": 0.855,
+      "vol_trigger": 59.6373,
+      "rv_20d": 0.2294,
+      "iv_rv_ratio": 0.851,
       "iv_extrapolated": 0,
       "rv_source": "captured_closes",
       "rv_proxy": false,
@@ -2829,13 +2835,13 @@
     "surface": {
       "asof": "2026-11-24",
       "noisy": true,
-      "baseline_fwd": 0.1979,
+      "baseline_fwd": 0.1956,
       "cm_iv": {
-        "7": 0.1873,
+        "7": 0.1872,
         "14": 0.1975,
-        "30": 0.1972,
-        "60": 0.1864,
-        "90": 0.1724,
+        "30": 0.1967,
+        "60": 0.1863,
+        "90": 0.1719,
         "180": null
       },
       "expiries": {
@@ -2868,44 +2874,44 @@
           87.0
         ],
         "atm_iv": [
-          0.3197,
-          0.2254,
-          0.1773,
+          0.3179,
+          0.2251,
+          0.177,
           0.1945,
-          0.2167,
-          0.1943,
-          0.2045,
-          0.1977,
-          0.1972,
-          0.1835,
+          0.2165,
+          0.1944,
+          0.2043,
+          0.1976,
+          0.1967,
+          0.1834,
           0.1948,
-          0.1724
+          0.1719
         ],
         "fwd_iv": [
-          0.2715,
-          0.1814,
-          0.1477,
-          0.2026,
-          0.2454,
-          0.1137,
-          0.1993,
-          0.1775,
-          0.1979,
-          0.1155,
-          0.2236,
-          0.1349
+          0.27,
+          0.1829,
+          0.1469,
+          0.2033,
+          0.2448,
+          0.1171,
+          0.1983,
+          0.1778,
+          0.1956,
+          0.119,
+          0.2238,
+          0.1336
         ],
         "rich_rel": [
           null,
           null,
-          -0.0854,
-          -0.0442,
-          0.0492,
-          -0.0057,
-          0.0063,
+          -0.0867,
+          -0.044,
+          0.0482,
+          -0.0051,
+          0.006,
           0.0,
-          0.0254,
-          -0.0684,
+          0.0226,
+          -0.069,
           null,
           null
         ],
@@ -3004,8 +3010,8 @@
       "charm_usd_day": 40995694,
       "charm_pct": 54.5,
       "vanna_usd_per_volpt": 70870523,
-      "vol_gap_pts": -3.33,
-      "vanna_potential_usd": -235895909,
+      "vol_gap_pts": -3.37,
+      "vanna_potential_usd": -238513112,
       "vanna_pct": null,
       "opex_date": "2026-12-18",
       "sessions_to_opex": 17,
@@ -3016,14 +3022,14 @@
         "expiry": "2026-12-18",
         "charm_usd_day": 30884573,
         "vanna_usd_per_volpt": 30988252,
-        "vanna_potential_usd": -103159891,
+        "vanna_potential_usd": -104275468,
         "oi_share_monthly": 0.4372
       },
       "next": {
         "expiry": "2027-01-15",
         "charm_usd_day": 10111121,
         "vanna_usd_per_volpt": 39882271,
-        "vanna_potential_usd": -132768080,
+        "vanna_potential_usd": -134203842,
         "oi_share_monthly": 0.4903
       },
       "history_sessions": 21,
@@ -3046,9 +3052,9 @@
     },
     "levels": {
       "session": "2026-11-24",
-      "spot": 56.12,
-      "band_lo": 53.0502,
-      "band_hi": 59.1898,
+      "spot": 56.11,
+      "band_lo": 53.0407,
+      "band_hi": 59.1793,
       "atm_iv": 0.1908,
       "sessions_used": 26,
       "support": [
@@ -3059,7 +3065,7 @@
           "strength": "strong",
           "wall": "put_wall",
           "score": 100.0,
-          "dist_pct": -3.78,
+          "dist_pct": -3.76,
           "sigma": -0.69
         }
       ],
@@ -3071,28 +3077,28 @@
           "strength": "fresh",
           "wall": "call_wall",
           "score": 31.3,
-          "dist_pct": 5.13,
+          "dist_pct": 5.15,
           "sigma": 0.94
         }
       ]
     }
   },
   "TLT": {
-    "spot": 81.35,
-    "flip": 79.2529,
+    "spot": 81.49,
+    "flip": 79.2536,
     "call_wall": 83.0,
     "put_wall": 80.0,
     "regime": "positive",
-    "net_gex_full": 678974843.28,
-    "flip_pct_vs_spot": -0.025778,
+    "net_gex_full": 681313829.69,
+    "flip_pct_vs_spot": -0.027444,
     "vol": {
-      "atm_iv_7d": 0.0942,
-      "atm_iv_30d": 0.1014,
-      "term_ratio": 0.9292,
+      "atm_iv_7d": 0.095,
+      "atm_iv_30d": 0.1024,
+      "term_ratio": 0.9278,
       "skew_25d": -0.0208,
-      "vol_trigger": 80.257,
-      "rv_20d": 0.1181,
-      "iv_rv_ratio": 0.858,
+      "vol_trigger": 80.2562,
+      "rv_20d": 0.1204,
+      "iv_rv_ratio": 0.851,
       "iv_extrapolated": 0,
       "rv_source": "captured_closes",
       "rv_proxy": false,
@@ -3120,7 +3126,8 @@
           84.5,
           85.0,
           86.0,
-          87.0
+          87.0,
+          88.0
         ],
         "put_iv": [
           0.6078,
@@ -3140,6 +3147,7 @@
           0.1151,
           null,
           0.1359,
+          null,
           null,
           null,
           null,
@@ -3166,20 +3174,21 @@
           0.1502,
           0.1617,
           0.186,
-          0.1987
+          0.1987,
+          0.2273
         ]
       }
     },
     "surface": {
       "asof": "2026-11-24",
-      "noisy": false,
-      "baseline_fwd": 0.0985,
+      "noisy": true,
+      "baseline_fwd": 0.1014,
       "cm_iv": {
-        "7": 0.0921,
-        "14": 0.0948,
-        "30": 0.1014,
-        "60": 0.1035,
-        "90": 0.1071,
+        "7": 0.093,
+        "14": 0.0941,
+        "30": 0.1022,
+        "60": 0.1076,
+        "90": 0.1126,
         "180": null
       },
       "expiries": {
@@ -3214,74 +3223,74 @@
           87.0
         ],
         "atm_iv": [
-          0.1892,
-          0.1,
-          0.0877,
-          0.0952,
-          0.0965,
-          0.0899,
-          0.0989,
-          0.1072,
-          0.1045,
-          0.1014,
-          0.1016,
-          0.1041,
-          0.1071
+          0.1926,
+          0.1008,
+          0.0891,
+          0.0959,
+          0.0946,
+          0.0887,
+          0.0985,
+          0.1074,
+          0.1032,
+          0.1022,
+          0.104,
+          0.1077,
+          0.1126
         ],
         "fwd_iv": [
-          0.1607,
+          0.1636,
           null,
-          0.0985,
-          0.0977,
-          0.086,
-          0.0851,
-          0.1226,
-          0.1322,
-          0.0962,
-          0.0893,
-          0.1112,
-          0.1116,
-          0.1139
+          0.1014,
+          0.0968,
+          0.0759,
+          0.0878,
+          0.1248,
+          0.1352,
+          0.0906,
+          0.0996,
+          0.1208,
+          0.1183,
+          0.1221
         ],
         "rich_rel": [
           null,
           null,
-          -0.0218,
-          -0.0154,
-          -0.0505,
-          -0.0664,
-          0.0031,
-          0.0696,
-          0.0341,
-          -0.0031,
-          0.0068,
+          -0.0035,
+          -0.0033,
+          -0.0634,
+          -0.0714,
+          0.0033,
+          0.0768,
+          0.0125,
+          -0.0053,
+          0.0146,
           null,
           null
         ],
         "label": [
           null,
           null,
-          "cheap",
+          "fair",
           "fair",
           "cheap",
           "cheap",
           "fair",
           "rich",
-          "rich",
+          "fair",
           "fair",
           "fair",
           null,
           null
         ],
         "event": [
-          true,
           false,
           false,
           false,
           false,
           false,
           false,
-          true,
+          false,
+          false,
           false,
           false,
           false,
@@ -3289,84 +3298,19 @@
           false
         ]
       },
-      "events": [
-        {
-          "expiration": "2026-11-25",
-          "bd": 1,
-          "gap_bd": 1,
-          "fwd_iv": 0.1607,
-          "baseline": 0.0985,
-          "excess_pts": 0.0622
-        },
-        {
-          "expiration": "2026-12-11",
-          "bd": 12,
-          "gap_bd": 2,
-          "fwd_iv": 0.1322,
-          "baseline": 0.0985,
-          "excess_pts": 0.0337
-        }
-      ],
+      "events": [],
       "windows": {
         "7-14": {
-          "buy": {
-            "expiration": "2026-12-07",
-            "dte": 13.0,
-            "rich_rel": -0.0664,
-            "label": "cheap",
-            "edge_rel": 0.0159,
-            "event_premium": false,
-            "reason": "2026-12-07 (13d) is the cheapest to buy in the 7-14 day window: IV 6.6% below its neighbours, 1.6% better than the window's median expiry"
-          },
-          "sell": {
-            "expiration": "2026-12-02",
-            "dte": 8.0,
-            "rich_rel": -0.0154,
-            "label": "fair",
-            "edge_rel": 0.0351,
-            "event_premium": false,
-            "reason": "2026-12-02 (8d) is the richest to sell in the 7-14 day window: IV 1.5% below its neighbours, 3.5% better than the window's median expiry"
-          }
+          "buy": null,
+          "sell": null
         },
         "15-25": {
-          "buy": {
-            "expiration": "2026-12-09",
-            "dte": 15.0,
-            "rich_rel": 0.0031,
-            "label": "fair",
-            "edge_rel": 0.031,
-            "event_premium": false,
-            "reason": "2026-12-09 (15d) is the cheapest to buy in the 15-25 day window: IV 0.3% above its neighbours, 3.1% better than the window's median expiry"
-          },
-          "sell": {
-            "expiration": "2026-12-11",
-            "dte": 17.0,
-            "rich_rel": 0.0696,
-            "label": "rich",
-            "edge_rel": 0.0355,
-            "event_premium": true,
-            "reason": "2026-12-11 (17d) is the richest to sell in the 15-25 day window: IV 7.0% above its neighbours, 3.5% better than the window's median expiry; its richness is event premium (a priced event falls just before it), so selling it means carrying that event"
-          }
+          "buy": null,
+          "sell": null
         },
         "20-35": {
-          "buy": {
-            "expiration": "2026-12-24",
-            "dte": 30.0,
-            "rich_rel": -0.0031,
-            "label": "fair",
-            "edge_rel": 0.0186,
-            "event_premium": false,
-            "reason": "2026-12-24 (30d) is the cheapest to buy in the 20-35 day window: IV 0.3% below its neighbours, 1.9% better than the window's median expiry"
-          },
-          "sell": {
-            "expiration": "2026-12-18",
-            "dte": 24.0,
-            "rich_rel": 0.0341,
-            "label": "rich",
-            "edge_rel": 0.0186,
-            "event_premium": false,
-            "reason": "2026-12-18 (24d) is the richest to sell in the 20-35 day window: IV 3.4% above its neighbours, 1.9% better than the window's median expiry"
-          }
+          "buy": null,
+          "sell": null
         },
         "35-45": {
           "buy": null,
@@ -3383,24 +3327,24 @@
       },
       "calendars": {
         "diagonal_35_45_over_7_14": {
-          "front": "2026-12-02",
+          "front": "2026-12-04",
           "back": "2026-12-31",
-          "pass": true,
-          "state": "fair",
-          "ratio": 0.962,
-          "fwd_iv": 0.1034,
-          "front_event": true,
-          "reason": "near leg fairly priced against the forward vol: near 9.9% vs forward 10.3% (ratio 0.96). The edge has to come from the pin, not the term structure"
+          "pass": null,
+          "state": "unknown",
+          "ratio": null,
+          "fwd_iv": null,
+          "front_event": null,
+          "reason": "forward vol not measurable: the chain is too thin, its expiries scatter too much to compare"
         },
         "calendar_45_60_over_7_14": {
-          "front": "2026-12-02",
+          "front": "2026-12-04",
           "back": "2027-01-15",
-          "pass": true,
-          "state": "fair",
-          "ratio": 0.936,
-          "fwd_iv": 0.1062,
-          "front_event": true,
-          "reason": "near leg fairly priced against the forward vol: near 9.9% vs forward 10.6% (ratio 0.94). The edge has to come from the pin, not the term structure"
+          "pass": null,
+          "state": "unknown",
+          "ratio": null,
+          "fwd_iv": null,
+          "front_event": null,
+          "reason": "forward vol not measurable: the chain is too thin, its expiries scatter too much to compare"
         }
       }
     },
@@ -3420,8 +3364,8 @@
       "charm_usd_day": 111324165,
       "charm_pct": 42.3,
       "vanna_usd_per_volpt": 311338214,
-      "vol_gap_pts": -1.67,
-      "vanna_potential_usd": -520668243,
+      "vol_gap_pts": -1.9,
+      "vanna_potential_usd": -590180199,
       "vanna_pct": null,
       "opex_date": "2026-12-18",
       "sessions_to_opex": 17,
@@ -3432,14 +3376,14 @@
         "expiry": "2026-12-18",
         "charm_usd_day": 84750866,
         "vanna_usd_per_volpt": 143874382,
-        "vanna_potential_usd": -240557967,
+        "vanna_potential_usd": -272785828,
         "oi_share_monthly": 0.3577
       },
       "next": {
         "expiry": "2027-01-15",
         "charm_usd_day": 26573299,
         "vanna_usd_per_volpt": 167463832,
-        "vanna_potential_usd": -279999527,
+        "vanna_potential_usd": -317511425,
         "oi_share_monthly": 0.4661
       },
       "history_sessions": 25,
@@ -3462,9 +3406,9 @@
     },
     "levels": {
       "session": "2026-11-24",
-      "spot": 81.35,
-      "band_lo": 78.966,
-      "band_hi": 83.734,
+      "spot": 81.49,
+      "band_lo": 79.1019,
+      "band_hi": 83.8781,
       "atm_iv": 0.1022,
       "sessions_used": 31,
       "support": [
@@ -3475,8 +3419,8 @@
           "strength": "fresh",
           "wall": "put_wall",
           "score": 40.5,
-          "dist_pct": -1.66,
-          "sigma": -0.57
+          "dist_pct": -1.83,
+          "sigma": -0.62
         }
       ],
       "resistance": [
@@ -3487,8 +3431,8 @@
           "strength": "strong",
           "wall": null,
           "score": 100.0,
-          "dist_pct": 0.8,
-          "sigma": 0.27
+          "dist_pct": 0.63,
+          "sigma": 0.21
         },
         {
           "strike": 83.0,
@@ -3497,8 +3441,8 @@
           "strength": "strong",
           "wall": "call_wall",
           "score": 92.9,
-          "dist_pct": 2.03,
-          "sigma": 0.69
+          "dist_pct": 1.85,
+          "sigma": 0.63
         }
       ]
     }
@@ -4750,7 +4694,7 @@
   },
   "market": {
     "flow_intensity": {
-      "score": 23.1,
+      "score": 22.5,
       "grade": "D",
       "label": "weak",
       "direction": "mixed",
@@ -4811,7 +4755,7 @@
       },
       "window_sessions": 252,
       "asof": "2026-11-25",
-      "fetched_utc": "2026-11-26T12:16:26.105529+00:00",
+      "fetched_utc": "2026-11-26T19:50:59.792957+00:00",
       "stale": false,
       "source": "index_history daily closes, tastytrade first (read fresh, not stored)"
     }
