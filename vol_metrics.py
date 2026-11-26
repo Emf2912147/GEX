@@ -402,7 +402,7 @@ def vix_block(histdir: str) -> dict | None:
 #
 # Additive like everything above. The per-symbol block is computed from the
 # stored chain; the market-wide long-dated block reads VIX3M / VIX6M /
-# VIX1Y daily history (index_history, Yahoo) fresh and stores nothing but its result in latest.json.
+# VIX1Y daily history (index_history: tastytrade, Yahoo fallback) fresh and stores nothing but its result in latest.json.
 
 import vol_surface as vs
 
@@ -522,13 +522,12 @@ def symbol_surface_block(raw: pd.DataFrame, row, stress: bool = False) -> dict |
 def _fetch_closes(symbol: str):
     """Daily closes, oldest first, with the last date. (None, None) if short.
 
-    Read from index_history (Yahoo).
+    Read from index_history: tastytrade first, Yahoo as the fallback.
 
-    VIX1Y IS EXPECTED TO COME BACK EMPTY. Yahoo serves its current level but
-    no usable history, so there is nothing to place it against. A percentile
-    off a handful of points is arithmetic dressed as information, and this
-    block drives tranche timing -- so VIX1Y is left absent and long_vol_block
-    keeps its previous value marked stale, which is the honest state.
+    VIX1Y has history only on tastytrade. With tastytrade down it comes back
+    empty -- Yahoo serves its current level but no history -- and rather than
+    a percentile off a handful of points, long_vol_block keeps its previous
+    value marked stale, which is the honest state.
     """
     import index_history as ixh
     return ixh.closes_and_asof(symbol)
@@ -573,7 +572,7 @@ def long_vol_block(docsdir: str | None = None, fetch=None, now=None) -> dict | N
                 asof = last if asof is None else min(asof, last or asof)
         out = vs.long_vol_state(closes)
         out.update({"asof": asof, "fetched_utc": now.isoformat(), "stale": False,
-                    "source": "index_history daily closes (read fresh, not stored)"})
+                    "source": "index_history daily closes, tastytrade first (read fresh, not stored)"})
         return out
     except Exception as ex:                          # network, schema, anything
         print(f"latest.json: long-vol fetch failed ({ex})")

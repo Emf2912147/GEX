@@ -14,8 +14,9 @@ Schwab and tastytrade credentials cannot live on a public runner. See
 The VIX complex -- VIX, VIX9D, VIX3M, VVIX and the front two /VX futures --
 comes from tastytrade (`tastytrade_vix.py` on the PC, preferred since
 2026-11-25), with Yahoo (`index_history.py`) as the fallback for VIX/VIX9D.
-The index daily closes behind the VIX 20-day change, realized vol and the
-long-vol block still come from Yahoo.
+The daily closes behind the VIX 20-day change, realized vol (each symbol's
+own series) and the long-vol block also come from tastytrade first, Yahoo
+second (`index_history.py`).
 
 **Dashboard:** enable GitHub Pages (Settings -> Pages -> Deploy from a branch
 -> `main` / `/docs`), then the page lives at

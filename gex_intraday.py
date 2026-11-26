@@ -74,7 +74,8 @@ VIX CAPTURE
                   source (Eugenio, 2026-11-25).
       yahoo       index_history: VIX and VIX9D only, no futures. Used when
                   the tastytrade module is absent or its snapshot fails.
-    The 20-day change still reads the VIX daily history from index_history.
+    The 20-day change reads the VIX daily history from index_history
+    (tastytrade daily candles first, Yahoo as the fallback).
 
     DEDUPE HERE IS CONTENT-ONLY. That is a simplification rather than a fix --
     an earlier note in this file claimed the quotes endpoint's last_trade_time
@@ -118,18 +119,14 @@ REALIZED VOL CAPTURE
         ordinary HTTP client and parse it deterministically and the problem
         disappears -- which is exactly how the VIX 20d change above works.
 
-    SOURCE AND PROXIES
-        Daily closes come from index_history (Yahoo): SPX, RUT and VIX.
-          SPX -> its own series
-          SPY -> SPX      (SPY tracks the S&P 500; a constant scale factor
-                           cancels out of log returns, so realized vol is the
-                           same series)
-          IWM -> RUT      (same reasoning, Russell 2000)
-          everything else -> no row; the agent computes RV from broker bars.
-        Every proxied read is written with rv_proxy=True and rv_source naming
-        the series actually used, so a substitute can never be mistaken for a
-        direct reading -- the same discipline the VIX9D term-structure proxy
-        already follows.
+    SOURCE
+        Daily closes come from index_history: tastytrade daily candles
+        (regular hours) first, Yahoo as the fallback. Since 2026-11-25 every
+        symbol reads its OWN series -- SPY its own closes, not the S&P 500 --
+        so rv_proxy is False throughout; tastytrade carries all nine GEX
+        symbols. (Before that, Yahoo-era mapping: SPY -> SPX, IWM -> RUT, and
+        no row at all for QQQ or the sector ETFs.) rv_source still names the
+        series used, so the column stays honest if a proxy ever returns.
 
     CADENCE
         Realized vol changes once a day, at the close; the capture runs every
@@ -196,9 +193,8 @@ class ChainIntegrityError(Exception):
     """
 
 # Keep in step with gex_capture.DEFAULT_SYMBOLS. GLD and TLT added 2026-10-08,
-# SMH and XLF 2026-10-15, XLK 2026-10-16; none has an entry in RV_HISTORY below (no free
-# daily-close series), so their realized vol is skipped and logged, the same
-# as QQQ.
+# SMH and XLF 2026-10-15, XLK 2026-10-16; since 2026-11-25 all of them have their own
+# entry in RV_HISTORY below.
 DEFAULT_SYMBOLS = ["SPX", "SPY", "QQQ", "IWM", "XLK", "SMH", "XLF", "GLD", "TLT"]
 
 # OCC symbol: root + YYMMDD + C/P + strike * 1000, zero padded to 8.
@@ -245,19 +241,10 @@ VIX_COLUMNS = [
 # table's RICH/CHEAP axis assumes when it compares ATM IV against HV.
 TRADING_DAYS = 252
 
-# symbol -> (index_history series to read, is_proxy). Every source here must be
-# a key of index_history.YAHOO; do not add one without fetching it first. See
-# the REALIZED VOL CAPTURE docstring section.
-RV_HISTORY = {
-    "SPX": ("SPX", False),
-    "SPY": ("SPX", True),      # SPY tracks the S&P 500
-    "IWM": ("RUT", True),      # IWM tracks the Russell 2000
-    "RUT": ("RUT", False),
-    "XSP": ("XSP", False),
-    "VIX": ("VIX", False),
-    # QQQ deliberately absent -- no Nasdaq-100 series in index_history. Leaving it out makes the gap explicit in the data instead of
-    # filling it with a series that is not the Nasdaq-100.
-}
+# symbol -> (index_history series to read, is_proxy). Each symbol reads its own
+# series (tastytrade, Yahoo fallback); see the REALIZED VOL CAPTURE docstring.
+RV_HISTORY = {sym: (sym, False) for sym in
+              ("SPX", "SPY", "QQQ", "IWM", "XLK", "SMH", "XLF", "GLD", "TLT", "VIX")}
 
 # Lookback for the asymmetry block. 60 sessions is long enough to hold a usable
 # number of down days while still describing the current regime rather than
@@ -595,7 +582,7 @@ def vx_curve(snap):
 
 def fetch_history_closes(symbol):
     """(dates, closes) for a daily-close history, oldest first, from
-    index_history (Yahoo).
+    index_history (tastytrade first, Yahoo fallback).
 
     index_history returns (None, None) rather than a number it had to guess
     at: a wrong realized vol flows straight into the RICH/CHEAP axis of the

@@ -2,30 +2,31 @@
 """
 index_history.py
 
-Daily closes and current levels for the cash indices this repo reads --
-VIX, VIX9D, VIX3M, VIX6M, VIX1Y, SPX, RUT, XSP, VXN.
+Daily closes and current levels for the indices and ETFs this repo reads --
+VIX, VIX9D, VIX3M, VIX6M, VIX1Y, SPX, XSP, VXN, RUT and the nine GEX symbols.
 
-SOURCE
-    Yahoo's chart API, which carries every series above and needs no key.
-    Availability was probed on 2026-11-22 before any of this was written:
+SOURCES, IN ORDER
+    tastytrade  daily_closes() asks tastytrade_vix.py first (PC-only, next to
+                the tastytrade login; DXLink daily candles, regular hours
+                only). Preferred since 2026-11-25. Probed that evening: VIX,
+                VIX9D, VIX3M, VIX6M, VIX1Y, SPX and XSP ~1,250 sessions; the
+                ETFs ~980 (from 2022-12); RUT none. Closes matched Yahoo's to
+                the cent for VIX, VIX3M and SPX. COMPLETED sessions only --
+                today's forming bar is dropped until 16:30 ET.
+    yahoo       Yahoo's chart API, keyless: the fallback when tastytrade is
+                absent or returns too little, and the only source for RUT.
+                quote() is Yahoo-only on purpose -- it is the VIX capture's
+                fallback, so it must not share tastytrade's failure.
 
-        VIX 1257 bars   VIX9D 1255   VIX3M 1255   VIX6M 1255
-        SPX 1255        RUT 1255     XSP 1255     VXN 1255
-        VIX1Y ............ 1 bar   <- current level only, no history
+VIX1Y
+    Yahoo serves VIX1Y's current level but no usable history; tastytrade
+    serves ~1,250 sessions. With tastytrade down, callers ask for a minimum
+    bar count and get nothing rather than a percentile from a handful of
+    points: that block feeds tranche timing, and a confident CHEAP/RICH label
+    computed off one observation is worse than a blank one.
 
-    That probe also agreed with this repo's own record: ^GSPC's last close
-    came back 6910.39, matching official_closes.json for 2026-11-20 to the
-    cent.
-
-VIX1Y IS THE EXCEPTION, AND IT STAYS ONE
-    Yahoo serves VIX1Y's current level but no usable history, so its
-    trailing-year and five-year percentiles cannot be computed. callers ask
-    for a minimum bar count and get nothing rather than a percentile derived
-    from a handful of points: that block feeds tranche timing, and a confident
-    CHEAP/RICH label computed off one observation is worse than a blank one.
-
-This module only reads public index levels. No key, no account, nothing that
-needs hiding -- which is why it is committed, unlike the broker scripts.
+The Yahoo path needs no key and no account, which is why this module is
+committed; the tastytrade path lives in the uncommitted tastytrade_vix.py.
 """
 
 from __future__ import annotations
@@ -43,7 +44,13 @@ YAHOO = {
     "VIX": "^VIX", "VIX9D": "^VIX9D", "VIX3M": "^VIX3M",
     "VIX6M": "^VIX6M", "VIX1Y": "^VIX1Y", "VXN": "^VXN",
     "SPX": "^GSPC", "RUT": "^RUT", "XSP": "^XSP",
+    # ETFs: Yahoo uses the plain ticker. Fallback for realized vol.
+    "SPY": "SPY", "QQQ": "QQQ", "IWM": "IWM", "XLK": "XLK", "SMH": "SMH",
+    "XLF": "XLF", "GLD": "GLD", "TLT": "TLT",
 }
+
+# Yahoo range strings -> years, for the tastytrade request.
+_RANGE_YEARS = {"1mo": 1 / 12, "3mo": 0.25, "6mo": 0.5, "1y": 1, "2y": 2, "5y": 5, "10y": 10}
 
 # Enough history to place a value in its own distribution. Below this a
 # percentile is arithmetic, not information.
@@ -60,12 +67,31 @@ def _chart(symbol: str, rng: str) -> dict | None:
     return res[0] if res else None
 
 
+def _tastytrade_closes(symbol: str, rng: str):
+    try:
+        import tastytrade_vix as tvx
+    except ImportError:
+        return None, None
+    try:
+        return tvx.daily_closes(symbol, years=_RANGE_YEARS.get(rng, 5))
+    except Exception:                         # login, network, feed: fall back
+        return None, None
+
+
 def daily_closes(symbol: str, rng: str = "5y", min_bars: int = 2):
     """(dates, closes) oldest first, ISO date strings. (None, None) if short.
 
-    The shape gex_intraday.fetch_history_closes returns. min_bars is the caller's honesty gate: ask
-    for what your statistic actually needs.
+    tastytrade first, Yahoo second (see SOURCES). The shape
+    gex_intraday.fetch_history_closes returns. min_bars is the caller's
+    honesty gate: ask for what your statistic actually needs.
     """
+    dates, closes = _tastytrade_closes(symbol, rng)
+    if closes and len(closes) >= min_bars:
+        return dates, closes
+    return _yahoo_closes(symbol, rng, min_bars)
+
+
+def _yahoo_closes(symbol: str, rng: str, min_bars: int):
     q = _chart(symbol, rng)
     if not q:
         return None, None

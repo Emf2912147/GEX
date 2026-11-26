@@ -132,8 +132,11 @@ def test_every_symbol_has_a_vol_block(feed):
 
 def test_rv_prefers_index_history_and_falls_back_to_captured_closes(feed):
     assert feed["SPX"]["vol"]["rv_source"] == "index_history:SPX"
-    # No Nasdaq-100 series in index_history: QQQ uses this repo's own closes.
-    assert feed["QQQ"]["vol"]["rv_source"] == "captured_closes"
+    # Since 2026-11-25 each symbol's realized_vol.csv row uses its own series;
+    # until a symbol has a fresh row, this repo's own closes stand in.
+    for sym in ("SPY", "QQQ", "IWM", "XLK", "SMH", "XLF", "GLD", "TLT"):
+        assert feed[sym]["vol"]["rv_source"] in (f"index_history:{sym}", "index_history:SPX",
+                                                 "index_history:RUT", "captured_closes"), sym
     assert feed["QQQ"]["vol"]["rv_20d"] is not None
 
 
