@@ -32,6 +32,22 @@ SYMBOL_FEED_LAG_LIMIT_MIN = {"XLK": 30}
 # meaning anything. Add a date ONLY after establishing why it is empty.
 KNOWN_GAPS = {
     "2026-09-23",   # runner stopped ~28h; the single stale row was quarantined
+    "2026-11-20",   # Cboe's free chain feed went 403 at 09:07 ET; the Schwab
+                    # intraday job on the PC only started 2026-11-23 (opex day lost)
+}
+
+# Settled sessions with intraday data but no daily row, for a permanent reason.
+KNOWN_DAILY_GAPS = {
+    "2026-11-19",   # its daily capture ran 2026-11-20 06:53 ET, after Cboe's
+                    # 403 began; no source serves a past session's settled OI
+}
+
+# Daily rows moved to history/quarantine/daily_metrics_degraded.csv (kept, not
+# deleted) because the book behind them is known bad. Readers never see them.
+KNOWN_DEGRADED = {
+    "2026-11-20",   # 8 ETFs: Schwab pull taken Saturday 2026-11-21 after opex,
+                    # 44-78% of <=30DTE contracts at zero OI vs 28-53% on
+                    # weekday pulls. SPX (separate source, 27% zero) kept.
 }
 
 # Sessions with SOME data but too few cycles to be a session series, for the
@@ -142,9 +158,13 @@ def main():
     daily_sessions = set(d.session_date.astype(str))
     settled = days[:-1] if days else []
     gaps = [str(x) for x in settled if str(x) not in daily_sessions]
-    check("every settled intraday session has a daily row", not gaps,
-          str(gaps) + f" (newest session {days[-1]} excluded -- its daily "
-                      f"capture runs tomorrow)" if days else "")
+    new_daily_gaps = [g for g in gaps if g not in KNOWN_DAILY_GAPS]
+    check("every settled intraday session has a daily row", not new_daily_gaps,
+          str(new_daily_gaps) + f" (newest session {days[-1]} excluded -- its daily "
+                                f"capture runs tomorrow)" if days else "")
+    if set(gaps) & set(KNOWN_DAILY_GAPS):
+        print(f"         known daily gaps, not counted: "
+              f"{sorted(set(gaps) & set(KNOWN_DAILY_GAPS))}")
 
     # Freshness: is the pipeline still alive?
     age = (dt.date.today() - days[-1]).days
