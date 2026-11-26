@@ -751,6 +751,21 @@ def _json_finite(value):
     return value
 
 
+def levels_block(L):
+    """sr.levels() -> the JSON the feed publishes: nearest first, per side."""
+    def lv(x):
+        return {"strike": round(float(x["strike"]), 4), "grade": x["grade"],
+                "label": x["label"], "strength": x.get("strength"),
+                "wall": x.get("wall") or None, "score": x["score"],
+                "dist_pct": round(float(x["dist"]) * 100, 2),
+                "sigma": round(float(x["sig"]), 2)}
+    return {"session": str(L["session"]), "spot": round(float(L["spot"]), 4),
+            "band_lo": round(float(L["lo"]), 4), "band_hi": round(float(L["hi"]), 4),
+            "atm_iv": round(float(L["iv"]), 4), "sessions_used": int(L["n_sessions"]),
+            "support": [lv(x) for x in L["support"]],
+            "resistance": [lv(x) for x in L["resistance"]]}
+
+
 def build_latest_json(histdir, docsdir):
     """
     Build lightweight JSON feed for the trading agent.
@@ -892,6 +907,27 @@ def build_latest_json(histdir, docsdir):
                     output[sym]["sign_model"] = sign_model
         except Exception as ex:                     # pragma: no cover
             print(f"latest.json: sign model skipped for {sym} ({ex})")
+
+    # Graded support / resistance inside +/-1 sigma (support_resistance.py) --
+    # the same levels the GEX Monitor cards show, published for the app and
+    # the agents. Same containment: a failure costs only this block.
+    try:
+        _sr_metrics = load_metrics(histdir)
+    except Exception as ex:                         # pragma: no cover
+        _sr_metrics = None
+        print(f"latest.json: levels skipped ({ex})")
+    if _sr_metrics is not None and not _sr_metrics.empty:
+        for sym in [k for k, v in output.items() if isinstance(v, dict) and k != "market"]:
+            try:
+                sub = _sr_metrics[_sr_metrics["symbol"] == sym]
+                if sub.empty:
+                    continue
+                L = sr.levels(histdir, _sr_metrics, sym,
+                              BIN_SIZE.get(sym, DEFAULT_BIN), sub.iloc[-1])
+                if L:
+                    output[sym]["levels"] = levels_block(L)
+            except Exception as ex:                 # pragma: no cover
+                print(f"latest.json: levels skipped for {sym} ({ex})")
 
     try:
         mkt = fi.composite({s: (output.get(s) or {}).get("flow_intensity") for s in fi.COMPOSITE})

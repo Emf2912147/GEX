@@ -1,6 +1,6 @@
 {
   "generated_utc": "2026-11-25T12:00:06.680966+00:00",
-  "published_utc": "2026-11-26T16:15:14.594013+00:00",
+  "published_utc": "2026-11-26T17:15:08.959757+00:00",
   "SPX": {
     "spot": 7201.09,
     "flip": 7384.8209,
@@ -1013,6 +1013,78 @@
       "bucket_sessions": 60,
       "label": "regime agrees (NEG), flip stable",
       "info_only": true
+    },
+    "levels": {
+      "session": "2026-11-24",
+      "spot": 7201.09,
+      "band_lo": 6710.8497,
+      "band_hi": 7691.3303,
+      "atm_iv": 0.2375,
+      "sessions_used": 53,
+      "support": [
+        {
+          "strike": 7100.0,
+          "grade": "C",
+          "label": "moderate",
+          "strength": "steady",
+          "wall": null,
+          "score": 56.4,
+          "dist_pct": -1.4,
+          "sigma": -0.21
+        },
+        {
+          "strike": 7000.0,
+          "grade": "A",
+          "label": "strong",
+          "strength": "strong",
+          "wall": "put_wall",
+          "score": 90.0,
+          "dist_pct": -2.79,
+          "sigma": -0.41
+        },
+        {
+          "strike": 6900.0,
+          "grade": "C",
+          "label": "moderate",
+          "strength": "steady",
+          "wall": null,
+          "score": 52.5,
+          "dist_pct": -4.18,
+          "sigma": -0.61
+        }
+      ],
+      "resistance": [
+        {
+          "strike": 7250.0,
+          "grade": "B",
+          "label": "solid",
+          "strength": "strong",
+          "wall": null,
+          "score": 65.4,
+          "dist_pct": 0.68,
+          "sigma": 0.1
+        },
+        {
+          "strike": 7300.0,
+          "grade": "B",
+          "label": "solid",
+          "strength": "strong",
+          "wall": null,
+          "score": 65.1,
+          "dist_pct": 1.37,
+          "sigma": 0.2
+        },
+        {
+          "strike": 7350.0,
+          "grade": "D",
+          "label": "weak",
+          "strength": "fresh",
+          "wall": null,
+          "score": 32.7,
+          "dist_pct": 2.07,
+          "sigma": 0.3
+        }
+      ]
     }
   },
   "SPY": {
@@ -1581,6 +1653,68 @@
       "bucket_sessions": 46,
       "label": "regime agrees (NEG), flip stable",
       "info_only": true
+    },
+    "levels": {
+      "session": "2026-11-24",
+      "spot": 718.12,
+      "band_lo": 670.1215,
+      "band_hi": 766.1185,
+      "atm_iv": 0.2331,
+      "sessions_used": 53,
+      "support": [
+        {
+          "strike": 700.0,
+          "grade": "A",
+          "label": "strong",
+          "strength": "steady",
+          "wall": "put_wall",
+          "score": 75.0,
+          "dist_pct": -2.52,
+          "sigma": -0.38
+        },
+        {
+          "strike": 675.0,
+          "grade": "D",
+          "label": "weak",
+          "strength": "shifting",
+          "wall": null,
+          "score": 39.6,
+          "dist_pct": -6.0,
+          "sigma": -0.9
+        }
+      ],
+      "resistance": [
+        {
+          "strike": 730.0,
+          "grade": "D",
+          "label": "weak",
+          "strength": "fresh",
+          "wall": null,
+          "score": 33.9,
+          "dist_pct": 1.65,
+          "sigma": 0.25
+        },
+        {
+          "strike": 740.0,
+          "grade": "D",
+          "label": "weak",
+          "strength": "shifting",
+          "wall": "call_wall",
+          "score": 39.1,
+          "dist_pct": 3.05,
+          "sigma": 0.46
+        },
+        {
+          "strike": 750.0,
+          "grade": "D",
+          "label": "weak",
+          "strength": "fresh",
+          "wall": null,
+          "score": 30.0,
+          "dist_pct": 4.44,
+          "sigma": 0.66
+        }
+      ]
     }
   },
   "QQQ": {
@@ -2107,6 +2241,78 @@
       "bucket_sessions": 46,
       "label": "regime agrees (NEG), flip stable",
       "info_only": true
+    },
+    "levels": {
+      "session": "2026-11-24",
+      "spot": 637.34,
+      "band_lo": 585.6596,
+      "band_hi": 689.0204,
+      "atm_iv": 0.2828,
+      "sessions_used": 52,
+      "support": [
+        {
+          "strike": 620.0,
+          "grade": "D",
+          "label": "weak",
+          "strength": "fresh",
+          "wall": "put_wall",
+          "score": 42.7,
+          "dist_pct": -2.72,
+          "sigma": -0.34
+        },
+        {
+          "strike": 610.0,
+          "grade": "D",
+          "label": "weak",
+          "strength": "fresh",
+          "wall": null,
+          "score": 32.6,
+          "dist_pct": -4.29,
+          "sigma": -0.53
+        },
+        {
+          "strike": 600.0,
+          "grade": "D",
+          "label": "weak",
+          "strength": "fresh",
+          "wall": null,
+          "score": 30.6,
+          "dist_pct": -5.86,
+          "sigma": -0.72
+        }
+      ],
+      "resistance": [
+        {
+          "strike": 650.0,
+          "grade": "D",
+          "label": "weak",
+          "strength": "fresh",
+          "wall": null,
+          "score": 31.8,
+          "dist_pct": 1.99,
+          "sigma": 0.24
+        },
+        {
+          "strike": 670.0,
+          "grade": "D",
+          "label": "weak",
+          "strength": "fresh",
+          "wall": null,
+          "score": 29.0,
+          "dist_pct": 5.12,
+          "sigma": 0.63
+        },
+        {
+          "strike": 680.0,
+          "grade": "C",
+          "label": "moderate",
+          "strength": "shifting",
+          "wall": "call_wall",
+          "score": 51.1,
+          "dist_pct": 6.69,
+          "sigma": 0.83
+        }
+      ]
     }
   },
   "IWM": {
@@ -2465,6 +2671,78 @@
       "history_sessions": 45,
       "note": null,
       "status": "information only (untested)"
+    },
+    "levels": {
+      "session": "2026-11-24",
+      "spot": 266.79,
+      "band_lo": 247.0328,
+      "band_hi": 286.5472,
+      "atm_iv": 0.2583,
+      "sessions_used": 52,
+      "support": [
+        {
+          "strike": 265.0,
+          "grade": "A",
+          "label": "strong",
+          "strength": "strong",
+          "wall": null,
+          "score": 91.7,
+          "dist_pct": -0.67,
+          "sigma": -0.09
+        },
+        {
+          "strike": 260.0,
+          "grade": "A",
+          "label": "strong",
+          "strength": "strong",
+          "wall": "put_wall",
+          "score": 100.0,
+          "dist_pct": -2.55,
+          "sigma": -0.34
+        },
+        {
+          "strike": 255.0,
+          "grade": "C",
+          "label": "moderate",
+          "strength": "shifting",
+          "wall": null,
+          "score": 52.1,
+          "dist_pct": -4.42,
+          "sigma": -0.6
+        }
+      ],
+      "resistance": [
+        {
+          "strike": 275.0,
+          "grade": "C",
+          "label": "moderate",
+          "strength": "fresh",
+          "wall": null,
+          "score": 48.4,
+          "dist_pct": 3.08,
+          "sigma": 0.42
+        },
+        {
+          "strike": 280.0,
+          "grade": "D",
+          "label": "weak",
+          "strength": "fresh",
+          "wall": null,
+          "score": 23.6,
+          "dist_pct": 4.95,
+          "sigma": 0.67
+        },
+        {
+          "strike": 285.0,
+          "grade": "D",
+          "label": "weak",
+          "strength": "fresh",
+          "wall": "call_wall",
+          "score": 27.2,
+          "dist_pct": 6.83,
+          "sigma": 0.92
+        }
+      ]
     }
   },
   "XLF": {
@@ -2765,6 +3043,38 @@
       "bucket_sessions": 22,
       "label": "regime agrees (NEG) but flip moves 1.48 DM - check G3",
       "info_only": true
+    },
+    "levels": {
+      "session": "2026-11-24",
+      "spot": 56.12,
+      "band_lo": 53.0502,
+      "band_hi": 59.1898,
+      "atm_iv": 0.1908,
+      "sessions_used": 26,
+      "support": [
+        {
+          "strike": 54.0,
+          "grade": "A",
+          "label": "strong",
+          "strength": "strong",
+          "wall": "put_wall",
+          "score": 100.0,
+          "dist_pct": -3.78,
+          "sigma": -0.69
+        }
+      ],
+      "resistance": [
+        {
+          "strike": 59.0,
+          "grade": "D",
+          "label": "weak",
+          "strength": "fresh",
+          "wall": "call_wall",
+          "score": 31.3,
+          "dist_pct": 5.13,
+          "sigma": 0.94
+        }
+      ]
     }
   },
   "TLT": {
@@ -3149,6 +3459,48 @@
       "bucket_sessions": 26,
       "label": "regime agrees (POS), flip stable",
       "info_only": true
+    },
+    "levels": {
+      "session": "2026-11-24",
+      "spot": 81.35,
+      "band_lo": 78.966,
+      "band_hi": 83.734,
+      "atm_iv": 0.1022,
+      "sessions_used": 31,
+      "support": [
+        {
+          "strike": 80.0,
+          "grade": "D",
+          "label": "weak",
+          "strength": "fresh",
+          "wall": "put_wall",
+          "score": 40.5,
+          "dist_pct": -1.66,
+          "sigma": -0.57
+        }
+      ],
+      "resistance": [
+        {
+          "strike": 82.0,
+          "grade": "A",
+          "label": "strong",
+          "strength": "strong",
+          "wall": null,
+          "score": 100.0,
+          "dist_pct": 0.8,
+          "sigma": 0.27
+        },
+        {
+          "strike": 83.0,
+          "grade": "A",
+          "label": "strong",
+          "strength": "strong",
+          "wall": "call_wall",
+          "score": 92.9,
+          "dist_pct": 2.03,
+          "sigma": 0.69
+        }
+      ]
     }
   },
   "XLK": {
@@ -3428,6 +3780,78 @@
       "history_sessions": 21,
       "note": "vanna not scored yet (6 of 15 sessions with an IV/RV reading); score is charm only",
       "status": "information only (untested)"
+    },
+    "levels": {
+      "session": "2026-11-24",
+      "spot": 157.09,
+      "band_lo": 139.3957,
+      "band_hi": 174.7843,
+      "atm_iv": 0.3929,
+      "sessions_used": 26,
+      "support": [
+        {
+          "strike": 155.0,
+          "grade": "C",
+          "label": "moderate",
+          "strength": "fresh",
+          "wall": "put_wall",
+          "score": 47.6,
+          "dist_pct": -1.33,
+          "sigma": -0.12
+        },
+        {
+          "strike": 150.0,
+          "grade": "D",
+          "label": "weak",
+          "strength": "fresh",
+          "wall": null,
+          "score": 43.0,
+          "dist_pct": -4.51,
+          "sigma": -0.4
+        },
+        {
+          "strike": 145.0,
+          "grade": "D",
+          "label": "weak",
+          "strength": "fresh",
+          "wall": null,
+          "score": 37.9,
+          "dist_pct": -7.7,
+          "sigma": -0.68
+        }
+      ],
+      "resistance": [
+        {
+          "strike": 165.0,
+          "grade": "D",
+          "label": "weak",
+          "strength": "fresh",
+          "wall": null,
+          "score": 44.4,
+          "dist_pct": 5.04,
+          "sigma": 0.45
+        },
+        {
+          "strike": 170.0,
+          "grade": "D",
+          "label": "weak",
+          "strength": "fresh",
+          "wall": null,
+          "score": 37.9,
+          "dist_pct": 8.22,
+          "sigma": 0.73
+        },
+        {
+          "strike": 172.5,
+          "grade": "C",
+          "label": "moderate",
+          "strength": "shifting",
+          "wall": "call_wall",
+          "score": 46.1,
+          "dist_pct": 9.81,
+          "sigma": 0.87
+        }
+      ]
     }
   },
   "SMH": {
@@ -3752,6 +4176,78 @@
       "bucket_sessions": 22,
       "label": "regime disagrees: naive NEG vs signed POS - lower confidence",
       "info_only": true
+    },
+    "levels": {
+      "session": "2026-11-24",
+      "spot": 426.75,
+      "band_lo": 355.6759,
+      "band_hi": 497.8241,
+      "atm_iv": 0.5809,
+      "sessions_used": 26,
+      "support": [
+        {
+          "strike": 420.0,
+          "grade": "D",
+          "label": "weak",
+          "strength": "shifting",
+          "wall": null,
+          "score": 41.0,
+          "dist_pct": -1.58,
+          "sigma": -0.09
+        },
+        {
+          "strike": 410.0,
+          "grade": "D",
+          "label": "weak",
+          "strength": "fresh",
+          "wall": "put_wall",
+          "score": 44.5,
+          "dist_pct": -3.93,
+          "sigma": -0.24
+        },
+        {
+          "strike": 400.0,
+          "grade": "D",
+          "label": "weak",
+          "strength": "fresh",
+          "wall": null,
+          "score": 41.3,
+          "dist_pct": -6.27,
+          "sigma": -0.38
+        }
+      ],
+      "resistance": [
+        {
+          "strike": 440.0,
+          "grade": "C",
+          "label": "moderate",
+          "strength": "steady",
+          "wall": null,
+          "score": 54.8,
+          "dist_pct": 3.1,
+          "sigma": 0.19
+        },
+        {
+          "strike": 450.0,
+          "grade": "B",
+          "label": "solid",
+          "strength": "strong",
+          "wall": null,
+          "score": 72.1,
+          "dist_pct": 5.45,
+          "sigma": 0.33
+        },
+        {
+          "strike": 465.0,
+          "grade": "D",
+          "label": "weak",
+          "strength": "fresh",
+          "wall": "call_wall",
+          "score": 16.4,
+          "dist_pct": 8.96,
+          "sigma": 0.54
+        }
+      ]
     }
   },
   "GLD": {
@@ -4178,6 +4674,78 @@
       "bucket_sessions": 26,
       "label": "regime agrees (NEG), flip stable",
       "info_only": true
+    },
+    "levels": {
+      "session": "2026-11-24",
+      "spot": 325.45,
+      "band_lo": 299.0068,
+      "band_hi": 351.8932,
+      "atm_iv": 0.2834,
+      "sessions_used": 31,
+      "support": [
+        {
+          "strike": 320.0,
+          "grade": "C",
+          "label": "moderate",
+          "strength": "shifting",
+          "wall": "put_wall",
+          "score": 51.7,
+          "dist_pct": -1.67,
+          "sigma": -0.21
+        },
+        {
+          "strike": 315.0,
+          "grade": "D",
+          "label": "weak",
+          "strength": "fresh",
+          "wall": null,
+          "score": 31.5,
+          "dist_pct": -3.21,
+          "sigma": -0.4
+        },
+        {
+          "strike": 310.0,
+          "grade": "C",
+          "label": "moderate",
+          "strength": "shifting",
+          "wall": null,
+          "score": 47.0,
+          "dist_pct": -4.75,
+          "sigma": -0.58
+        }
+      ],
+      "resistance": [
+        {
+          "strike": 330.0,
+          "grade": "C",
+          "label": "moderate",
+          "strength": "steady",
+          "wall": null,
+          "score": 49.7,
+          "dist_pct": 1.4,
+          "sigma": 0.17
+        },
+        {
+          "strike": 340.0,
+          "grade": "B",
+          "label": "solid",
+          "strength": "strong",
+          "wall": null,
+          "score": 72.0,
+          "dist_pct": 4.47,
+          "sigma": 0.55
+        },
+        {
+          "strike": 350.0,
+          "grade": "D",
+          "label": "weak",
+          "strength": "shifting",
+          "wall": "call_wall",
+          "score": 44.3,
+          "dist_pct": 7.54,
+          "sigma": 0.93
+        }
+      ]
     }
   },
   "market": {

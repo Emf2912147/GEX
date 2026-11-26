@@ -105,6 +105,15 @@ fitted, and over the first 22 graded sessions the score showed no reliable
 link to next-day or 5-day returns. Rebuild the stored series from the raw
 chains with `python flow_intensity.py --backfill`.
 
+Since 2026-11-26 each record also carries a `levels` block: the graded
+support / resistance the GEX Monitor cards show (`support_resistance.py`),
+inside +/-1 sigma of spot. `support` and `resistance` list up to three levels
+each, nearest first: `strike`, `grade` (A strong, B solid, C moderate, D weak),
+`strength` (persistence: new, fresh, steady, strong, shifting), `wall`
+(`call_wall` / `put_wall` when the level is a wall), `score`, `dist_pct` and
+`sigma` (distance from spot in % and in 1-sigma units); plus `band_lo` /
+`band_hi`, `atm_iv` and `sessions_used`.
+
 Since 2026-11-14 each record also carries a `surface` block (`vol_surface.py`),
 the term structure across expirations from the same stored chain:
 
