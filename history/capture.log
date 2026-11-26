@@ -3692,3 +3692,132 @@ Traceback (most recent call last):
 requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://cdn-api.cboe.com/api/global/delayed_quotes/options/TLT.json
 
 2026-11-25T20:33:04+00:00  === capture done  ok=0  failed=9
+2026-11-26T01:04:26+00:00  === schwab_daily start session=2026-11-23 symbols=XLK SMH GLD  (dry run)
+2026-11-26T01:04:26+00:00  XLK: vintage check REJECT -- OI 308,225 is 1.68x the 2026-11-21T19:28:33.006547+00:00 book (183,627) over 5 shared expiries, 119,857 OI rolled off since -- outside 0.6x-1.6x [vs pull schwab_chains_20261121.json]
+2026-11-26T01:04:27+00:00  SMH: vintage check REJECT -- OI 785,119 is 1.91x the 2026-11-21T19:28:33.006547+00:00 book (411,457) over 7 shared expiries, 450,355 OI rolled off since -- outside 0.6x-1.6x [vs pull schwab_chains_20261121.json]
+2026-11-26T01:04:27+00:00  GLD: vintage check REJECT -- OI 1,173,089 is 1.64x the 2026-11-21T19:28:33.006547+00:00 book (714,561) over 9 shared expiries, 1,383,850 OI rolled off since -- outside 0.6x-1.6x [vs pull schwab_chains_20261121.json]
+2026-11-26T01:04:27+00:00  === schwab_daily done  ok=0  skipped=0  failed=3  (dry run)
+2026-11-26T01:05:24+00:00  === schwab_daily start session=2026-11-23 symbols=XLK SMH GLD  (dry run)
+2026-11-26T01:05:24+00:00  XLK: vintage check PASS -- <=30DTE OI 308,225; 0.99x 2026-11-25T12:00:06.680966+00:00 over 5 shared expiries, 196,148 OI rolled off since [vs pull schwab_chains_20261124.json]
+2026-11-26T01:05:24+00:00  XLK: spot 158.9100 from Schwab is -2.14% off the 2026-11-23 close 162.3800 (official_close) -- using the close
+2026-11-26T01:05:24+00:00  XLK: 1,488 contracts (Schwab, dry run, not written)
+2026-11-26T01:05:24+00:00  
+2026-11-26T01:05:24+00:00  *** THIN CHAIN *** XLK: 1,488 contracts vs trailing median 2,523 (59% of normal)
+2026-11-26T01:05:24+00:00  *** XLK: below 75% of the trailing median, so open interest is INCOMPLETE and net GEX, walls and flip are all understated. The usual cause is a capture taken after the session's expiry had already stripped contracts out of the chain -- check whether this run is late for session 2026-11-23.
+2026-11-26T01:05:24+00:00  
+2026-11-26T01:05:24+00:00  XLK: OI zero near-ATM -- ITM 20/165 (12%), OTM 4/165 (2%), traded-but-zero 0
+2026-11-26T01:05:24+00:00  XLK: spot 162.38  netGEX -0.01Bn  flip 165.5851  walls 175.0/160.0  negative  [schwab]
+2026-11-26T01:05:24+00:00  SMH: vintage check PASS -- <=30DTE OI 787,290; 0.97x 2026-11-25T12:00:06.680966+00:00 over 9 shared expiries, 575,169 OI rolled off since [vs pull schwab_chains_20261124.json]
+2026-11-26T01:05:24+00:00  SMH: spot 446.2000 from Schwab is -3.04% off the 2026-11-23 close 460.1800 (official_close) -- using the close
+2026-11-26T01:05:24+00:00  SMH: 3,392 contracts (Schwab, dry run, not written)
+2026-11-26T01:05:24+00:00  
+2026-11-26T01:05:24+00:00  *** THIN CHAIN *** SMH: 3,392 contracts vs trailing median 7,145 (47% of normal)
+2026-11-26T01:05:24+00:00  *** SMH: below 75% of the trailing median, so open interest is INCOMPLETE and net GEX, walls and flip are all understated. The usual cause is a capture taken after the session's expiry had already stripped contracts out of the chain -- check whether this run is late for session 2026-11-23.
+2026-11-26T01:05:24+00:00  
+2026-11-26T01:05:24+00:00  SMH: OI zero near-ATM -- ITM 62/295 (21%), OTM 36/295 (12%), traded-but-zero 0
+2026-11-26T01:05:24+00:00  SMH: spot 460.18  netGEX -0.04Bn  flip 467.6324  walls 490.0/450.0  negative  [schwab]
+2026-11-26T01:05:24+00:00  GLD: vintage check PASS -- <=30DTE OI 1,174,278; 0.98x 2026-11-25T12:00:06.680966+00:00 over 12 shared expiries, 1,753,277 OI rolled off since [vs pull schwab_chains_20261124.json]
+2026-11-26T01:05:25+00:00  GLD: 4,064 contracts (Schwab, dry run, not written)
+2026-11-26T01:05:25+00:00  
+2026-11-26T01:05:25+00:00  *** THIN CHAIN *** GLD: 4,064 contracts vs trailing median 7,190 (57% of normal)
+2026-11-26T01:05:25+00:00  *** GLD: below 75% of the trailing median, so open interest is INCOMPLETE and net GEX, walls and flip are all understated. The usual cause is a capture taken after the session's expiry had already stripped contracts out of the chain -- check whether this run is late for session 2026-11-23.
+2026-11-26T01:05:25+00:00  
+2026-11-26T01:05:25+00:00  GLD: OI zero near-ATM -- ITM 267/627 (43%), OTM 179/627 (29%), traded-but-zero 0
+2026-11-26T01:05:25+00:00  GLD: spot 333.02  netGEX -0.07Bn  flip 337.1582  walls 350.0/325.0  negative  [schwab]
+2026-11-26T01:05:25+00:00  3 row(s) would be written (dry run, nothing appended)
+2026-11-26T01:05:25+00:00  === schwab_daily done  ok=3  skipped=0  failed=0  THIN=3 (XLK,SMH,GLD)  (dry run)
+2026-11-26T01:05:27+00:00  === schwab_daily start session=2026-11-23 symbols=XLK SMH GLD
+2026-11-26T01:05:27+00:00  XLK: vintage check PASS -- <=30DTE OI 308,225; 0.99x 2026-11-25T12:00:06.680966+00:00 over 5 shared expiries, 196,148 OI rolled off since [vs pull schwab_chains_20261124.json]
+2026-11-26T01:05:27+00:00  XLK: spot 158.9100 from Schwab is -2.14% off the 2026-11-23 close 162.3800 (official_close) -- using the close
+2026-11-26T01:05:27+00:00  XLK: 1,488 contracts (Schwab) -> XLK.parquet
+2026-11-26T01:05:27+00:00  
+2026-11-26T01:05:27+00:00  *** THIN CHAIN *** XLK: 1,488 contracts vs trailing median 2,523 (59% of normal)
+2026-11-26T01:05:27+00:00  *** XLK: below 75% of the trailing median, so open interest is INCOMPLETE and net GEX, walls and flip are all understated. The usual cause is a capture taken after the session's expiry had already stripped contracts out of the chain -- check whether this run is late for session 2026-11-23.
+2026-11-26T01:05:27+00:00  
+2026-11-26T01:05:27+00:00  XLK: OI zero near-ATM -- ITM 20/165 (12%), OTM 4/165 (2%), traded-but-zero 0
+2026-11-26T01:05:27+00:00  XLK: spot 162.38  netGEX -0.01Bn  flip 165.5851  walls 175.0/160.0  negative  [schwab]
+2026-11-26T01:05:27+00:00  SMH: vintage check PASS -- <=30DTE OI 787,290; 0.97x 2026-11-25T12:00:06.680966+00:00 over 9 shared expiries, 575,169 OI rolled off since [vs pull schwab_chains_20261124.json]
+2026-11-26T01:05:27+00:00  SMH: spot 446.2000 from Schwab is -3.04% off the 2026-11-23 close 460.1800 (official_close) -- using the close
+2026-11-26T01:05:27+00:00  SMH: 3,392 contracts (Schwab) -> SMH.parquet
+2026-11-26T01:05:27+00:00  
+2026-11-26T01:05:27+00:00  *** THIN CHAIN *** SMH: 3,392 contracts vs trailing median 7,145 (47% of normal)
+2026-11-26T01:05:27+00:00  *** SMH: below 75% of the trailing median, so open interest is INCOMPLETE and net GEX, walls and flip are all understated. The usual cause is a capture taken after the session's expiry had already stripped contracts out of the chain -- check whether this run is late for session 2026-11-23.
+2026-11-26T01:05:27+00:00  
+2026-11-26T01:05:27+00:00  SMH: OI zero near-ATM -- ITM 62/295 (21%), OTM 36/295 (12%), traded-but-zero 0
+2026-11-26T01:05:27+00:00  SMH: spot 460.18  netGEX -0.04Bn  flip 467.6324  walls 490.0/450.0  negative  [schwab]
+2026-11-26T01:05:28+00:00  GLD: vintage check PASS -- <=30DTE OI 1,174,278; 0.98x 2026-11-25T12:00:06.680966+00:00 over 12 shared expiries, 1,753,277 OI rolled off since [vs pull schwab_chains_20261124.json]
+2026-11-26T01:05:28+00:00  GLD: 4,064 contracts (Schwab) -> GLD.parquet
+2026-11-26T01:05:28+00:00  
+2026-11-26T01:05:28+00:00  *** THIN CHAIN *** GLD: 4,064 contracts vs trailing median 7,190 (57% of normal)
+2026-11-26T01:05:28+00:00  *** GLD: below 75% of the trailing median, so open interest is INCOMPLETE and net GEX, walls and flip are all understated. The usual cause is a capture taken after the session's expiry had already stripped contracts out of the chain -- check whether this run is late for session 2026-11-23.
+2026-11-26T01:05:28+00:00  
+2026-11-26T01:05:28+00:00  GLD: OI zero near-ATM -- ITM 267/627 (43%), OTM 179/627 (29%), traded-but-zero 0
+2026-11-26T01:05:28+00:00  GLD: spot 333.02  netGEX -0.07Bn  flip 337.1582  walls 350.0/325.0  negative  [schwab]
+2026-11-26T01:05:28+00:00  appended 3 metric row(s) (Schwab)
+2026-11-26T01:05:28+00:00  === schwab_daily done  ok=3  skipped=0  failed=0  THIN=3 (XLK,SMH,GLD)
+2026-11-26T01:05:30+00:00  === schwab_daily start session=2026-11-24 symbols=XLK SMH GLD  (dry run)
+2026-11-26T01:07:56+00:00  XLK: vintage check PASS -- <=30DTE OI 312,698; 1.01x 2026-11-24T12:00:05.143365+00:00 over 5 shared expiries, 189,902 OI rolled off since [vs pull schwab_chains_20261123.json]
+2026-11-26T01:07:56+00:00  XLK: tastytrade OI patch -- 980/1568 contracts matched and replaced, 588 kept Schwab's OI (no tastytrade match)
+2026-11-26T01:07:56+00:00  XLK: spot 151.4300 from Schwab is -3.60% off the 2026-11-24 close 157.0900 (official_close) -- using the close
+2026-11-26T01:07:56+00:00  XLK: 1,568 contracts (Schwab, dry run, not written)
+2026-11-26T01:07:56+00:00  
+2026-11-26T01:07:56+00:00  *** THIN CHAIN *** XLK: 1,568 contracts vs trailing median 2,523 (62% of normal)
+2026-11-26T01:07:56+00:00  *** XLK: below 75% of the trailing median, so open interest is INCOMPLETE and net GEX, walls and flip are all understated. The usual cause is a capture taken after the session's expiry had already stripped contracts out of the chain -- check whether this run is late for session 2026-11-24.
+2026-11-26T01:07:56+00:00  
+2026-11-26T01:07:56+00:00  XLK: OI zero near-ATM -- ITM 27/165 (16%), OTM 10/165 (6%), traded-but-zero 0
+2026-11-26T01:07:56+00:00  XLK: spot 157.09  netGEX -0.01Bn  flip 162.3649  walls 172.5/155.0  negative  [schwab]
+2026-11-26T01:07:56+00:00  SMH: vintage check PASS -- <=30DTE OI 812,641; 1.03x 2026-11-24T12:00:05.143365+00:00 over 9 shared expiries, 541,755 OI rolled off since [vs pull schwab_chains_20261123.json]
+2026-11-26T01:07:56+00:00  SMH: tastytrade OI patch -- 2642/3848 contracts matched and replaced, 1206 kept Schwab's OI (no tastytrade match)
+2026-11-26T01:07:56+00:00  SMH: spot 407.5300 from Schwab is -4.50% off the 2026-11-24 close 426.7500 (official_close) -- using the close
+2026-11-26T01:07:56+00:00  SMH: 3,582 contracts (Schwab, dry run, not written)
+2026-11-26T01:07:56+00:00  
+2026-11-26T01:07:56+00:00  *** THIN CHAIN *** SMH: 3,582 contracts vs trailing median 7,091 (51% of normal)
+2026-11-26T01:07:56+00:00  *** SMH: below 75% of the trailing median, so open interest is INCOMPLETE and net GEX, walls and flip are all understated. The usual cause is a capture taken after the session's expiry had already stripped contracts out of the chain -- check whether this run is late for session 2026-11-24.
+2026-11-26T01:07:56+00:00  
+2026-11-26T01:07:56+00:00  SMH: OI zero near-ATM -- ITM 70/285 (25%), OTM 33/285 (12%), traded-but-zero 0
+2026-11-26T01:07:56+00:00  SMH: spot 426.75  netGEX -0.13Bn  flip 456.2038  walls 465.0/410.0  negative  [schwab]
+2026-11-26T01:07:56+00:00  GLD: vintage check PASS -- <=30DTE OI 1,194,267; 1.02x 2026-11-24T12:00:05.143365+00:00 over 12 shared expiries, 1,712,121 OI rolled off since [vs pull schwab_chains_20261123.json]
+2026-11-26T01:07:56+00:00  GLD: tastytrade OI patch -- 3526/4838 contracts matched and replaced, 1312 kept Schwab's OI (no tastytrade match)
+2026-11-26T01:07:56+00:00  GLD: spot 320.0200 from Schwab is -1.67% off the 2026-11-24 close 325.4500 (official_close) -- using the close
+2026-11-26T01:07:57+00:00  GLD: 4,558 contracts (Schwab, dry run, not written)
+2026-11-26T01:07:57+00:00  
+2026-11-26T01:07:57+00:00  *** THIN CHAIN *** GLD: 4,558 contracts vs trailing median 7,190 (63% of normal)
+2026-11-26T01:07:57+00:00  *** GLD: below 75% of the trailing median, so open interest is INCOMPLETE and net GEX, walls and flip are all understated. The usual cause is a capture taken after the session's expiry had already stripped contracts out of the chain -- check whether this run is late for session 2026-11-24.
+2026-11-26T01:07:57+00:00  
+2026-11-26T01:07:57+00:00  GLD: OI zero near-ATM -- ITM 301/649 (46%), OTM 152/649 (23%), traded-but-zero 0
+2026-11-26T01:07:57+00:00  GLD: spot 325.45  netGEX -0.09Bn  flip 331.693  walls 350.0/320.0  negative  [schwab]
+2026-11-26T01:07:57+00:00  3 row(s) would be written (dry run, nothing appended)
+2026-11-26T01:07:57+00:00  === schwab_daily done  ok=3  skipped=0  failed=0  THIN=3 (XLK,SMH,GLD)  (dry run)
+2026-11-26T01:07:59+00:00  === schwab_daily start session=2026-11-24 symbols=XLK SMH GLD
+2026-11-26T01:10:25+00:00  XLK: vintage check PASS -- <=30DTE OI 312,698; 1.01x 2026-11-24T12:00:05.143365+00:00 over 5 shared expiries, 189,902 OI rolled off since [vs pull schwab_chains_20261123.json]
+2026-11-26T01:10:25+00:00  XLK: tastytrade OI patch -- 980/1568 contracts matched and replaced, 588 kept Schwab's OI (no tastytrade match)
+2026-11-26T01:10:25+00:00  XLK: spot 151.4300 from Schwab is -3.60% off the 2026-11-24 close 157.0900 (official_close) -- using the close
+2026-11-26T01:10:26+00:00  XLK: 1,568 contracts (Schwab) -> XLK.parquet
+2026-11-26T01:10:26+00:00  
+2026-11-26T01:10:26+00:00  *** THIN CHAIN *** XLK: 1,568 contracts vs trailing median 2,523 (62% of normal)
+2026-11-26T01:10:26+00:00  *** XLK: below 75% of the trailing median, so open interest is INCOMPLETE and net GEX, walls and flip are all understated. The usual cause is a capture taken after the session's expiry had already stripped contracts out of the chain -- check whether this run is late for session 2026-11-24.
+2026-11-26T01:10:26+00:00  
+2026-11-26T01:10:26+00:00  XLK: OI zero near-ATM -- ITM 27/165 (16%), OTM 10/165 (6%), traded-but-zero 0
+2026-11-26T01:10:26+00:00  XLK: spot 157.09  netGEX -0.01Bn  flip 162.3655  walls 172.5/155.0  negative  [schwab]
+2026-11-26T01:10:26+00:00  SMH: vintage check PASS -- <=30DTE OI 812,641; 1.03x 2026-11-24T12:00:05.143365+00:00 over 9 shared expiries, 541,755 OI rolled off since [vs pull schwab_chains_20261123.json]
+2026-11-26T01:10:26+00:00  SMH: tastytrade OI patch -- 2642/3848 contracts matched and replaced, 1206 kept Schwab's OI (no tastytrade match)
+2026-11-26T01:10:26+00:00  SMH: spot 407.5300 from Schwab is -4.50% off the 2026-11-24 close 426.7500 (official_close) -- using the close
+2026-11-26T01:10:26+00:00  SMH: 3,582 contracts (Schwab) -> SMH.parquet
+2026-11-26T01:10:26+00:00  
+2026-11-26T01:10:26+00:00  *** THIN CHAIN *** SMH: 3,582 contracts vs trailing median 7,091 (51% of normal)
+2026-11-26T01:10:26+00:00  *** SMH: below 75% of the trailing median, so open interest is INCOMPLETE and net GEX, walls and flip are all understated. The usual cause is a capture taken after the session's expiry had already stripped contracts out of the chain -- check whether this run is late for session 2026-11-24.
+2026-11-26T01:10:26+00:00  
+2026-11-26T01:10:26+00:00  SMH: OI zero near-ATM -- ITM 70/285 (25%), OTM 33/285 (12%), traded-but-zero 0
+2026-11-26T01:10:26+00:00  SMH: spot 426.75  netGEX -0.13Bn  flip 456.2064  walls 465.0/410.0  negative  [schwab]
+2026-11-26T01:10:26+00:00  GLD: vintage check PASS -- <=30DTE OI 1,194,267; 1.02x 2026-11-24T12:00:05.143365+00:00 over 12 shared expiries, 1,712,121 OI rolled off since [vs pull schwab_chains_20261123.json]
+2026-11-26T01:10:26+00:00  GLD: tastytrade OI patch -- 3526/4838 contracts matched and replaced, 1312 kept Schwab's OI (no tastytrade match)
+2026-11-26T01:10:26+00:00  GLD: spot 320.0200 from Schwab is -1.67% off the 2026-11-24 close 325.4500 (official_close) -- using the close
+2026-11-26T01:10:26+00:00  GLD: 4,558 contracts (Schwab) -> GLD.parquet
+2026-11-26T01:10:26+00:00  
+2026-11-26T01:10:26+00:00  *** THIN CHAIN *** GLD: 4,558 contracts vs trailing median 7,190 (63% of normal)
+2026-11-26T01:10:26+00:00  *** GLD: below 75% of the trailing median, so open interest is INCOMPLETE and net GEX, walls and flip are all understated. The usual cause is a capture taken after the session's expiry had already stripped contracts out of the chain -- check whether this run is late for session 2026-11-24.
+2026-11-26T01:10:26+00:00  
+2026-11-26T01:10:26+00:00  GLD: OI zero near-ATM -- ITM 301/649 (46%), OTM 152/649 (23%), traded-but-zero 0
+2026-11-26T01:10:26+00:00  GLD: spot 325.45  netGEX -0.09Bn  flip 331.6945  walls 350.0/320.0  negative  [schwab]
+2026-11-26T01:10:26+00:00  appended 3 metric row(s) (Schwab)
+2026-11-26T01:10:26+00:00  === schwab_daily done  ok=3  skipped=0  failed=0  THIN=3 (XLK,SMH,GLD)
