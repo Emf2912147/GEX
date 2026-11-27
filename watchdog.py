@@ -41,7 +41,8 @@ import sys
 
 import pandas as pd
 
-from market_calendar import et_wall_clock, is_trading_day, session_for, should_capture
+from market_calendar import (et_wall_clock, is_trading_day, session_close, session_for,
+                             should_capture)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 HIST = os.path.join(HERE, "history")
@@ -134,8 +135,9 @@ def main():
         today_rows = s[s["et_date"] == et_today]
         cycles = today_rows["capture_ts"].nunique()
 
-        elapsed = (min(et_now.time(), CLOSE_ET).hour * 60
-                   + min(et_now.time(), CLOSE_ET).minute
+        close_et = session_close(et_today)        # 13:00 on an early close
+        elapsed = (min(et_now.time(), close_et).hour * 60
+                   + min(et_now.time(), close_et).minute
                    - OPEN_ET.hour * 60 - OPEN_ET.minute)
         expected = max(int(elapsed / CADENCE_MIN), 1)
         floor = max(int(expected * MIN_FRACTION), 1)
@@ -155,7 +157,7 @@ def main():
         # banked, then silence. The count check alone would pass that.
         if len(today_rows):
             silence = (now - today_rows["ts"].max()).total_seconds() / 60
-            if et_now.time() <= CLOSE_ET and silence > MAX_SILENCE_MIN:
+            if et_now.time() <= close_et and silence > MAX_SILENCE_MIN:
                 fail(f"no capture for {silence:.0f} min "
                      f"(last {today_rows['ts'].max():%H:%M} UTC) -- "
                      f"the scheduler has stalled mid-session")

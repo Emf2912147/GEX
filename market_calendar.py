@@ -96,6 +96,36 @@ def holidays(year):
     }
 
 
+def early_closes(year):
+    """NYSE 13:00 ET early-close sessions in `year`.
+
+    The day after Thanksgiving, Christmas Eve and July 3 -- each only when it
+    is itself a trading day (Dec 24 2027 is the observed Christmas holiday,
+    July 3 2026 the observed Independence Day, so neither is an early close).
+    Added 2026-11-27: the pipeline ran a full 16:00 day on that Friday and
+    wrote three hours of frozen post-close rows.
+    """
+    cands = {
+        _nth_weekday(year, 11, 3, 4) + timedelta(days=1),   # Black Friday
+        date(year, 12, 24),
+        date(year, 7, 3),
+    }
+    return {d for d in cands if is_trading_day(d)}
+
+
+def session_close(d):
+    """Regular-session close on `d` as a naive ET time: 13:00 on an early
+    close, 16:00 otherwise."""
+    from datetime import time as _time
+    return _time(13, 0) if d in early_closes(d.year) else _time(16, 0)
+
+
+def close_minute(d):
+    """session_close(d) in minutes past midnight ET (780 or 960)."""
+    t = session_close(d)
+    return t.hour * 60 + t.minute
+
+
 def is_trading_day(d):
     """True if `d` is a full NYSE session."""
     if d.weekday() >= 5:
@@ -153,9 +183,10 @@ def is_market_open(utc_dt):
     mid-session (the 10/06 capture GitHub deferred to 13:53 ET on 10/07).
     """
     et = et_wall_clock(utc_dt)
+    c = session_close(et.date())
     return (is_trading_day(et.date()) and
             datetime(et.year, et.month, et.day, 9, 30) <= et
-            < datetime(et.year, et.month, et.day, 16, 0))
+            < datetime(et.year, et.month, et.day, c.hour, c.minute))
 
 
 def should_capture(capture_date):
@@ -240,5 +271,14 @@ if __name__ == "__main__":
     assert not is_market_open(datetime(2026, 10, 10, 15, 0)), "Saturday"
     assert is_market_open(datetime(2026, 11, 2, 14, 45)), "09:45 EST = 14:45 UTC"
     assert not is_market_open(datetime(2026, 11, 2, 14, 15)), "09:15 EST, pre-open"
+
+    # Early closes (13:00 ET).
+    assert early_closes(2026) == {date(2026, 11, 27), date(2026, 12, 24)}, early_closes(2026)
+    assert early_closes(2025) == {date(2025, 7, 3), date(2025, 11, 28), date(2025, 12, 24)}
+    assert early_closes(2027) == {date(2027, 11, 26)}, "Dec 24 2027 is a holiday"
+    assert close_minute(date(2026, 11, 27)) == 780 and close_minute(date(2026, 11, 30)) == 960
+    assert is_market_open(datetime(2026, 11, 27, 17, 45)), "12:45 ET on Black Friday"
+    assert not is_market_open(datetime(2026, 11, 27, 18, 15)), "13:15 ET on Black Friday"
+    assert is_market_open(datetime(2026, 11, 30, 18, 15)), "13:15 ET on an ordinary Monday"
 
     print("market_calendar: all self-tests passed")

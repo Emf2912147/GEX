@@ -166,7 +166,7 @@ import re
 import sys
 import time
 import traceback
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import numpy as np
 import pandas as pd
@@ -1399,7 +1399,11 @@ def main():
     # close -- every day until March.
     et = cal.et_wall_clock(now)
     session_start = et.replace(hour=9, minute=0, second=0, microsecond=0)
-    session_end = et.replace(hour=17, minute=15, second=0, microsecond=0)
+    # 75 minutes past the close: 17:15 ET on a normal day, 14:15 ET on a
+    # 13:00 early close (day after Thanksgiving, Christmas Eve, July 3).
+    _close = cal.session_close(et.date())
+    session_end = (et.replace(hour=_close.hour, minute=_close.minute, second=0, microsecond=0)
+                   + timedelta(minutes=75))
     if not args.ignore_calendar and not (session_start <= et <= session_end):
         if et < session_start:
             off = (session_start - et).total_seconds() / 60
