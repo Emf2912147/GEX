@@ -56468,3 +56468,34 @@ requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://cdn-
 2026-11-27T15:51:59+00:00  appended 9 state row(s)
 2026-11-27T15:52:03+00:00  VIX: 25.58 (-4.6% 1d, +48.7% 20d)  VIX9D: 26.23  term backwardation(short-rich)  VX 23.88/23.52 backwardation (basis -1.71) [tastytrade] -> vix_state.csv
 2026-11-27T15:52:03+00:00  --- intraday done  ok=9  skipped=0  failed=0  vix=written
+2026-11-27T16:06:55+00:00  --- intraday capture  symbols=SPX SPY QQQ IWM XLK SMH XLF GLD TLT
+2026-11-27T16:06:55+00:00  SPX: greek fill gamma 40.6% / iv 100.0%
+2026-11-27T16:06:55+00:00  SPX: 12,206 contracts -> SPX__010000.parquet
+2026-11-27T16:06:55+00:00  SPX: spot 7,268.08  netGEX(win) -11.46Bn  flip 7335.9323  walls 7310.0/7000.0  negative  RR25 -0.06038 (STEEP)  P/C 1.0563
+2026-11-27T16:06:55+00:00  SPY: greek fill gamma 53.5% / iv 100.0%
+2026-11-27T16:06:55+00:00  SPY: 4,028 contracts -> SPY__010000.parquet
+2026-11-27T16:06:55+00:00  SPY: spot 725.16  netGEX(win) -0.45Bn  flip 725.9641  walls 750.0/700.0  negative  RR25 -0.06468 (STEEP)  P/C 1.0534
+2026-11-27T16:06:55+00:00  QQQ: greek fill gamma 54.5% / iv 100.0%
+2026-11-27T16:06:55+00:00  QQQ: 3,908 contracts -> QQQ__010000.parquet
+2026-11-27T16:06:55+00:00  QQQ: spot 645.05  netGEX(win) -0.62Bn  flip 648.0683  walls 650.0/640.0  negative  RR25 -0.07568 (STEEP)  P/C 0.9506
+2026-11-27T16:06:55+00:00  IWM: greek fill gamma 69.3% / iv 100.0%
+2026-11-27T16:06:56+00:00  IWM: 1,976 contracts -> IWM__010000.parquet
+2026-11-27T16:06:56+00:00  IWM: spot 272.35  netGEX(win) -1.36Bn  flip 283.5239  walls 274.0/270.0  negative  RR25 -0.04704 (STEEP)  P/C 1.5425
+2026-11-27T16:06:56+00:00  XLK: greek fill gamma 89.0% / iv 100.0%
+2026-11-27T16:06:56+00:00  XLK: 666 contracts -> XLK__010000.parquet
+2026-11-27T16:06:56+00:00  XLK: spot 158.52  netGEX(win) -0.01Bn  flip 162.1352  walls 172.5/155.0  negative  RR25 -0.07645 (STEEP)  P/C 0.44
+2026-11-27T16:06:56+00:00  SMH: greek fill gamma 72.8% / iv 100.0%
+2026-11-27T16:06:56+00:00  SMH: 1,054 contracts -> SMH__010000.parquet
+2026-11-27T16:06:56+00:00  SMH: spot 431.90  netGEX(win) -0.10Bn  flip 443.7078  walls 465.0/420.0  negative  RR25 -0.12311 (STEEP)  P/C 1.7343
+2026-11-27T16:06:56+00:00  XLF: greek fill gamma 91.5% / iv 100.0%
+2026-11-27T16:06:56+00:00  XLF: 652 contracts -> XLF__010000.parquet
+2026-11-27T16:06:56+00:00  XLF: spot 57.19  netGEX(win) -0.08Bn  flip 59.0468  walls 59.0/54.0  negative  RR25 -0.03474 (STEEP)  P/C 2.3361
+2026-11-27T16:06:56+00:00  GLD: greek fill gamma 64.0% / iv 100.0%
+2026-11-27T16:06:56+00:00  GLD: 2,364 contracts -> GLD__010000.parquet
+2026-11-27T16:06:56+00:00  GLD: spot 331.89  netGEX(win) 0.10Bn  flip 329.5992  walls 336.0/329.0  positive  RR25 -0.02576 (STEEP)  P/C 1.4311
+2026-11-27T16:06:56+00:00  TLT: greek fill gamma 84.6% / iv 100.0%
+2026-11-27T16:06:56+00:00  TLT: 754 contracts -> TLT__010000.parquet
+2026-11-27T16:06:56+00:00  TLT: spot 81.49  netGEX(win) 0.94Bn  flip 79.352  walls 83.0/79.0  positive  RR25 0.02364 (FLAT)  P/C 0.4883
+2026-11-27T16:06:56+00:00  appended 9 state row(s)
+2026-11-27T16:07:00+00:00  VIX: 25.31 (-5.6% 1d, +47.2% 20d)  VIX9D: 25.86  term backwardation(short-rich)  VX 23.77/23.48 backwardation (basis -1.53) [tastytrade] -> vix_state.csv
+2026-11-27T16:07:00+00:00  --- intraday done  ok=9  skipped=0  failed=0  vix=written
