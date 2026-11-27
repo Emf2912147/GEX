@@ -56900,3 +56900,4 @@ requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://cdn-
 2026-11-27T19:21:53+00:00  appended 8 state row(s)
 2026-11-27T19:21:55+00:00  VIX: 23.81/24.10 unchanged from the last row, nothing written (feed_ts 2026-11-27T18:15:00)
 2026-11-27T19:21:55+00:00  --- intraday done  ok=8  skipped=1  failed=0
+2026-11-27T19:41:30+00:00  --- intraday skipped  19:41 UTC (14:41 ET) is 27 min past the session window -- a deferred run, not a session observation
