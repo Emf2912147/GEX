@@ -1,6 +1,6 @@
 {
   "generated_utc": "2026-11-27T12:00:09.791506+00:00",
-  "published_utc": "2026-11-27T18:07:08.713211+00:00",
+  "published_utc": "2026-11-27T18:22:23.774206+00:00",
   "SPX": {
     "spot": 7182.78,
     "flip": 7347.5915,
@@ -4831,23 +4831,23 @@
       ]
     },
     "vix": {
-      "asof": "2026-11-27T18:06:46",
-      "vix": 24.04,
-      "vix9d": 24.32,
-      "term_spread_9d_vs_30d": 0.28,
+      "asof": "2026-11-27T18:15:00",
+      "vix": 23.81,
+      "vix9d": 24.1,
+      "term_spread_9d_vs_30d": 0.29,
       "term_state": "backwardation(short-rich)",
-      "vix_chg_1d_pct": -0.102985,
-      "vix_20d_change_pct": 0.397674,
+      "vix_chg_1d_pct": -0.111567,
+      "vix_20d_change_pct": 0.384302,
       "source": "tastytrade",
-      "vix3m": 23.89,
-      "vvix": 107.77,
-      "vx1": 22.925,
+      "vix3m": 23.82,
+      "vvix": 107.84,
+      "vx1": 17.975,
       "vx1_expiry": "2026-12-16",
-      "vx2": 22.775,
+      "vx2": 20.525,
       "vx2_expiry": "2027-01-20",
-      "vx_slope_1_2": -0.15,
-      "vx_term_state": "backwardation",
-      "vx1_basis": -1.115
+      "vx_slope_1_2": 2.55,
+      "vx_term_state": "contango",
+      "vx1_basis": -5.835
     },
     "long_vol": {
       "tenors": {
@@ -4858,7 +4858,7 @@
           "state": "RICH",
           "tenor_days": 93,
           "ratio_to_vix": 0.93,
-          "ratio_pct_1y": 1.2
+          "ratio_pct_1y": 4.8
         },
         "vix6m": {
           "level": 26.9,
@@ -4867,21 +4867,21 @@
           "state": "RICH",
           "tenor_days": 184,
           "ratio_to_vix": 0.951,
-          "ratio_pct_1y": 2.0
+          "ratio_pct_1y": 3.6
         },
         "vix1y": {
           "level": 26.12,
           "pct_1y": 94.4,
-          "pct_5y": 75.2,
+          "pct_5y": 75.1,
           "state": "RICH",
           "tenor_days": 365,
           "ratio_to_vix": 0.923,
-          "ratio_pct_1y": 3.2
+          "ratio_pct_1y": 2.8
         }
       },
       "window_sessions": 252,
       "asof": "2026-11-25",
-      "fetched_utc": "2026-11-27T12:15:12.036840+00:00",
+      "fetched_utc": "2026-11-27T18:22:32.044999+00:00",
       "stale": false,
       "source": "index_history daily closes, tastytrade first (read fresh, not stored)"
     },
