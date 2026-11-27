@@ -24,13 +24,14 @@ session_date,symbol,score,grade,direction,charm_pct,vanna_pct,front_charm_share,
 2026-11-10,SPX,78.8,B,mixed,61.8,95.7,0.711,8,2026-11-20,False,False,True,False,True,7520.93,0.0130052,-0.0242788,0.188138,-0.0846637
 2026-11-11,SPX,66.5,B,mixed,37.2,95.8,0.689,7,2026-11-20,False,False,True,False,False,7619.38,-0.00354725,-0.0395889,0.112935,-0.0976689
 2026-11-12,SPX,84.9,A,mixed,71.2,98.6,0.674,6,2026-11-20,False,False,True,False,True,7592.4,-0.00405568,-0.0941217,0.364149,-0.0941217
-2026-11-13,SPX,64.4,B,mixed,35.4,93.4,0.58,5,2026-11-20,True,False,True,False,False,7561.67,-0.0193727,-0.0431781,0.598501,-0.090066
-2026-11-16,SPX,55.6,C,mixed,53.6,57.7,0.595,4,2026-11-20,True,False,False,False,False,7416.59,-0.0103083,-0.029487,0.590871,-0.0706933
-2026-11-17,SPX,48.7,C,mixed,68.6,28.7,0.611,3,2026-11-20,True,False,False,False,True,7340.53,-0.00230494,,,-0.060385
+2026-11-13,SPX,64.4,B,mixed,35.4,93.4,0.58,5,2026-11-20,True,False,True,False,False,7561.67,-0.0193727,-0.0438618,0.594511,-0.090066
+2026-11-16,SPX,55.6,C,mixed,53.6,57.7,0.595,4,2026-11-20,True,False,False,False,False,7416.59,-0.0103083,-0.029487,0.587076,-0.0706933
+2026-11-17,SPX,48.7,C,mixed,68.6,28.7,0.611,3,2026-11-20,True,False,False,False,True,7340.53,-0.00230494,-0.0217246,0.585987,-0.060385
 2026-11-18,SPX,62.4,B,mixed,94.3,30.5,0.666,2,2026-11-20,True,False,False,False,True,7323.63,-0.05808,,,-0.05808
-2026-11-20,SPX,8.1,F,dealer buying,7.8,8.3,0.895,19,2026-12-18,False,False,False,False,False,6910.39,0.0468879,,,
-2026-11-23,SPX,13.3,F,mixed,18.5,8.1,0.997,18,2026-12-18,False,True,False,False,False,7242.12,-0.00568158,,,
-2026-11-24,SPX,25.7,D,mixed,11.7,39.8,0.967,17,2026-12-18,False,True,False,False,False,7201.09,,,,
+2026-11-20,SPX,8.1,F,dealer buying,7.8,8.3,0.895,19,2026-12-18,False,False,False,False,False,6910.39,0.0462042,,,
+2026-11-23,SPX,13.3,F,mixed,18.5,8.1,0.997,18,2026-12-18,False,True,False,False,False,7237.17,-0.00499784,,,
+2026-11-24,SPX,25.7,D,mixed,11.7,39.8,0.967,17,2026-12-18,False,True,False,False,False,7201.09,-0.00254591,,,
+2026-11-25,SPX,22.2,D,mixed,1,43.3,0.953,16,2026-12-18,False,True,False,False,False,7182.78,,,,
 2026-10-01,SPY,71.9,B,dealer buying,71.9,,0.857,11,2026-10-16,False,False,False,False,True,763.99,0.00736817,0.0129267,0.0869015,-0.000969068
 2026-10-02,SPY,20.6,D,dealer buying,20.6,,0.762,10,2026-10-16,False,False,False,False,False,769.64,0.00672078,0.011536,0.0825303,-0.00833724
 2026-10-06,SPY,75,B,dealer buying,75,,0.811,8,2026-10-16,False,False,False,False,True,779.09,-0.00240312,-0.00138719,0.0612214,-0.0205409
@@ -55,14 +56,14 @@ session_date,symbol,score,grade,direction,charm_pct,vanna_pct,front_charm_share,
 2026-11-06,SPY,2.8,F,dealer buying,4.1,1.5,0.736,10,2026-11-20,False,False,False,False,False,735.29,0.0233885,0.025618,0.198723,
 2026-11-10,SPY,72.2,B,mixed,48.7,95.7,0.788,8,2026-11-20,False,False,True,False,False,749.92,0.0131019,-0.0235851,0.188298,
 2026-11-11,SPY,71.6,B,mixed,47.4,95.8,0.775,7,2026-11-20,False,False,True,False,False,759.81,-0.00354664,-0.0397499,0.111053,
-2026-11-12,SPY,83.7,A,mixed,68.8,98.6,0.729,6,2026-11-20,False,False,True,False,True,757.12,-0.0036388,-0.0459604,0.104072,
-2026-11-13,SPY,59.4,C,mixed,28,90.8,0.609,5,2026-11-20,True,False,True,False,False,754.37,-0.0193003,-0.0492463,0.0952677,
-2026-11-16,SPY,68.9,B,mixed,75,62.8,0.67,4,2026-11-20,True,False,True,False,True,739.95,-0.0102012,-0.03074,0.0655674,
+2026-11-12,SPY,83.7,A,mixed,68.8,98.6,0.729,6,2026-11-20,False,False,True,False,True,757.12,-0.0036388,-0.047095,0.104769,
+2026-11-13,SPY,59.4,C,mixed,28,90.8,0.609,5,2026-11-20,True,False,True,False,False,754.37,-0.0193003,-0.0483276,0.100774,
+2026-11-16,SPY,68.9,B,mixed,75,62.8,0.67,4,2026-11-20,True,False,True,False,True,739.95,-0.0102012,-0.03074,0.0662894,
 2026-11-17,SPY,55.3,C,mixed,91.9,18.8,0.681,3,2026-11-20,True,False,False,False,True,732.44,-0.00306296,,,
-2026-11-18,SPY,51.6,C,mixed,89.8,13.4,0.666,2,2026-11-20,True,False,False,False,True,730.2,-0.00975711,,,
+2026-11-18,SPY,51.6,C,mixed,89.8,13.4,0.666,2,2026-11-20,True,False,False,False,True,730.2,-0.0108917,,,
 2026-11-20,SPY,26.5,D,mixed,25.6,27.4,0.906,19,2026-12-18,False,False,False,False,False,,,,,
-2026-11-24,SPY,56.6,C,mixed,26.1,87.2,0.906,17,2026-12-18,False,True,True,False,False,718.12,-0.000794054,,,
-2026-11-25,SPY,63.2,B,mixed,45.7,80.7,0.916,16,2026-12-18,False,True,True,False,False,717.55,,,,
+2026-11-24,SPY,56.6,C,mixed,26.1,87.2,0.906,17,2026-12-18,False,True,True,False,False,718.78,-0.0017127,,,
+2026-11-25,SPY,47.2,C,mixed,16,78.4,0.879,16,2026-12-18,False,True,True,False,False,717.55,,,,
 2026-10-01,QQQ,71.9,B,dealer buying,71.9,,0.895,11,2026-10-16,False,False,False,False,True,742.03,0.0101234,0.00745165,0.154291,-0.0444064
 2026-10-02,QQQ,32.4,D,dealer buying,32.4,,0.78,10,2026-10-16,False,False,False,False,False,749.58,0.00879284,0.00225206,0.139687,-0.0545298
 2026-10-06,QQQ,52.8,C,dealer buying,52.8,,0.799,8,2026-10-16,False,False,False,False,False,759.66,-0.00254384,-0.0214081,0.106703,-0.0678877
@@ -87,14 +88,14 @@ session_date,symbol,score,grade,direction,charm_pct,vanna_pct,front_charm_share,
 2026-11-06,QQQ,3.3,F,mixed,4.1,2.5,0.695,10,2026-11-20,False,False,False,False,False,656.1,0.0348232,0.0356178,0.325856,
 2026-11-10,QQQ,65.5,B,mixed,38.2,92.9,0.769,8,2026-11-20,False,False,True,False,False,674.76,0.0228851,-0.0267492,0.288567,
 2026-11-11,QQQ,62.9,B,mixed,37.2,88.6,0.739,7,2026-11-20,False,False,True,False,False,690.38,-0.00320627,-0.045745,0.184059,
-2026-11-12,QQQ,83.3,A,mixed,68.8,97.8,0.753,6,2026-11-20,False,False,True,False,True,688.17,-0.0121049,-0.0553727,0.177032,
-2026-11-13,QQQ,48.6,C,mixed,15.9,81.2,0.506,5,2026-11-20,True,False,True,False,False,679.89,-0.0270432,-0.0646278,0.191987,
-2026-11-16,QQQ,53.8,C,mixed,41.7,66,0.642,4,2026-11-20,True,False,True,False,False,661.75,-0.00727993,-0.0421136,0.149524,
+2026-11-12,QQQ,83.3,A,mixed,68.8,97.8,0.753,6,2026-11-20,False,False,True,False,True,688.17,-0.0121049,-0.0554802,0.177101,
+2026-11-13,QQQ,48.6,C,mixed,15.9,81.2,0.506,5,2026-11-20,True,False,True,False,False,679.89,-0.0270432,-0.063436,0.18859,
+2026-11-16,QQQ,53.8,C,mixed,41.7,66,0.642,4,2026-11-20,True,False,True,False,False,661.75,-0.00727993,-0.0421136,0.141107,
 2026-11-17,QQQ,67.6,B,mixed,75.6,59.6,0.674,3,2026-11-20,True,False,False,False,True,656.95,0.00388922,,,
-2026-11-18,QQQ,76.5,B,mixed,80.7,72.2,0.636,2,2026-11-20,True,False,True,False,True,659.51,-0.0128339,,,
+2026-11-18,QQQ,76.5,B,mixed,80.7,72.2,0.636,2,2026-11-20,True,False,True,False,True,659.51,-0.0129414,,,
 2026-11-20,QQQ,50.5,C,mixed,27.8,73.2,0.909,19,2026-12-18,False,False,True,False,False,,,,,
-2026-11-24,QQQ,34,D,mixed,28.3,39.7,0.909,17,2026-12-18,False,True,False,False,False,637.34,-0.00452902,,,
-2026-11-25,QQQ,21.6,D,mixed,41.5,1.7,0.923,16,2026-12-18,False,True,False,False,False,634.46,,,,
+2026-11-24,QQQ,32.2,D,mixed,28.3,36.2,0.909,17,2026-12-18,False,True,False,False,False,638.1,-0.00572077,,,
+2026-11-25,QQQ,19.5,F,mixed,37.2,1.7,0.906,16,2026-12-18,False,True,False,False,False,634.46,,,,
 2026-10-01,IWM,9.4,F,dealer buying,9.4,,0.884,11,2026-10-16,False,False,False,False,False,279.02,0.00892003,-0.00521031,0.146249,-0.0312332
 2026-10-02,IWM,32.4,D,dealer buying,32.4,,0.86,10,2026-10-16,False,False,False,False,False,281.52,0.00658526,-0.00920679,0.131063,-0.0401532
 2026-10-06,IWM,75,B,dealer buying,75,,0.848,8,2026-10-16,False,False,False,False,True,281.34,-0.0130225,-0.01663,0.103919,-0.0395136
@@ -120,13 +121,13 @@ session_date,symbol,score,grade,direction,charm_pct,vanna_pct,front_charm_share,
 2026-11-10,IWM,86.1,A,mixed,90.8,81.4,0.856,8,2026-11-20,False,False,True,False,True,280.58,0.00890598,-0.0419617,0.177009,
 2026-11-11,IWM,79.6,B,mixed,88.5,70.8,0.834,7,2026-11-20,False,False,True,False,True,283.09,-0.0165623,-0.0468986,0.147649,
 2026-11-12,IWM,89.9,A,mixed,81.2,98.6,0.775,6,2026-11-20,False,False,True,False,True,278.44,-0.00323753,-0.0466842,0.146998,
-2026-11-13,IWM,70.9,B,mixed,69.5,72.4,0.796,5,2026-11-20,True,False,True,False,True,277.54,-0.0167131,-0.0395032,0.172413,
-2026-11-16,IWM,60.3,B,mixed,98.8,21.8,0.855,4,2026-11-20,True,False,False,False,True,272.94,-0.0143548,-0.0145778,0.182653,
+2026-11-13,IWM,70.9,B,mixed,69.5,72.4,0.796,5,2026-11-20,True,False,True,False,True,277.54,-0.0167131,-0.0381922,0.178239,
+2026-11-16,IWM,60.3,B,mixed,98.8,21.8,0.855,4,2026-11-20,True,False,False,False,True,272.94,-0.0143548,-0.0145778,0.181311,
 2026-11-17,IWM,51.3,C,mixed,98.8,3.8,0.875,3,2026-11-20,True,False,False,False,True,269.05,0.00396907,,,
 2026-11-18,IWM,52.5,C,mixed,98.9,6.1,0.887,2,2026-11-20,True,False,False,False,True,270.12,-0.0163479,,,
 2026-11-20,IWM,6.9,F,mixed,7.8,6,0.894,19,2026-12-18,False,False,False,False,False,,,,,
-2026-11-24,IWM,9.6,F,mixed,8.7,10.5,0.894,17,2026-12-18,False,True,False,False,False,266.79,0.00821237,,,
-2026-11-25,IWM,23.9,D,mixed,30.9,17,0.923,16,2026-12-18,False,True,False,False,False,268.99,,,,
+2026-11-24,IWM,9.6,F,mixed,8.7,10.5,0.894,17,2026-12-18,False,True,False,False,False,267.14,0.00690134,,,
+2026-11-25,IWM,22.3,D,mixed,13.8,30.7,0.883,16,2026-12-18,False,True,False,False,False,268.99,,,,
 2026-11-12,SMH,78.1,B,mixed,78.1,,0.896,6,2026-11-20,False,False,False,False,True,501.73,-0.0303115,-0.0864444,0.371351,
 2026-11-13,SMH,32.4,D,mixed,32.4,,0.779,5,2026-11-20,True,False,False,False,False,486.75,-0.0524022,-0.131552,0.560773,
 2026-11-16,SMH,41.7,C,mixed,41.7,,0.809,4,2026-11-20,True,False,False,False,False,461.9,-0.00390456,-0.0868185,0.517936,
@@ -134,4 +135,4 @@ session_date,symbol,score,grade,direction,charm_pct,vanna_pct,front_charm_share,
 2026-11-18,SMH,47.5,C,mixed,47.5,,0.753,2,2026-11-20,True,False,False,False,False,459.54,0.00139173,,,
 2026-11-20,SMH,26.2,D,mixed,26.2,,0.916,19,2026-12-18,False,False,False,False,False,,,,,
 2026-11-24,SMH,27.3,D,mixed,27.3,,0.916,17,2026-12-18,False,True,False,False,False,426.75,-0.00766846,,,
-2026-11-25,SMH,45.7,C,mixed,45.7,,0.946,16,2026-12-18,False,True,False,False,False,423.49,,,,
+2026-11-25,SMH,15.2,F,mixed,15.2,,0.864,16,2026-12-18,False,True,False,False,False,423.49,,,,
