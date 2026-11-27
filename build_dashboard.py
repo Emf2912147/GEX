@@ -30,6 +30,7 @@ import market_calendar as cal
 import vol_metrics as vm
 import dealer_flows as dfl
 import flow_intensity as fi
+import credit_stress as cs
 try:
     import dealer_sign as ds              # sign model (information only)
 except ImportError:                       # not deployed yet: feed builds without it
@@ -534,6 +535,71 @@ def sr_block(L):
             f"<th>Grade</th></tr></thead><tbody>{body}</tbody></table></div>")
 
 
+def credit_spark(hist, width=260, height=44, pad=4, threshold=-2.0):
+    """z history with the -2 stress line and the zero line."""
+    vals = [h["z"] for h in hist if h.get("z") is not None]
+    if len(vals) < 2:
+        return '<div class="spark-empty">not enough history yet</div>'
+    lo, hi = min(min(vals), threshold - 0.25), max(max(vals), 0.25)
+    rng = (hi - lo) or 1.0
+    n = len(vals)
+
+    def y(v):
+        return height - pad - (v - lo) / rng * (height - 2 * pad)
+    pts = [f"{pad + i * (width - 2 * pad) / (n - 1):.1f},{y(v):.1f}"
+           for i, v in enumerate(vals)]
+    lx, ly = pts[-1].split(",")
+    dot = "var(--neg)" if vals[-1] < threshold else "var(--line)"
+    return (
+        f'<svg class="spark" viewBox="0 0 {width} {height}" preserveAspectRatio="none" '
+        f'role="img" aria-label="credit z-score, {n} sessions, latest {vals[-1]:+.2f}">'
+        f'<line x1="0" y1="{y(0):.1f}" x2="{width}" y2="{y(0):.1f}" class="spark-zero"/>'
+        f'<line x1="0" y1="{y(threshold):.1f}" x2="{width}" y2="{y(threshold):.1f}" '
+        f'style="stroke:var(--neg);stroke-width:1;stroke-dasharray:4 3"/>'
+        f'<polyline points="{" ".join(pts)}" class="spark-line"/>'
+        f'<circle cx="{lx}" cy="{ly}" r="3.5" style="fill:{dot}"/></svg>'
+    )
+
+
+def credit_card(b):
+    """Market-wide credit stress card (credit_stress.py)."""
+    if not b:
+        return ""
+    state = b.get("state", "")
+    cls = "neg" if state == "stress" else "pos" if state == "calm" else ""
+    badge = {"stress": "stress &middot; z below -2", "watch": "watch &middot; z below -1",
+             "calm": "calm"}.get(state, html.escape(state))
+    stale = ' <small>(stale)</small>' if b.get("stale") else ""
+    chg = b.get("z_change_5d")
+    chg_s = f"{chg:+.2f}" if chg is not None else "&mdash;"
+    below = b.get("sessions_below_threshold") or 0
+    cross = b.get("last_cross_below") or "&mdash;"
+    return f"""
+<section class="card">
+  <div class="card-top">
+    <div><span class="sym">Credit stress</span>
+      <span class="spot">&nbsp;HYG/IEF &middot; z{b.get('len', 60)}{stale}</span></div>
+    <span class="badge {cls}">{badge}</span>
+  </div>
+  <div class="grid">
+    <div class="metric"><div class="k">Z-score</div>
+      <div class="v">{b['z']:+.2f}<small> {html.escape(b.get('trend', ''))}</small></div></div>
+    <div class="metric"><div class="k">5-session change</div>
+      <div class="v">{chg_s}</div></div>
+    <div class="metric"><div class="k">Ratio vs 60d mean</div>
+      <div class="v">{b['ratio_vs_mean_pct']:+.2f}%<small> {b['ratio']:.4f}</small></div></div>
+    <div class="metric"><div class="k">Sessions below -2</div>
+      <div class="v">{below}<small> last cross {cross}</small></div></div>
+  </div>
+  <div class="sparkwrap">
+    <div class="k">Z-score &middot; last {len(b.get('history') or [])} sessions &middot; dashed red = -2 &middot; as of {html.escape(str(b.get('asof', '')))}</div>
+    {credit_spark(b.get('history') or [], threshold=b.get('threshold', -2.0))}
+  </div>
+  <p class="sub note">High yield vs Treasuries of similar duration. Falling z = credit
+    underperforming = rising default-risk pricing. Information only, not a trade gate.</p>
+</section>"""
+
+
 def card(row, hist, has_chart, bars="", live=None, levels=""):
     sym = row["symbol"]
     spot = float(row["spot"])
@@ -633,6 +699,10 @@ def build(histdir, docsdir, charts=True):
                               if "session_date" in metrics.columns
                               else metrics["feed_date"].iloc[-1])
         body = ""
+        try:
+            body += credit_card(cs.credit_block(docsdir))
+        except Exception as e:                      # pragma: no cover
+            print(f"credit stress card failed -- {e}")
         live = latest_intraday(histdir)
         order = [s for s in SYMBOL_ORDER if s in set(metrics["symbol"])]
         order += [s for s in sorted(set(metrics["symbol"])) if s not in SYMBOL_ORDER]
@@ -950,6 +1020,14 @@ def build_latest_json(histdir, docsdir):
             output.setdefault("market", {})["long_vol"] = long_vol
     except Exception as ex:                         # pragma: no cover
         print(f"latest.json: long-vol block skipped ({ex})")
+
+    # Credit stress: HYG/IEF ratio z-score vs its 60-session mean.
+    try:
+        credit = cs.credit_block(docsdir)
+        if credit is not None:
+            output.setdefault("market", {})["credit_stress"] = credit
+    except Exception as ex:                         # pragma: no cover
+        print(f"latest.json: credit stress skipped ({ex})")
 
     outfile = os.path.join(
         docsdir,

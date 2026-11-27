@@ -137,8 +137,19 @@ VIX1Y with their percentile over the last year and five years and a
 CHEAP (30th or below) / NEUTRAL / RICH (70th or above) state, for timing
 staged long-dated tranches. Its daily history is read fresh at most every six
 hours and not stored. All additive: a reader that ignores them is unaffected.
-Apart from `long_vol`, nothing new is fetched, and nothing new is stored.
-Tests: `python -m pytest test_vol_metrics.py test_vol_surface.py test_rsi_divergence.py test_flow_intensity.py test_flow_outcomes.py`.
+Apart from `long_vol` and `credit_stress`, nothing new is fetched, and nothing new is stored.
+
+`market.credit_stress` (`credit_stress.py`) is the HYG/IEF ratio's z-score against
+its own 60-session mean and population stdev, a port of the thinkScript study
+(`z < -2` = stress). Fields: `z`, `state` (calm / watch below -1 / stress below -2),
+`trend` (5-session z change of 0.5 or more: deteriorating / improving, else steady),
+`z_change_5d`, `z_min_20d`, `ratio_vs_mean_pct`, `sessions_below_threshold`,
+`last_cross_below`, and the last 60 z values in `history`. Closes come from
+tastytrade first, Yahoo second, read at most every six hours and not stored; a
+failed read keeps the previous block marked stale. Shown as a card at the top of
+the GEX Monitor and as a line on the app's Market tab. Information only, not a gate.
+`py credit_stress.py` prints the current reading.
+Tests: `python -m pytest test_credit_stress.py test_vol_metrics.py test_vol_surface.py test_rsi_divergence.py test_flow_intensity.py test_flow_outcomes.py`.
 
 `rsi_divergence.py` is not wired into `latest.json`: this pipeline holds no
 price bars for the index ETFs (it reads option chains), so each agent passes the

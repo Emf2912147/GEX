@@ -47,6 +47,8 @@ YAHOO = {
     # ETFs: Yahoo uses the plain ticker. Fallback for realized vol.
     "SPY": "SPY", "QQQ": "QQQ", "IWM": "IWM", "XLK": "XLK", "SMH": "SMH",
     "XLF": "XLF", "GLD": "GLD", "TLT": "TLT",
+    # Credit stress pair (credit_stress.py).
+    "HYG": "HYG", "IEF": "IEF",
 }
 
 # Yahoo range strings -> years, for the tastytrade request.
