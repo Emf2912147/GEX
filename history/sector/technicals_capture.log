@@ -1334,3 +1334,10 @@
 2026-11-26T13:57:08.347600+00:00Z  no usable history for 1 names -- ['VYLR']
 2026-11-26T13:57:08.348070+00:00Z  === technicals capture done: 121/121 names captured, 0 with options data ===
 2026-11-26T13:57:08.348110+00:00Z  === WARNING: NOT ONE name has options data -- the chain source is unusable this run, the rows are price-only ===
+2026-11-27T09:39:05.432985+00:00Z  universe: 121 names from fundamentals 2026-11-21
+2026-11-27T09:39:05.433113+00:00Z  === technicals capture start (121 names) ===
+2026-11-27T09:39:08.995697+00:00Z  yfinance batch 1: 100/100 with history
+2026-11-27T09:39:09.849627+00:00Z  yfinance batch 2: 24/25 with history
+2026-11-27T09:39:09.849753+00:00Z  no usable history for 1 names -- ['VYLR']
+2026-11-27T09:39:09.850148+00:00Z  === technicals capture done: 121/121 names captured, 0 with options data ===
+2026-11-27T09:39:09.850174+00:00Z  === WARNING: NOT ONE name has options data -- the chain source is unusable this run, the rows are price-only ===
